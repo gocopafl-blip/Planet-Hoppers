@@ -9,7 +9,7 @@ canvas.width = 1000;
 canvas.height = 700;
 
 // Base URL for assets from the GitHub repo
-const ASSET_BASE_URL = 'https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/';
+const ASSET_BASE_URL = 'https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/';
 
 // --- Asset Definitions ---
 function createSound(src, loop = false, volume = 1.0) {
@@ -28,14 +28,14 @@ function createSound(src, loop = false, volume = 1.0) {
     return sound;
 }
 
-const backgroundMusic = createSound('music.mp3', true, 0.3);
-const thrusterSound = createSound('thruster.mp3', true, 0.5);
-const explosionSound = createSound('explosion.mp3', false, 0.7);
+const backgroundMusic = createSound('sounds/music.mp3', true, 0.3);
+const thrusterSound = createSound('sounds/thruster.mp3', true, 0.5);
+const explosionSound = createSound('sounds/explosion.mp3', false, 0.7);
 
 const shipTypes = {
-    scout:  { src: 'lander-scout.png',  width: 40,  height: 40,  img: new Image(), thrusterOffset: 20 },
-    classic:{ src: 'lander-classic.png', width: 80,  height: 80,  img: new Image(), thrusterOffset: 40 },
-    heavy:  { src: 'lander-heavy.png',   width: 160, height: 160, img: new Image(), thrusterOffset: 65 }
+    scout:  { src: 'images/lander-scout.png',  width: 40,  height: 40,  img: new Image(), thrusterOffset: 20 },
+    classic:{ src: 'images/lander-classic.png', width: 80,  height: 80,  img: new Image(), thrusterOffset: 40 },
+    heavy:  { src: 'images/lander-heavy.png',   width: 160, height: 160, img: new Image(), thrusterOffset: 65 }
 };
 const spaceShipeImage = new Image();
 const planetImages = [new Image(), new Image(), new Image()];
@@ -457,12 +457,12 @@ function init() {
     });
 
     // Now set the src to trigger loading
-    spaceShipeImage.src = ASSET_BASE_URL + 'ship.png';
-    planetImages[0].src = ASSET_BASE_URL + 'planet1.png';
-    planetImages[1].src = ASSET_BASE_URL + 'planet2.png';
-    planetImages[2].src = ASSET_BASE_URL + 'planet3.png';
+    spaceShipeImage.src = ASSET_BASE_URL + 'images/ship.png';
+    planetImages[0].src = ASSET_BASE_URL + 'images/planet1.png';
+    planetImages[1].src = ASSET_BASE_URL + 'images/planet2.png';
+    planetImages[2].src = ASSET_BASE_URL + 'images/planet3.png';
     Object.values(shipTypes).forEach(ship => {
-        ship.img.src = ASSET_BASE_URL + ship.src;
+        ship.img.src = ASSET_BASE_URL + 'images/' + ship.src;
     });
     
     landerScene.createStars();
