@@ -462,7 +462,7 @@ function init() {
     planetImages[1].src = ASSET_BASE_URL + 'images/planet2.png';
     planetImages[2].src = ASSET_BASE_URL + 'images/planet3.png';
     Object.values(shipTypes).forEach(ship => {
-        ship.img.src = ASSET_BASE_URL + 'images/' + ship.src;
+        ship.img.src = ASSET_BASE_URL + ship.src;
     });
     
     landerScene.createStars();
