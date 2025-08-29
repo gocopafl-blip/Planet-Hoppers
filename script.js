@@ -28,7 +28,7 @@ function createSound(src, loop = false, volume = 1.0) {
     return sound;
 }
 
-const backgroundMusic = createSound('sounds/music.mp3', true, 0.3);
+const backgroundMusic = createSound('sounds/musictrek.mp3', true, 0.3);
 const thrusterSound = createSound('sounds/thruster.mp3', true, 0.5);
 const explosionSound = createSound('sounds/explosion.mp3', false, 0.7);
 
