@@ -9,7 +9,7 @@ canvas.width = 1000;
 canvas.height = 700;
 
 // Base URL for assets from the GitHub repo
-const ASSET_BASE_URL = 'https://raw.githubusercontent.com/gocopafl-blip/MoonlanderAssets/main/';
+const ASSET_BASE_URL = 'https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/';
 
 // --- Asset Definitions ---
 function createSound(src, loop = false, volume = 1.0) {
