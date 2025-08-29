@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunar Lander</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="menu">
+            <h1>LUNAR LANDER</h1>
+            <button id="easyBtn">Easy</button>
+            <button id="mediumBtn">Medium</button>
+            <button id="hardBtn">Hard</button>
+        </div>
+
+        <div id="ship-selection" style="display: none;">
+            <h2>Select Your Lander</h2>
+            <div class="ship-options-container">
+                <div class="ship-option" data-ship="scout">
+                    <img src="https://raw.githubusercontent.com/gocopafl-blip/MoonlanderAssets/main/lander-scout.png" alt="Scout Lander">
+                    <p>Scout</p>
+                    <span>(Small)</span>
+                </div>
+                <div class="ship-option" data-ship="classic">
+                    <img src="https://raw.githubusercontent.com/gocopafl-blip/MoonlanderAssets/main/lander-classic.png" alt="Classic Lander">
+                    <p>Classic</p>
+                    <span>(Medium)</span>
+                </div>
+                <div class="ship-option" data-ship="heavy">
+                    <img src="https://raw.githubusercontent.com/gocopafl-blip/MoonlanderAssets/main/lander-heavy.png" alt="Heavy Lander">
+                    <p>Heavy</p>
+                    <span>(Large)</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script src="script.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #000;
+    font-family: 'Consolas', monospace;
+    overflow: hidden; /* Prevents scrollbars */
+}
+
+#game-container {
+    position: relative;
+}
+
+canvas {
+    background-color: #000010;
+    border: 2px solid #444;
+    cursor: none;
+    display: block;
+}
+
+#menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #fff;
+}
+
+h1 {
+    color: #fff;
+}
+
+button {
+    background-color: #000;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    padding: 15px 30px;
+    font-size: 1.2em;
+    cursor: pointer;
+    margin: 10px;
+}
+
+button:hover {
+    background-color: #00ff00;
+    color: #000;
+}
+#ship-selection {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #fff;
+}
+
+.ship-options-container {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.ship-option {
+    border: 2px solid #555;
+    padding: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.ship-option:hover {
+    border-color: #00ff00;
+    background-color: rgba(0, 255, 0, 0.1);
+}
+
+.ship-option img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+}
+
+.ship-option p {
+    margin: 10px 0 0 0;
+    font-size: 1.2em;
+}
+
+.ship-option span {
+    font-size: 0.9em;
+    color: #aaa;
+}
