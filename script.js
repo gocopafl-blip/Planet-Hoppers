@@ -101,37 +101,39 @@ const spaceScene = {
         for (let i = 0; i < 2000; i++) {
             this.stars.push({ x: Math.random() * this.WORLD_WIDTH, y: Math.random() * this.WORLD_HEIGHT, radius: Math.random() * 1.5 });
         }
-    },
-       createPlanets() {
+        createPlanets() {
         celestialBodies = [];
         const numPlanets = 5;
-        const minDistance = 400; // New: Minimum distance between planet centers
-        let attempts = 0; // New: A safety measure to prevent infinite loops
+        const minDistance = 400; 
+        let attempts = 0; 
+        
+        // New: Define a clear range for planet sizes
+        const minRadius = 80;  // Allows for smaller planets
+        const maxRadius = 300; // Allows for larger planets
 
         while (celestialBodies.length < numPlanets && attempts < 1000) {
             let newPlanet = {
                 x: Math.random() * this.WORLD_WIDTH * 0.8 + this.WORLD_WIDTH * 0.1,
                 y: Math.random() * this.WORLD_HEIGHT * 0.8 + this.WORLD_HEIGHT * 0.1,
-                radius: Math.random() * 100 + 150,
+                // New: Use our min/max variables to calculate a random radius within the new range
+                radius: Math.random() * (maxRadius - minRadius) + minRadius,
                 image: planetImages[celestialBodies.length % planetImages.length]
             };
 
             let overlapping = false;
-            // New: Check for overlap with existing planets
             for (const existingPlanet of celestialBodies) {
                 const dist = Math.hypot(newPlanet.x - existingPlanet.x, newPlanet.y - existingPlanet.y);
                 if (dist < newPlanet.radius + existingPlanet.radius + minDistance) {
                     overlapping = true;
-                    break; // Exit the loop as soon as we find an overlap
+                    break;
                 }
             }
 
-            // New: If no overlap was found, add the new planet to our array
             if (!overlapping) {
                 celestialBodies.push(newPlanet);
             }
 
-            attempts++; // New: Increment our safety counter
+            attempts++;
         }
         
         if (attempts >= 1000) {
