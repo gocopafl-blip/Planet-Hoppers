@@ -63,7 +63,7 @@ const gameManager = {
 // --- Space Scene ---
 const spaceScene = {
     ship: null, stars: [], difficulty: 'easy', isPaused: false,
-    WORLD_WIDTH: canvas.width * 5, WORLD_HEIGHT: canvas.height * 5,
+    WORLD_WIDTH: canvas.width * 10, WORLD_HEIGHT: canvas.height * 10,
     THRUST_POWER: 0.1, ROTATION_SPEED: 0.05,
     Ship: class {
         constructor(x, y) {
