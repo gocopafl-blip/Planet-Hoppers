@@ -63,7 +63,7 @@ const gameManager = {
 // --- Space Scene ---
 const spaceScene = {
     ship: null, stars: [], difficulty: 'easy', isPaused: false,
-    WORLD_WIDTH: canvas.width * 3, WORLD_HEIGHT: canvas.height * 3,
+    WORLD_WIDTH: canvas.width * 5, WORLD_HEIGHT: canvas.height * 5,
     THRUST_POWER: 0.1, ROTATION_SPEED: 0.05,
     Ship: class {
         constructor(x, y) {
@@ -102,16 +102,40 @@ const spaceScene = {
             this.stars.push({ x: Math.random() * this.WORLD_WIDTH, y: Math.random() * this.WORLD_HEIGHT, radius: Math.random() * 1.5 });
         }
     },
-    createPlanets() {
+       createPlanets() {
         celestialBodies = [];
         const numPlanets = 5;
-        for (let i = 0; i < numPlanets; i++) {
-            celestialBodies.push({
+        const minDistance = 400; // New: Minimum distance between planet centers
+        let attempts = 0; // New: A safety measure to prevent infinite loops
+
+        while (celestialBodies.length < numPlanets && attempts < 1000) {
+            let newPlanet = {
                 x: Math.random() * this.WORLD_WIDTH * 0.8 + this.WORLD_WIDTH * 0.1,
                 y: Math.random() * this.WORLD_HEIGHT * 0.8 + this.WORLD_HEIGHT * 0.1,
                 radius: Math.random() * 100 + 150,
-                image: planetImages[i % planetImages.length]
-            });
+                image: planetImages[celestialBodies.length % planetImages.length]
+            };
+
+            let overlapping = false;
+            // New: Check for overlap with existing planets
+            for (const existingPlanet of celestialBodies) {
+                const dist = Math.hypot(newPlanet.x - existingPlanet.x, newPlanet.y - existingPlanet.y);
+                if (dist < newPlanet.radius + existingPlanet.radius + minDistance) {
+                    overlapping = true;
+                    break; // Exit the loop as soon as we find an overlap
+                }
+            }
+
+            // New: If no overlap was found, add the new planet to our array
+            if (!overlapping) {
+                celestialBodies.push(newPlanet);
+            }
+
+            attempts++; // New: Increment our safety counter
+        }
+        
+        if (attempts >= 1000) {
+            console.warn("Could not place all planets without overlapping. The world might be too crowded.");
         }
     },
     start(settings) {
