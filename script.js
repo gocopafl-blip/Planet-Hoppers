@@ -108,8 +108,8 @@ const spaceScene = {
         const minDistance = 400; 
         let attempts = 0; 
         // New: Define a clear range for planet sizes
-        const minRadius = 150;  // Allows for smaller planets
-        const maxRadius = 600; // Allows for larger planets
+        const minRadius = 80;  // Allows for smaller planets
+        const maxRadius = 300; // Allows for larger planets
 
         while (celestialBodies.length < numPlanets && attempts < 1000) {
             let newPlanet = {
