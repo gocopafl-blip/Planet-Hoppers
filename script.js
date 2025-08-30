@@ -63,7 +63,7 @@ const gameManager = {
 // --- Space Scene ---
 const spaceScene = {
     ship: null, stars: [], difficulty: 'easy', isPaused: false,
-    WORLD_WIDTH: canvas.width * 10, WORLD_HEIGHT: canvas.height * 10,
+    WORLD_WIDTH: canvas.width * 20, WORLD_HEIGHT: canvas.height * 20,
     THRUST_POWER: 0.1, ROTATION_SPEED: 0.05,
     Ship: class {
         constructor(x, y) {
@@ -101,12 +101,12 @@ const spaceScene = {
         for (let i = 0; i < 2000; i++) {
             this.stars.push({ x: Math.random() * this.WORLD_WIDTH, y: Math.random() * this.WORLD_HEIGHT, radius: Math.random() * 1.5 });
         }
-        createPlanets() {
+    },
+    createPlanets() {
         celestialBodies = [];
-        const numPlanets = 8;
+        const numPlanets = 5;
         const minDistance = 400; 
         let attempts = 0; 
-        
         // New: Define a clear range for planet sizes
         const minRadius = 150;  // Allows for smaller planets
         const maxRadius = 600; // Allows for larger planets
@@ -135,7 +135,6 @@ const spaceScene = {
 
             attempts++;
         }
-        
         if (attempts >= 1000) {
             console.warn("Could not place all planets without overlapping. The world might be too crowded.");
         }
