@@ -65,6 +65,13 @@ const spaceScene = {
     ship: null, stars: [], difficulty: 'easy', isPaused: false,
     WORLD_WIDTH: canvas.width * 20, WORLD_HEIGHT: canvas.height * 20,
     THRUST_POWER: 0.1, ROTATION_SPEED: 0.05,
+    // New: Camera Zoom Variables
+    zoomLevel: 1.5,
+    minZoom: 0.3,
+    maxZoom: 1.5,
+    maxSpeedForZoom: 15,
+    zoomSmoothing: 0.03,
+
     Ship: class {
         constructor(x, y) {
             this.x = x; this.y = y; this.velX = 0; this.velY = 0;
@@ -96,20 +103,22 @@ const spaceScene = {
             }
         }
     },
+
     createStars() {
         this.stars = [];
         for (let i = 0; i < 2000; i++) {
             this.stars.push({ x: Math.random() * this.WORLD_WIDTH, y: Math.random() * this.WORLD_HEIGHT, radius: Math.random() * 1.5 });
         }
     },
+
     createPlanets() {
         celestialBodies = [];
-        const numPlanets = 5;
+        const numPlanets = 8;
         const minDistance = 400; 
         let attempts = 0; 
         // New: Define a clear range for planet sizes
         const minRadius = 80;  // Allows for smaller planets
-        const maxRadius = 300; // Allows for larger planets
+        const maxRadius = 500; // Allows for larger planets
 
         while (celestialBodies.length < numPlanets && attempts < 1000) {
             let newPlanet = {
@@ -139,6 +148,7 @@ const spaceScene = {
             console.warn("Could not place all planets without overlapping. The world might be too crowded.");
         }
     },
+
     start(settings) {
         console.log("Starting Space Scene...");
         this.difficulty = settings.difficulty;
@@ -150,12 +160,25 @@ const spaceScene = {
         if (backgroundMusic.isLoaded) { backgroundMusic.currentTime = 0; backgroundMusic.play().catch(e => console.error("Music play failed:", e)); }
         if (!this.stars.length) { this.createStars(); this.createPlanets(); }
     },
+
     stop() {
         if (thrusterSound.isLoaded) thrusterSound.pause();
     },
+
     update() {
         if (!this.ship || this.isPaused) return;
         this.ship.update();
+
+        // New: Dynamic Zoom Logic
+        const speed = Math.hypot(this.ship.velX, this.ship.velY);
+        // Calculate a ratio from 0 to 1 based on the ship's speed
+        const speedRatio = Math.min(speed / this.maxSpeedForZoom, 1); 
+        // Determine the target zoom level based on the speed ratio
+        const targetZoom = this.maxZoom - (this.maxZoom - this.minZoom) * speedRatio;
+        // Smoothly move the current zoom level towards the target zoom level
+        this.zoomLevel += (targetZoom - this.zoomLevel) * this.zoomSmoothing;
+
+
         for (const planet of celestialBodies) {
             const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
             if (dist < planet.radius) {
@@ -167,23 +190,87 @@ const spaceScene = {
             }
         }
     },
+ 
     draw() {
         if (!this.ship || this.isPaused) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
-        const viewWidth = canvas.width; const viewHeight = canvas.height;
-        const minCameraX = viewWidth / 2; const maxCameraX = this.WORLD_WIDTH - viewWidth / 2;
-        const minCameraY = viewHeight / 2; const maxCameraY = this.WORLD_HEIGHT - viewHeight / 2;
+
+        // New: Calculate the visible area based on the current zoom level
+        const viewWidth = canvas.width / this.zoomLevel;
+        const viewHeight = canvas.height / this.zoomLevel;
+
+        const minCameraX = viewWidth / 2; 
+        const maxCameraX = this.WORLD_WIDTH - viewWidth / 2;
+        const minCameraY = viewHeight / 2; 
+        const maxCameraY = this.WORLD_HEIGHT - viewHeight / 2;
+        
         let cameraX = Math.max(minCameraX, Math.min(this.ship.x, maxCameraX));
         let cameraY = Math.max(minCameraY, Math.min(this.ship.y, maxCameraY));
+        
         ctx.translate(canvas.width / 2, canvas.height / 2);
+        
+        // New: Apply the zoom level to the canvas
+        ctx.scale(this.zoomLevel, this.zoomLevel);
+
         ctx.translate(-cameraX, -cameraY);
+        
         ctx.fillStyle = 'white';
         this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); ctx.fill(); });
         celestialBodies.forEach(p => { ctx.drawImage(p.image, p.x - p.radius, p.y - p.radius, p.radius * 2, p.radius * 2); });
+        
         this.ship.draw();
+        
         ctx.restore();
+
+        this.drawCompass();
     },
+       drawCompass() {
+        if (!this.ship || celestialBodies.length === 0) return;
+
+        // Find the closest planet
+        let closestPlanet = null;
+        let minDistance = Infinity;
+
+        for (const planet of celestialBodies) {
+            const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
+            if (dist < minDistance) {
+                minDistance = dist;
+                closestPlanet = planet;
+            }
+        }
+
+        // --- THIS IS THE CHANGED LOGIC ---
+        // Only draw the compass if the planet is far away, based on its size
+        const compassMaxViewDistance = closestPlanet.radius * 1.5; 
+        if (minDistance > compassMaxViewDistance) {
+            const angleToPlanet = Math.atan2(closestPlanet.y - this.ship.y, closestPlanet.x - this.ship.x);
+            
+            const hudX = canvas.width / 2;
+            const hudY = canvas.height / 2;
+            const compassRadius = 120;
+
+            ctx.save();
+            ctx.translate(hudX + Math.cos(angleToPlanet) * compassRadius, hudY + Math.sin(angleToPlanet) * compassRadius);
+            ctx.rotate(angleToPlanet + Math.PI / 2);
+            
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+            ctx.beginPath();
+            ctx.moveTo(0, -7.5);
+            ctx.lineTo(-5, 5);
+            ctx.lineTo(5, 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.font = '22px "Consolas"';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${Math.floor(minDistance)}m`, hudX, hudY + compassRadius + 30);
+        }
+    },
+
     handleKeys(e, isDown) {
         if (!this.ship || this.isPaused) return;
         const oldThrusting = this.ship.thrusting;
@@ -525,3 +612,4 @@ function init() {
 
 // Run the game
 init();
+
