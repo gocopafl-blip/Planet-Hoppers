@@ -65,6 +65,10 @@ const spaceScene = {
     ship: null, stars: [], difficulty: 'easy', isPaused: false,
     WORLD_WIDTH: canvas.width * 20, WORLD_HEIGHT: canvas.height * 20,
     THRUST_POWER: 0.1, ROTATION_SPEED: 0.05,
+        // --- New Gravity Settings ---
+    GRAVITY_BOUNDARY_MULTIPLIER: 4.0, // Gravity is felt at 4x a planet's radius (2x diameter)
+    MIN_GRAVITY_PULL: 0.01,           // The gentle pull at the very edge of the gravity well
+    PLANET_GRAVITY_SCALAR: 0.0004,    // Ties a planet's max gravity to its size. Tweak this to make all planets stronger/weaker.
     // New: Camera Zoom Variables
     zoomLevel: 1.5,
     minZoom: 0.3,
@@ -121,11 +125,14 @@ const spaceScene = {
         const maxRadius = 500; // Allows for larger planets
 
         while (celestialBodies.length < numPlanets && attempts < 1000) {
+         const radius = Math.random() * (maxRadius - minRadius) + minRadius;
             let newPlanet = {
                 x: Math.random() * this.WORLD_WIDTH * 0.8 + this.WORLD_WIDTH * 0.1,
                 y: Math.random() * this.WORLD_HEIGHT * 0.8 + this.WORLD_HEIGHT * 0.1,
                 // New: Use our min/max variables to calculate a random radius within the new range
-                radius: Math.random() * (maxRadius - minRadius) + minRadius,
+                radius: radius,
+                // New: Each planet's max gravity is calculated based on its size and our scalar
+                maxGravity: this.PLANET_GRAVITY_SCALAR * radius,  
                 image: planetImages[celestialBodies.length % planetImages.length]
             };
 
@@ -165,30 +172,46 @@ const spaceScene = {
         if (thrusterSound.isLoaded) thrusterSound.pause();
     },
 
-    update() {
+ update() {
         if (!this.ship || this.isPaused) return;
         this.ship.update();
 
-        // New: Dynamic Zoom Logic
-        const speed = Math.hypot(this.ship.velX, this.ship.velY);
-        // Calculate a ratio from 0 to 1 based on the ship's speed
-        const speedRatio = Math.min(speed / this.maxSpeedForZoom, 1); 
-        // Determine the target zoom level based on the speed ratio
-        const targetZoom = this.maxZoom - (this.maxZoom - this.minZoom) * speedRatio;
-        // Smoothly move the current zoom level towards the target zoom level
-        this.zoomLevel += (targetZoom - this.zoomLevel) * this.zoomSmoothing;
-
-
+        // --- New Gravity Logic ---
         for (const planet of celestialBodies) {
-            const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
-            if (dist < planet.radius) {
+            const dx = planet.x - this.ship.x;
+            const dy = planet.y - this.ship.y;
+            const distance = Math.hypot(dx, dy);
+            
+            const gravityWellEdge = planet.radius * this.GRAVITY_BOUNDARY_MULTIPLIER;
+
+            // Only apply gravity if the ship is within the planet's gravity well
+            if (distance < gravityWellEdge) {
+                // Calculate how deep we are in the well, from 0 (at the edge) to 1 (at the surface)
+                const gravityRatio = 1 - ((distance - planet.radius) / (gravityWellEdge - planet.radius));
+                
+                // Linearly scale the force between the min and the planet's max pull
+                const force = this.MIN_GRAVITY_PULL + (planet.maxGravity - this.MIN_GRAVITY_PULL) * gravityRatio;
+
+                const angle = Math.atan2(dy, dx);
+                this.ship.velX += force * Math.cos(angle);
+                this.ship.velY += force * Math.sin(angle);
+            }
+
+            // Collision check
+            if (distance < planet.radius) {
                 console.log("Approaching planet, showing ship selection...");
                 this.isPaused = true;
                 if (thrusterSound.isLoaded) thrusterSound.pause();
-                canvas.style.display = 'none'; // Hide canvas
-                shipSelectionMenu.style.display = 'block'; // Show ship selection
+                canvas.style.display = 'none';
+                shipSelectionMenu.style.display = 'block';
             }
         }
+
+        // --- Dynamic Zoom Logic ---
+        const speed = Math.hypot(this.ship.velX, this.ship.velY);
+        const speedRatio = Math.min(speed / this.maxSpeedForZoom, 1); 
+        const targetZoom = this.maxZoom - (this.maxZoom - this.minZoom) * speedRatio;
+        this.zoomLevel += (targetZoom - this.zoomLevel) * this.zoomSmoothing;
     },
  
     draw() {
@@ -223,7 +246,8 @@ const spaceScene = {
         
         ctx.restore();
 
-        this.drawCompass();
+        this.drawCompass.call(this);
+        this.drawRadar.call(this);
     },
        drawCompass() {
         if (!this.ship || celestialBodies.length === 0) return;
@@ -269,6 +293,61 @@ const spaceScene = {
             ctx.textAlign = 'center';
             ctx.fillText(`${Math.floor(minDistance)}m`, hudX, hudY + compassRadius + 30);
         }
+    },
+     drawRadar() {
+        if (!this.ship || celestialBodies.length === 0) return;
+
+        // --- Radar Settings (tweak these to change the look and feel!) ---
+        const radarRadius = 100; // The size of the radar circle
+        const radarX = canvas.width - radarRadius - 20; // Position from the right edge
+        const radarY = radarRadius + 20; // Position from the top edge
+        const radarRange = this.WORLD_WIDTH / 4; // The max distance the radar can "see". Tied to world size!
+        const radarScale = radarRadius / radarRange; // How to scale world distances to radar distances
+
+        ctx.save();
+        
+        // Draw the semi-transparent background circle
+        ctx.beginPath();
+        ctx.arc(radarX, radarY, radarRadius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 50, 0, 0.5)'; // Dark green, semi-transparent
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0, 255, 0, 0.7)'; // Brighter green border
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw the player's blip in the center
+        ctx.beginPath();
+        ctx.arc(radarX, radarY, 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'lime';
+        ctx.fill();
+
+        // Draw each planet as a blip on the radar
+        for (const planet of celestialBodies) {
+            const dx = planet.x - this.ship.x;
+            const dy = planet.y - this.ship.y;
+            const distance = Math.hypot(dx, dy);
+
+            let blipX, blipY;
+
+            if (distance < radarRange) {
+                // Planet is inside radar range, position it proportionally
+                blipX = radarX + dx * radarScale;
+                blipY = radarY + dy * radarScale;
+            } else {
+                // Planet is outside range, pin it to the edge of the radar
+                const angle = Math.atan2(dy, dx);
+                blipX = radarX + Math.cos(angle) * radarRadius;
+                blipY = radarY + Math.sin(angle) * radarRadius;
+            }
+            
+            // Draw the planet's blip
+            ctx.beginPath();
+            ctx.arc(blipX, blipY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
+            ctx.fill();
+        }
+
+        ctx.restore();
     },
 
     handleKeys(e, isDown) {
