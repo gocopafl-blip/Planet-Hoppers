@@ -60,30 +60,100 @@ const gameManager = {
     }
 };
 
-// --- Space Scene ---
-const spaceScene = {
-    ship: null, stars: [], difficulty: 'easy', isPaused: false,
-    WORLD_WIDTH: canvas.width * 20, WORLD_HEIGHT: canvas.height * 20,
-    THRUST_POWER: 0.1, ROTATION_SPEED: 0.05,
-        // --- New Gravity Settings ---
-    GRAVITY_BOUNDARY_MULTIPLIER: 4.0, // Gravity is felt at 4x a planet's radius (2x diameter)
-    MIN_GRAVITY_PULL: 0.01,           // The gentle pull at the very edge of the gravity well
-    PLANET_GRAVITY_SCALAR: 0.0004,    // Ties a planet's max gravity to its size. Tweak this to make all planets stronger/weaker.
-    // New: Camera Zoom Variables
-    zoomLevel: 1.5,
-    minZoom: 0.3,
-    maxZoom: 1.5,
-    maxSpeedForZoom: 15,
-    zoomSmoothing: 0.03,
+// --- Camera Class ---
+class Camera {
+    constructor(target, worldWidth, worldHeight, settings = {}) {
+        this.target = target;
+        this.worldWidth = worldWidth;
+        this.worldHeight = worldHeight;
 
-    Ship: class {
-        constructor(x, y) {
+        this.x = target ? target.x : 0;
+        this.y = target ? target.y : 0;
+        this.zoomLevel = 1.0;
+        this.targetZoom = 1.0;
+
+        // Apply settings with defaults using nullish coalescing
+        this.zoomSmoothing = settings.zoomSmoothing ?? 0.05;
+        this.followSmoothing = settings.followSmoothing ?? 0.1;
+    }
+
+    update() {
+        // Smoothly move the camera towards the target (lerp)
+        if (this.target) {
+            this.x += (this.target.x - this.x) * this.followSmoothing;
+            this.y += (this.target.y - this.y) * this.followSmoothing;
+        }
+        // Smoothly adjust the zoom level
+        this.zoomLevel += (this.targetZoom - this.zoomLevel) * this.zoomSmoothing;
+    }
+
+    begin(ctx) {
+        ctx.save();
+
+        const viewWidth = canvas.width / this.zoomLevel;
+        const viewHeight = canvas.height / this.zoomLevel;
+
+        const minCameraX = viewWidth / 2;
+        const maxCameraX = this.worldWidth - viewWidth / 2;
+        const minCameraY = viewHeight / 2;
+        const maxCameraY = this.worldHeight - viewHeight / 2;
+
+        let cameraX = Math.max(minCameraX, Math.min(this.x, maxCameraX));
+        let cameraY = Math.max(minCameraY, Math.min(this.y, maxCameraY));
+
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(this.zoomLevel, this.zoomLevel);
+        ctx.translate(-cameraX, -cameraY);
+    }
+
+    end(ctx) {
+        ctx.restore();
+    }
+}
+
+// --- Space Scene ---
+class SpaceScene {
+    constructor() {
+        // --- Scene State ---
+        this.ship = null;
+        this.stars = [];
+        this.difficulty = 'easy';
+        this.isPaused = false;
+        this.camera = null;
+        this.orbitData = null;
+
+        // --- World Settings ---
+        this.WORLD_WIDTH = canvas.width * 20;
+        this.WORLD_HEIGHT = canvas.height * 20;
+
+        // --- Core Movement Settings ---
+        this.ROTATION_SPEED = 0.05;
+        this.THRUST_POWER = 0.05;  // Reduced for finer orbital control
+
+        // --- Orbital Mechanics Settings ---
+        this.GRAVITY_BOUNDARY_MULTIPLIER = 3.0;  // Gravity well extends to 2x planet radius
+        this.ORBITAL_CONSTANT = 0.00035;         // Reduced for more manageable orbital velocities
+        this.PLANET_MASS_SCALAR = 0.4;           // Reduced mass to prevent excessive gravitational acceleration
+
+        // --- Camera Settings ---
+        this.minZoom = 0.3; // minZoom is now used to configure the camera
+        this.maxZoom = 1.5;
+        this.maxSpeedForZoom = 15;
+        this.zoomSmoothing = 0.03;
+    }
+
+    Ship = class {
+        constructor(x, y, game) {
             this.x = x; this.y = y; this.velX = 0; this.velY = 0;
             this.angle = -Math.PI / 2;
             this.rotation = 0; this.thrusting = false;
             this.width = 100; // Adjusted for better visibility
             this.height = 120;
+            this.orbitLocked = false;
+            this.orbitingPlanet = null;
+            this.game = game; // Store reference to the game
         }
+        
         draw() {
             ctx.save();
             ctx.translate(this.x, this.y);
@@ -91,48 +161,55 @@ const spaceScene = {
             ctx.drawImage(spaceShipeImage, -this.width / 2, -this.height / 2, this.width, this.height);
             ctx.restore();
         }
+        
         update() {
             this.angle += this.rotation;
             if (this.thrusting) {
-                this.velX += spaceScene.THRUST_POWER * Math.cos(this.angle);
-                this.velY += spaceScene.THRUST_POWER * Math.sin(this.angle);
+                this.velX += this.game.THRUST_POWER * Math.cos(this.angle);
+                this.velY += this.game.THRUST_POWER * Math.sin(this.angle);
             }
-            this.velX *= 0.99; this.velY *= 0.99;
+            // No drag in space - objects maintain velocity (Newton's First Law)
             this.x += this.velX; this.y += this.velY;
             // World boundary checks
-            if (this.x < 0 || this.x > spaceScene.WORLD_WIDTH || this.y < 0 || this.y > spaceScene.WORLD_HEIGHT) {
-                this.x = Math.max(0, Math.min(this.x, spaceScene.WORLD_WIDTH));
-                this.y = Math.max(0, Math.min(this.y, spaceScene.WORLD_HEIGHT));
+            if (this.x < 0 || this.x > this.game.WORLD_WIDTH || this.y < 0 || this.y > this.game.WORLD_HEIGHT) {
+                this.x = Math.max(0, Math.min(this.x, this.game.WORLD_WIDTH));
+                this.y = Math.max(0, Math.min(this.y, this.game.WORLD_HEIGHT));
                 this.velX = 0; this.velY = 0;
             }
         }
-    },
+    }
 
     createStars() {
         this.stars = [];
         for (let i = 0; i < 2000; i++) {
             this.stars.push({ x: Math.random() * this.WORLD_WIDTH, y: Math.random() * this.WORLD_HEIGHT, radius: Math.random() * 1.5 });
         }
-    },
+    }
+
+    calculatePlanetParameters(minRadius, maxRadius) {
+        const radius = Math.random() * (maxRadius - minRadius) + minRadius;
+        const mass = Math.pow(radius, 3) * this.PLANET_MASS_SCALAR; // Mass scales with volume
+        return {
+            radius,
+            mass
+        };
+    }
 
     createPlanets() {
         celestialBodies = [];
         const numPlanets = 8;
         const minDistance = 400; 
         let attempts = 0; 
-        // New: Define a clear range for planet sizes
-        const minRadius = 80;  // Allows for smaller planets
+        const minRadius = 200;  // Allows for smaller planets
         const maxRadius = 500; // Allows for larger planets
 
         while (celestialBodies.length < numPlanets && attempts < 1000) {
-         const radius = Math.random() * (maxRadius - minRadius) + minRadius;
+            const params = this.calculatePlanetParameters(minRadius, maxRadius);
             let newPlanet = {
                 x: Math.random() * this.WORLD_WIDTH * 0.8 + this.WORLD_WIDTH * 0.1,
                 y: Math.random() * this.WORLD_HEIGHT * 0.8 + this.WORLD_HEIGHT * 0.1,
-                // New: Use our min/max variables to calculate a random radius within the new range
-                radius: radius,
-                // New: Each planet's max gravity is calculated based on its size and our scalar
-                maxGravity: this.PLANET_GRAVITY_SCALAR * radius,  
+                radius: params.radius,
+                mass: params.mass,
                 image: planetImages[celestialBodies.length % planetImages.length]
             };
 
@@ -154,29 +231,39 @@ const spaceScene = {
         if (attempts >= 1000) {
             console.warn("Could not place all planets without overlapping. The world might be too crowded.");
         }
-    },
+    }
 
     start(settings) {
         console.log("Starting Space Scene...");
         this.difficulty = settings.difficulty;
-        this.ship = new this.Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2);
+        // Create the ship with a reference to this game instance
+        this.ship = new this.Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this);
+        this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, { 
+            zoomSmoothing: this.zoomSmoothing 
+        });
         this.isPaused = false;
         menu.style.display = 'none';
         shipSelectionMenu.style.display = 'none';
         canvas.style.display = 'block';
         if (backgroundMusic.isLoaded) { backgroundMusic.currentTime = 0; backgroundMusic.play().catch(e => console.error("Music play failed:", e)); }
         if (!this.stars.length) { this.createStars(); this.createPlanets(); }
-    },
+    }
 
     stop() {
         if (thrusterSound.isLoaded) thrusterSound.pause();
-    },
+    }
 
- update() {
+    update() {
         if (!this.ship || this.isPaused) return;
         this.ship.update();
+        this.camera.update(); // Update camera position and zoom
+        
+        // Only clear orbital data if we're not in a locked orbit and not thrusting
+        if (!this.ship.orbitLocked && !this.ship.thrusting) {
+            this.orbitData = null;
+        }
 
-        // --- New Gravity Logic ---
+        // --- Orbital Mechanics Logic ---
         for (const planet of celestialBodies) {
             const dx = planet.x - this.ship.x;
             const dy = planet.y - this.ship.y;
@@ -185,16 +272,80 @@ const spaceScene = {
             const gravityWellEdge = planet.radius * this.GRAVITY_BOUNDARY_MULTIPLIER;
 
             // Only apply gravity if the ship is within the planet's gravity well
-            if (distance < gravityWellEdge) {
-                // Calculate how deep we are in the well, from 0 (at the edge) to 1 (at the surface)
-                const gravityRatio = 1 - ((distance - planet.radius) / (gravityWellEdge - planet.radius));
+            if (distance < gravityWellEdge && distance > planet.radius) {
+                // Calculate gravitational force using inverse square law
+                const force = this.ORBITAL_CONSTANT * planet.mass / (distance * distance);
                 
-                // Linearly scale the force between the min and the planet's max pull
-                const force = this.MIN_GRAVITY_PULL + (planet.maxGravity - this.MIN_GRAVITY_PULL) * gravityRatio;
+                // Calculate orbital velocity for a circular orbit at this distance
+                const orbitalVelocity = Math.sqrt(this.ORBITAL_CONSTANT * planet.mass / distance);
+                const shipVelocity = Math.hypot(this.ship.velX, this.ship.velY);
+                const velocityRatio = shipVelocity / orbitalVelocity;
+                
+                // Calculate approach angle
+                const shipAngle = Math.atan2(this.ship.velY, this.ship.velX);
+                const radialAngle = Math.atan2(dy, dx);
+                const orbitAngle = Math.abs(shipAngle - radialAngle) % (Math.PI * 2);
+                const isOrbitalPath = (orbitAngle > Math.PI * 0.4 && orbitAngle < Math.PI * 0.6);
 
-                const angle = Math.atan2(dy, dx);
-                this.ship.velX += force * Math.cos(angle);
-                this.ship.velY += force * Math.sin(angle);
+                // Always update orbitData for the planet we're orbiting or near
+                if (this.ship.orbitLocked && this.ship.orbitingPlanet === planet || 
+                    (!this.ship.orbitLocked && distance < this.GRAVITY_BOUNDARY_MULTIPLIER * planet.radius)) {
+                    this.orbitData = {
+                        planet,
+                        distance,
+                        shipVelocity,
+                        orbitalVelocity,
+                        velocityRatio,
+                        shipAngle,
+                        orbitQuality: this.ship.orbitLocked ? 'locked' : 'approaching'
+                    };
+                }
+
+                // Check for orbital lock conditions - much wider velocity window, no angle requirement
+                if (!this.ship.thrusting && !this.ship.orbitLocked && 
+                    velocityRatio > 0.6 && velocityRatio < 1.4) {  // 40% tolerance either way
+                    // Lock into orbit
+                    this.ship.orbitLocked = true;
+                    this.ship.orbitingPlanet = planet;
+                    console.log("Orbit locked!"); // Debug message
+                    
+                    // Set exact orbital velocity
+                    const tangentialAngle = radialAngle + Math.PI / 2;
+                    this.ship.velX = orbitalVelocity * Math.cos(tangentialAngle);
+                    this.ship.velY = orbitalVelocity * Math.sin(tangentialAngle);
+                } else if (this.ship.orbitLocked && this.ship.orbitingPlanet === planet) {
+                    if (this.ship.thrusting) {
+                        // Break orbit if thrusters are used
+                        this.ship.orbitLocked = false;
+                        this.ship.orbitingPlanet = null;
+                    } else {
+                        // Maintain perfect orbital velocity while locked
+                        const tangentialAngle = radialAngle + Math.PI / 2;
+                        this.ship.velX = orbitalVelocity * Math.cos(tangentialAngle);
+                        this.ship.velY = orbitalVelocity * Math.sin(tangentialAngle);
+                        return; // Skip normal gravity application
+                    }
+                }
+                
+                // Apply gravitational acceleration if not in locked orbit
+                if (!this.ship.orbitLocked || this.ship.orbitingPlanet !== planet) {
+                    const angle = Math.atan2(dy, dx);
+                    this.ship.velX += force * Math.cos(angle);
+                    this.ship.velY += force * Math.sin(angle);
+                }
+                
+                // Store orbital data for visualization
+                if (distance < gravityWellEdge * 0.9) {  // Show within 90% of gravity well
+                    const shipVelocity = Math.hypot(this.ship.velX, this.ship.velY);
+                    const velocityRatio = shipVelocity / orbitalVelocity;
+                    
+                    // Calculate orbital indicators
+                    const shipAngle = Math.atan2(this.ship.velY, this.ship.velX);
+                    const radialAngle = Math.atan2(dy, dx);
+                    const orbitAngle = Math.abs(shipAngle - radialAngle) % (Math.PI * 2);
+                    const isOrbitalPath = (orbitAngle > Math.PI * 0.4 && orbitAngle < Math.PI * 0.6);
+                    
+                }
             }
 
             // Collision check
@@ -210,46 +361,85 @@ const spaceScene = {
         // --- Dynamic Zoom Logic ---
         const speed = Math.hypot(this.ship.velX, this.ship.velY);
         const speedRatio = Math.min(speed / this.maxSpeedForZoom, 1); 
-        const targetZoom = this.maxZoom - (this.maxZoom - this.minZoom) * speedRatio;
-        this.zoomLevel += (targetZoom - this.zoomLevel) * this.zoomSmoothing;
-    },
+        this.camera.targetZoom = this.maxZoom - (this.maxZoom - this.minZoom) * speedRatio;
+    }
  
     draw() {
         if (!this.ship || this.isPaused) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.save();
-
-        // New: Calculate the visible area based on the current zoom level
-        const viewWidth = canvas.width / this.zoomLevel;
-        const viewHeight = canvas.height / this.zoomLevel;
-
-        const minCameraX = viewWidth / 2; 
-        const maxCameraX = this.WORLD_WIDTH - viewWidth / 2;
-        const minCameraY = viewHeight / 2; 
-        const maxCameraY = this.WORLD_HEIGHT - viewHeight / 2;
         
-        let cameraX = Math.max(minCameraX, Math.min(this.ship.x, maxCameraX));
-        let cameraY = Math.max(minCameraY, Math.min(this.ship.y, maxCameraY));
-        
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        
-        // New: Apply the zoom level to the canvas
-        ctx.scale(this.zoomLevel, this.zoomLevel);
-
-        ctx.translate(-cameraX, -cameraY);
+        this.camera.begin(ctx);
         
         ctx.fillStyle = 'white';
         this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); ctx.fill(); });
-        celestialBodies.forEach(p => { ctx.drawImage(p.image, p.x - p.radius, p.y - p.radius, p.radius * 2, p.radius * 2); });
+        
+        // Draw orbital indicators if we have orbital data
+        if (this.orbitData) {
+            const { planet, distance, shipAngle, orbitQuality, velocityRatio } = this.orbitData;
+            
+            // Visual feedback for orbital mechanics
+            ctx.lineWidth = 2;
+            if (this.ship.orbitLocked && this.ship.orbitingPlanet === planet) {
+                // Locked orbit indicator - always visible while locked
+                const pulse = (Math.sin(Date.now() / 200) + 1) / 2; // 0 to 1 pulsing
+                // Locked orbit indicator - pulsing green ring
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = `rgba(0, 255, 0, ${0.3 + pulse * 0.2})`; // More subtle pulsing
+                ctx.beginPath();
+                ctx.arc(planet.x, planet.y, distance, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Draw orbit locked text at top
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('ORBIT LOCKED', canvas.width / 2, 30);
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
+                ctx.fillText('ORBIT LOCKED', canvas.width / 2, 30);
+                ctx.restore();
+            } else if (velocityRatio < 0.6 || velocityRatio > 1.4) {
+                // Too fast or too slow - red indicator
+                ctx.strokeStyle = 'rgba(255, 100, 100, 0.3)';
+                ctx.beginPath();
+                ctx.arc(planet.x, planet.y, distance, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Speed guidance text
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.font = '18px Arial';
+                ctx.textAlign = 'center';
+                const text = velocityRatio > 1.4 ? 'Too fast' : 'Too slow';
+                ctx.fillText(text, this.ship.x, this.ship.y - 30);
+                ctx.fillStyle = 'rgba(255, 100, 100, 0.7)';
+                ctx.fillText(text, this.ship.x, this.ship.y - 30);
+                ctx.restore();
+            }
+            
+            // Draw predicted trajectory arc
+            if (!this.ship.thrusting && velocityRatio > 0.6 && velocityRatio < 1.4) {
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(100, 100, 255, 0.3)';
+                // Draw an arc that shows the next quarter orbit
+                ctx.arc(planet.x, planet.y, distance, shipAngle, shipAngle + Math.PI/2);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw planets over the trajectory lines
+        celestialBodies.forEach(p => { 
+            ctx.drawImage(p.image, p.x - p.radius, p.y - p.radius, p.radius * 2, p.radius * 2); 
+        });
         
         this.ship.draw();
-        
-        ctx.restore();
+        this.camera.end(ctx);
 
         this.drawCompass.call(this);
         this.drawRadar.call(this);
-    },
-       drawCompass() {
+    }
+
+    drawCompass() {
         if (!this.ship || celestialBodies.length === 0) return;
 
         // Find the closest planet
@@ -264,38 +454,47 @@ const spaceScene = {
             }
         }
 
-        // --- THIS IS THE CHANGED LOGIC ---
-        // Only draw the compass if the planet is far away, based on its size
-        const compassMaxViewDistance = closestPlanet.radius * 1.5; 
-        if (minDistance > compassMaxViewDistance) {
-            const angleToPlanet = Math.atan2(closestPlanet.y - this.ship.y, closestPlanet.x - this.ship.x);
-            
-            const hudX = canvas.width / 2;
-            const hudY = canvas.height / 2;
-            const compassRadius = 120;
+        // Only proceed if we found a closest planet
+        if (closestPlanet) {
+            // Only draw the compass if the planet is far away, based on its size
+            const compassMaxViewDistance = closestPlanet.radius * 1.5; 
+            if (minDistance > compassMaxViewDistance) {
+                const angleToPlanet = Math.atan2(closestPlanet.y - this.ship.y, closestPlanet.x - this.ship.x);
+                
+                const hudX = canvas.width / 2;
+                const hudY = canvas.height / 2;
+                const compassRadius = 120;
 
-            ctx.save();
-            ctx.translate(hudX + Math.cos(angleToPlanet) * compassRadius, hudY + Math.sin(angleToPlanet) * compassRadius);
-            ctx.rotate(angleToPlanet + Math.PI / 2);
-            
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
-            ctx.beginPath();
-            ctx.moveTo(0, -7.5);
-            ctx.lineTo(-5, 5);
-            ctx.lineTo(5, 5);
-            ctx.closePath();
-            ctx.fill();
-            
-            ctx.restore();
+                ctx.save();
+                ctx.translate(hudX + Math.cos(angleToPlanet) * compassRadius, hudY + Math.sin(angleToPlanet) * compassRadius);
+                ctx.rotate(angleToPlanet + Math.PI / 2);
+                
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+                ctx.beginPath();
+                ctx.moveTo(0, -7.5);
+                ctx.lineTo(-5, 5);
+                ctx.lineTo(5, 5);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.restore();
 
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.font = '22px "Consolas"';
-            ctx.textAlign = 'center';
-            ctx.fillText(`${Math.floor(minDistance)}m`, hudX, hudY + compassRadius + 30);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.font = '22px "Consolas"';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${Math.floor(minDistance)}m`, hudX, hudY + compassRadius + 30);
+            }
         }
-    },
-     drawRadar() {
+    }
+
+    drawRadar() {
         if (!this.ship || celestialBodies.length === 0) return;
+
+        // Cache ship position and radar settings
+        const shipPos = {
+            x: this.ship.x,
+            y: this.ship.y
+        };
 
         // --- Radar Settings (tweak these to change the look and feel!) ---
         const radarRadius = 100; // The size of the radar circle
@@ -348,7 +547,7 @@ const spaceScene = {
         }
 
         ctx.restore();
-    },
+    }
 
     handleKeys(e, isDown) {
         if (!this.ship || this.isPaused) return;
@@ -368,8 +567,8 @@ const spaceScene = {
 
 // --- Lander Scene ---
 const landerScene = {
-    lander: null, terrain: null, particles: [], stars: [],
-    baseGravity: 0, difficultySettings: null, selectedShip: null,
+    lander: null, terrain: null, particles: [], stars: [], camera: null,
+    baseGravity: 0, difficultySettings: null, selectedShip: null, 
     gameState: 'playing', zoomLevel: 1.5,
     ZOOM_IN: 1.5, ZOOM_OUT: 0.75,
     WORLD_WIDTH: canvas.width * 3, WORLD_HEIGHT: canvas.height * 2,
@@ -527,7 +726,7 @@ const landerScene = {
         const dy = padCenter.y - this.lander.y;
         const distance = Math.hypot(dx, dy);
         const angleToPad = Math.atan2(dy, dx);
-        if (distance < 250 && this.zoomLevel === this.ZOOM_IN) return;
+        if (distance < 250 && this.camera.targetZoom === this.ZOOM_IN) return;
         const hudX = canvas.width / 2; const hudY = 80; const arcRadius = 50;
         ctx.save(); ctx.globalAlpha = 0.8;
         ctx.strokeStyle = '#00ff00'; ctx.lineWidth = 2;
@@ -545,6 +744,7 @@ const landerScene = {
     update() {
         if (this.gameState === 'playing') {
             this.lander.update();
+            this.camera.update();
             this.lander.emitThrusterParticles();
             if (this.lander.x < 0 || this.lander.x > this.WORLD_WIDTH || this.lander.y < 0) this.triggerCrash();
             if (this.getAltitude() <= 0) {
@@ -557,26 +757,28 @@ const landerScene = {
                 } else { this.triggerCrash(); }
             }
             const zoomOutZone = { left: this.terrain.padStart - canvas.width * 0.2, right: this.terrain.padEnd + canvas.width * 0.2 };
-            if (this.zoomLevel === this.ZOOM_IN && (this.lander.x < zoomOutZone.left || this.lander.x > zoomOutZone.right)) this.zoomLevel = this.ZOOM_OUT;
-            else if (this.zoomLevel === this.ZOOM_OUT && (this.lander.x > zoomOutZone.left && this.lander.x < zoomOutZone.right)) this.zoomLevel = this.ZOOM_IN;
+            if (this.camera.targetZoom === this.ZOOM_IN && (this.lander.x < zoomOutZone.left || this.lander.x > zoomOutZone.right)) {
+                this.camera.targetZoom = this.ZOOM_OUT;
+            } else if (this.camera.targetZoom === this.ZOOM_OUT && (this.lander.x > zoomOutZone.left && this.lander.x < zoomOutZone.right)) {
+                this.camera.targetZoom = this.ZOOM_IN;
+            }
         }
-        this.particles.forEach((p, i) => { p.update(); if (p.lifespan <= 0) this.particles.splice(i, 1); });
+        this.particles = this.particles.filter(p => {
+            p.update();
+            return p.lifespan > 0;
+        });
     },
     draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.save();
-        const viewWidth = canvas.width / this.zoomLevel; const viewHeight = canvas.height / this.zoomLevel;
-        const minCameraX = viewWidth / 2; const maxCameraX = this.WORLD_WIDTH - viewWidth / 2;
-        const minCameraY = viewHeight / 2; const maxCameraY = this.WORLD_HEIGHT - viewHeight / 2;
-        let cameraX = Math.max(minCameraX, Math.min(this.lander.x, maxCameraX));
-        let cameraY = Math.max(minCameraY, Math.min(this.lander.y, maxCameraY));
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.scale(this.zoomLevel, this.zoomLevel);
-        ctx.translate(-cameraX, -cameraY);
+
+        this.camera.begin(ctx);
+
         this.drawWorld();
         this.lander.draw();
         this.particles.forEach(p => p.draw());
-        ctx.restore();
+
+        this.camera.end(ctx);
+
         this.drawCompass();
         this.drawUI();
     },
@@ -592,8 +794,12 @@ const landerScene = {
         this.baseGravity = this.difficultySettings.gravity;
         this.generateTerrain();
         this.lander = new this.Lander(this.WORLD_WIDTH / 2, 150, this.difficultySettings.fuel, this.selectedShip);
+        this.camera = new Camera(this.lander, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
+            followSmoothing: 0.08, // A slightly slower, smoother follow for the lander
+            zoomSmoothing: 0.04    // A custom zoom speed for the lander scene
+        });
+        this.camera.targetZoom = this.ZOOM_IN;
         this.particles = [];
-        this.zoomLevel = this.ZOOM_IN;
         this.gameState = 'playing';
         shipSelectionMenu.style.display = 'none';
         canvas.style.display = 'block';
@@ -649,15 +855,21 @@ function init() {
 
     // Now set the src to trigger loading
     spaceShipeImage.src = ASSET_BASE_URL + 'images/ship.png';
-    planetImages[0].src = ASSET_BASE_URL + 'images/planet1.png';
-    planetImages[1].src = ASSET_BASE_URL + 'images/planet2.png';
-    planetImages[2].src = ASSET_BASE_URL + 'images/planet3.png';
+    planetImages.forEach((img, index) => {
+        img.src = ASSET_BASE_URL + `images/planet${index + 1}.png`;
+        img.onerror = () => {
+            console.error(`Failed to load planet image ${index + 1}`);
+            // Load a backup image or show a placeholder
+            img.src = ASSET_BASE_URL + 'images/planet1.png';
+        };
+    });
     Object.values(shipTypes).forEach(ship => {
         ship.img.src = ASSET_BASE_URL + ship.src;
     });
     
     landerScene.createStars();
     
+    const spaceScene = new SpaceScene();
     document.getElementById('easyBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'easy' }));
     document.getElementById('mediumBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'medium' }));
     document.getElementById('hardBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'hard' }));
@@ -691,4 +903,3 @@ function init() {
 
 // Run the game
 init();
-
