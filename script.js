@@ -28,7 +28,107 @@ function createSound(src, loop = false, volume = 1.0) {
     return sound;
 }
 
-const backgroundMusic = createSound('sounds/musictrek.mp3', true, 0.3);
+// --- NEW: Music Manager Class ---
+class MusicManager {
+    constructor() {
+        // Define all music tracks, organized by scene
+        this.playlists = {
+            menu: [
+                { src: 'sounds/music_menu.mp3', volume: 0.3 }
+            ],
+            space: [
+                { src: 'sounds/music_bold_brave.mp3', volume: 0.3 }, // Placeholder for your new music
+                { src: 'sounds/music_prospect_determined.mp3', volume: 0.3 },
+                { src: 'sounds/music_dark_mystery.mp3', volume: 0.3 },
+                { src: 'sounds/music_trek.mp3', volume: 0.3 },  // Add as many as you like
+            ],
+            lander: [
+                { src: 'sounds/music_battle_tense.mp3', volume: 0.5 }, // Tense lander music
+               // { src: 'sounds/music_lander_calm.mp3', volume: 0.5 }
+            ]
+        };
+
+        this.audioTracks = {}; // To store the created Audio objects
+        this.currentTrack = null;
+        this.currentPlaylist = [];
+        this.currentTrackIndex = 0;
+
+        // Preload all music files
+        this.preloadAll();
+    }
+
+    preloadAll() {
+        for (const scene in this.playlists) {
+            this.playlists[scene].forEach(trackData => {
+                if (!this.audioTracks[trackData.src]) {
+                    const audio = createSound(trackData.src, false, trackData.volume); // Music never loops individually
+                    // Add listener to play the next track when one ends
+                    audio.addEventListener('ended', () => this.playNextTrack());
+                    this.audioTracks[trackData.src] = audio;
+                }
+            });
+        }
+    }
+
+    playPlaylistForScene(sceneName) {
+        if (!this.playlists[sceneName] || this.playlists[sceneName].length === 0) {
+            console.warn(`No playlist found for scene: ${sceneName}`);
+            this.stop();
+            return;
+        }
+
+        const newPlaylist = this.playlists[sceneName].map(t => t.src);
+
+        // Don't restart if it's the same playlist
+        if (JSON.stringify(newPlaylist) === JSON.stringify(this.currentPlaylist)) {
+            return;
+        }
+
+        this.stop(); // Stop any currently playing music
+        this.currentPlaylist = newPlaylist;
+        this.currentTrackIndex = 0;
+        this.playCurrentTrack();
+    }
+
+    playCurrentTrack() {
+        if (this.currentPlaylist.length > 0) {
+            const trackSrc = this.currentPlaylist[this.currentTrackIndex];
+            this.currentTrack = this.audioTracks[trackSrc];
+            if (this.currentTrack && this.currentTrack.isLoaded) {
+                this.currentTrack.currentTime = 0;
+                this.currentTrack.play().catch(e => console.error("Music play failed:", e));
+            } else if (this.currentTrack) {
+                // If not loaded, wait for it to load
+                this.currentTrack.addEventListener('canplaythrough', () => {
+                    this.currentTrack.play().catch(e => console.error("Music play failed:", e));
+                }, { once: true });
+            }
+        }
+    }
+
+    playNextTrack() {
+        this.currentTrackIndex++;
+        // If we've reached the end of the playlist, loop back to the start
+        if (this.currentTrackIndex >= this.currentPlaylist.length) {
+            this.currentTrackIndex = 0;
+        }
+        this.playCurrentTrack();
+    }
+
+    stop() {
+        if (this.currentTrack) {
+            this.currentTrack.pause();
+            this.currentTrack.currentTime = 0;
+            this.currentTrack = null;
+            this.currentPlaylist = [];
+        }
+    }
+}
+
+// --- Create a single instance of the MusicManager ---
+const musicManager = new MusicManager();
+
+// --- Sound Effects (unchanged) ---
 const thrusterSound = createSound('sounds/thruster.mp3', true, 0.5);
 const explosionSound = createSound('sounds/explosion.mp3', false, 0.7);
 
@@ -56,6 +156,8 @@ const gameManager = {
         if (this.activeScene?.stop) { this.activeScene.stop(); }
         Object.assign(settings, newSettings);
         this.activeScene = scene;
+        // Tell the music manager which scene is starting
+        musicManager.playPlaylistForScene(scene.name || 'menu');
         scene.start(settings);
     }
 };
@@ -115,6 +217,7 @@ class Camera {
 class SpaceScene {
     constructor() {
         // --- Scene State ---
+        this.name = 'space'; // Give the scene a name for the MusicManager
         this.ship = null;
         this.stars = [];
         this.difficulty = 'easy';
@@ -245,7 +348,7 @@ class SpaceScene {
         menu.style.display = 'none';
         shipSelectionMenu.style.display = 'none';
         canvas.style.display = 'block';
-        if (backgroundMusic.isLoaded) { backgroundMusic.currentTime = 0; backgroundMusic.play().catch(e => console.error("Music play failed:", e)); }
+        // NEW: Music is now handled by gameManager.switchScene
         if (!this.stars.length) { this.createStars(); this.createPlanets(); }
     }
 
@@ -567,6 +670,7 @@ class SpaceScene {
 
 // --- Lander Scene ---
 const landerScene = {
+    name: 'lander', // Give the scene a name for the MusicManager
     lander: null, terrain: null, particles: [], stars: [], camera: null,
     baseGravity: 0, difficultySettings: null, selectedShip: null, 
     gameState: 'playing', zoomLevel: 1.5,
@@ -803,7 +907,6 @@ const landerScene = {
         this.gameState = 'playing';
         shipSelectionMenu.style.display = 'none';
         canvas.style.display = 'block';
-        if (backgroundMusic.isLoaded) { backgroundMusic.currentTime = 0; backgroundMusic.play().catch(e => console.error("Music play failed:", e)); }
     },
     handleKeys(e, isDown) {
         if (!this.lander || this.gameState !== 'playing') return;
@@ -841,6 +944,7 @@ function init() {
             console.log("All game assets loaded!");
             loadingScreen.style.display = 'none';
             menu.style.display = 'block';
+            musicManager.playPlaylistForScene('menu'); // Start menu music once loaded
         }
     }
     
@@ -888,7 +992,7 @@ function init() {
     
     canvas.addEventListener('click', () => {
         if (gameManager.activeScene === landerScene && (landerScene.gameState === 'landed' || landerScene.gameState === 'crashed')) {
-            if (backgroundMusic.isLoaded) backgroundMusic.pause();
+            musicManager.stop(); // NEW: Tell the manager to stop all music
             if (thrusterSound.isLoaded) thrusterSound.pause();
             gameManager.activeScene = null; // Stop the animation loop for the scene
             menu.style.display = 'block';
