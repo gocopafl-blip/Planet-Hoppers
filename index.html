@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lunar Lander</title>
+    <title>Planet Hoppers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Consolas&family=Orbitron:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,8 +14,14 @@
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
 
-        <div id="menu">
-            <h1>LUNAR LANDER</h1>
+         <!-- CHANGE #2: Add the new start screen element -->
+        <div id="start-screen" style="display: none;">
+            <h1>PLANET HOPPERS</h1>
+            <button id="startBtn">Click to Start</button>
+        </div>
+
+        <div id="menu" style="display: none;">
+            <h1>Planet Hoppers</h1>
             <button id="easyBtn">Easy</button>
             <button id="mediumBtn">Medium</button>
             <button id="hardBtn">Hard</button>

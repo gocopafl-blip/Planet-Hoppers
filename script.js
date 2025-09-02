@@ -2,6 +2,7 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const loadingScreen = document.getElementById('loading-screen');
+const startScreen = document.getElementById('start-screen');
 const menu = document.getElementById('menu');
 const shipSelectionMenu = document.getElementById('ship-selection');
 
@@ -943,8 +944,7 @@ function init() {
         if (imagesLoaded === totalImages) {
             console.log("All game assets loaded!");
             loadingScreen.style.display = 'none';
-            menu.style.display = 'block';
-            musicManager.playPlaylistForScene('menu'); // Start menu music once loaded
+            startScreen.style.display = 'block';
         }
     }
     
@@ -974,6 +974,14 @@ function init() {
     landerScene.createStars();
     
     const spaceScene = new SpaceScene();
+// ADD THIS NEW EVENT LISTENER
+    document.getElementById('startBtn').addEventListener('click', () => {
+        startScreen.style.display = 'none'; // Hide the start screen
+        menu.style.display = 'block';      // Show the main menu
+        // NOW we play the music, after the user has clicked!
+        musicManager.playPlaylistForScene('menu');
+    });
+    
     document.getElementById('easyBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'easy' }));
     document.getElementById('mediumBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'medium' }));
     document.getElementById('hardBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'hard' }));
