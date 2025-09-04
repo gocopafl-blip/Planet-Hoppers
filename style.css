@@ -90,3 +90,54 @@ button:hover {
     font-size: 0.9em;
     color: #aaa;
 }
+#start-screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #fff;
+    width: 80%; /* Give it some width */
+    max-width: 700px; 
+    aspect-ratio: 1 / 1; 
+    padding: 40px;
+    box-sizing: border-box; /* Ensures padding is included in the width */
+    border: 2px solid #00ff00;
+    border-radius: 10px; /* Optional: adds rounded corners */
+
+    background-image: url('https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/start_screen_background.png');
+    background-size: cover; /* Stretches the image to cover the div */
+    background-position: center; /* Centers the image */
+
+    /* --- FLEXBOX LAYOUT --- */
+    /* ADD these properties to control the layout of items inside */
+    display: flex;
+    flex-direction: column; /* Stack items vertically */
+    justify-content: space-between; /* Push items to the top and bottom */
+    align-items: center; /* Center items horizontally */
+}
+
+#start-screen h1 {
+    font-family: "Orbitron", sans-serif; /* A cool sci-fi font from Google Fonts */
+    font-size: 4em; /* Make it even bigger */
+    color: #a0e0ff; /* A light, icy blue */
+    text-shadow: 6px 6px 6px #000000; /* A more pronounced shadow */
+}
+
+#start-screen button {
+    background-color: #00000099; /* Semi-transparent black */
+    color: #a0e0ff;
+    border: 2px solid #a0e0ff;
+    border-radius: 35px;
+    padding: 15px 30px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5em;
+    cursor: pointer;
+    text-shadow: 2px 2px 4px #000;
+    transition: all 0.2s ease; /* Smooth transition for hover effect */
+    /* REMOVE any margin-top you added. Flexbox handles the spacing now */
+}
+#start-screen button:hover {
+    background-color: #f1f7f163;
+    color: #0c0606;
+}
