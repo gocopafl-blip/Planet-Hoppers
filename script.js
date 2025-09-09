@@ -5,6 +5,8 @@ const loadingScreen = document.getElementById('loading-screen');
 const startScreen = document.getElementById('start-screen');
 const menu = document.getElementById('menu');
 const shipSelectionMenu = document.getElementById('ship-selection');
+const descentUI = document.getElementById('descent-ui');
+const zoomControls = document.getElementById('zoom-controls');
 
 canvas.width = 1000;
 canvas.height = 700;
@@ -235,7 +237,7 @@ class SpaceScene {
         this.THRUST_POWER = 0.05;  // Reduced for finer orbital control
 
         // --- Orbital Mechanics Settings ---
-        this.GRAVITY_BOUNDARY_MULTIPLIER = 3.0;  // Gravity well extends to 2x planet radius
+        this.GRAVITY_BOUNDARY_MULTIPLIER = 2.5;  // Gravity well extends to 2x planet radius
         this.ORBITAL_CONSTANT = 0.00035;         // Reduced for more manageable orbital velocities
         this.PLANET_MASS_SCALAR = 0.4;           // Reduced mass to prevent excessive gravitational acceleration
 
@@ -251,6 +253,7 @@ class SpaceScene {
             this.x = x; this.y = y; this.velX = 0; this.velY = 0;
             this.angle = -Math.PI / 2;
             this.rotation = 0; this.thrusting = false;
+            this.reversing = false;
             this.width = 100; // Adjusted for better visibility
             this.height = 120;
             this.orbitLocked = false;
@@ -271,6 +274,10 @@ class SpaceScene {
             if (this.thrusting) {
                 this.velX += this.game.THRUST_POWER * Math.cos(this.angle);
                 this.velY += this.game.THRUST_POWER * Math.sin(this.angle);
+            }
+            if (this.reversing) {
+                this.velX -= this.game.THRUST_POWER * Math.cos(this.angle);
+                this.velY -= this.game.THRUST_POWER * Math.sin(this.angle);
             }
             // No drag in space - objects maintain velocity (Newton's First Law)
             this.x += this.velX; this.y += this.velY;
@@ -320,7 +327,9 @@ class SpaceScene {
             let overlapping = false;
             for (const existingPlanet of celestialBodies) {
                 const dist = Math.hypot(newPlanet.x - existingPlanet.x, newPlanet.y - existingPlanet.y);
-                if (dist < newPlanet.radius + existingPlanet.radius + minDistance) {
+                const existingWell = existingPlanet.radius * this.GRAVITY_BOUNDARY_MULTIPLIER;
+                const newWell = newPlanet.radius * this.GRAVITY_BOUNDARY_MULTIPLIER;
+                if (dist < existingWell + newWell + minDistance) {
                     overlapping = true;
                     break;
                 }
@@ -351,15 +360,19 @@ class SpaceScene {
         canvas.style.display = 'block';
         // NEW: Music is now handled by gameManager.switchScene
         if (!this.stars.length) { this.createStars(); this.createPlanets(); }
+        canvas.style.display = 'block';
+        zoomControls.style.display = 'flex';
     }
 
     stop() {
         if (thrusterSound.isLoaded) thrusterSound.pause();
+        zoomControls.style.display = 'none';
     }
 
     update() {
         if (!this.ship || this.isPaused) return;
         this.ship.update();
+        this.angle += this.rotation;
         this.camera.update(); // Update camera position and zoom
         
         // Only clear orbital data if we're not in a locked orbit and not thrusting
@@ -369,9 +382,14 @@ class SpaceScene {
 
         // --- Orbital Mechanics Logic ---
         for (const planet of celestialBodies) {
+            // If we are locked in an orbit, ignore all other planets.
+            if (this.ship.orbitLocked && this.ship.orbitingPlanet !== planet) {
+                continue;
+            }
             const dx = planet.x - this.ship.x;
             const dy = planet.y - this.ship.y;
             const distance = Math.hypot(dx, dy);
+            
             
             const gravityWellEdge = planet.radius * this.GRAVITY_BOUNDARY_MULTIPLIER;
 
@@ -407,11 +425,13 @@ class SpaceScene {
 
                 // Check for orbital lock conditions - much wider velocity window, no angle requirement
                 if (!this.ship.thrusting && !this.ship.orbitLocked && 
-                    velocityRatio > 0.6 && velocityRatio < 1.4) {  // 40% tolerance either way
+                    velocityRatio > 0.75 && velocityRatio < 1.25 && isOrbitalPath) {  // 25% tolerance either way
                     // Lock into orbit
                     this.ship.orbitLocked = true;
                     this.ship.orbitingPlanet = planet;
                     console.log("Orbit locked!"); // Debug message
+
+                    this.camera.targetZoom = 1 / ( (planet.radius * 3.5) / canvas.height);
                     
                     // Set exact orbital velocity
                     const tangentialAngle = radialAngle + Math.PI / 2;
@@ -422,11 +442,20 @@ class SpaceScene {
                         // Break orbit if thrusters are used
                         this.ship.orbitLocked = false;
                         this.ship.orbitingPlanet = null;
+                        this.ship.rotation = 0;
                     } else {
                         // Maintain perfect orbital velocity while locked
                         const tangentialAngle = radialAngle + Math.PI / 2;
                         this.ship.velX = orbitalVelocity * Math.cos(tangentialAngle);
                         this.ship.velY = orbitalVelocity * Math.sin(tangentialAngle);
+                        let angleDiff = tangentialAngle - this.ship.angle;
+                        // This ensures the ship rotates the shortest way around
+                        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+                        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+
+                        // Smoothly adjust the angle by 5% of the difference each frame
+                        this.ship.angle += angleDiff * 0.05;
+                        
                         return; // Skip normal gravity application
                     }
                 }
@@ -454,18 +483,18 @@ class SpaceScene {
 
             // Collision check
             if (distance < planet.radius) {
-                console.log("Approaching planet, showing ship selection...");
-                this.isPaused = true;
-                if (thrusterSound.isLoaded) thrusterSound.pause();
-                canvas.style.display = 'none';
-                shipSelectionMenu.style.display = 'block';
+                //console.log("Approaching planet, showing ship selection...");
+                //this.isPaused = true;
+                //if (thrusterSound.isLoaded) thrusterSound.pause();
+                //canvas.style.display = 'none';
+                //shipSelectionMenu.style.display = 'block';
             }
         }
 
         // --- Dynamic Zoom Logic ---
-        const speed = Math.hypot(this.ship.velX, this.ship.velY);
-        const speedRatio = Math.min(speed / this.maxSpeedForZoom, 1); 
-        this.camera.targetZoom = this.maxZoom - (this.maxZoom - this.minZoom) * speedRatio;
+        //const speed = Math.hypot(this.ship.velX, this.ship.velY);
+        //const speedRatio = Math.min(speed / this.maxSpeedForZoom, 1); 
+        //this.camera.targetZoom = this.maxZoom - (this.maxZoom - this.minZoom) * speedRatio;
     }
  
     draw() {
@@ -539,17 +568,24 @@ class SpaceScene {
         this.ship.draw();
         this.camera.end(ctx);
 
+        if (this.ship.orbitLocked) {
+            descentUI.style.display = 'block';
+        } else {
+            descentUI.style.display = 'none';
+        }
+
         this.drawCompass.call(this);
         this.drawRadar.call(this);
     }
 
-    drawCompass() {
+   drawCompass() {
         if (!this.ship || celestialBodies.length === 0) return;
 
         // Find the closest planet
         let closestPlanet = null;
         let minDistance = Infinity;
 
+        // --- REPLACE THE LOOP WITH THIS ---
         for (const planet of celestialBodies) {
             const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
             if (dist < minDistance) {
@@ -655,13 +691,16 @@ class SpaceScene {
 
     handleKeys(e, isDown) {
         if (!this.ship || this.isPaused) return;
-        const oldThrusting = this.ship.thrusting;
+        const oldThrusting = this.ship.thrusting || this.ship.reversing;
         switch (e.key) {
             case 'ArrowUp': case 'w': this.ship.thrusting = isDown; break;
-            case 'ArrowLeft': case 'a': this.ship.rotation = isDown ? -this.ROTATION_SPEED : 0; break;
-            case 'ArrowRight': case 'd': this.ship.rotation = isDown ? this.ROTATION_SPEED : 0; break;
+            case 'ArrowDown': case 's': this.ship.reversing = isDown; break;
+            case 'ArrowLeft': case 'a':  if (isDown) this.ship.rotation -= this.ROTATION_SPEED * 0.1;
+                break;
+            case 'ArrowRight': case 'd': if (isDown) this.ship.rotation += this.ROTATION_SPEED * 0.1;
+                break;
         }
-        const newThrusting = this.ship.thrusting;
+                const newThrusting = this.ship.thrusting || this.ship.reversing;
         if (thrusterSound.isLoaded) {
             if (newThrusting && !oldThrusting) { thrusterSound.currentTime = 0; thrusterSound.play().catch(e => console.error("Thruster sound play failed:", e)); }
             else if (!newThrusting && oldThrusting) { thrusterSound.pause(); }
@@ -974,6 +1013,38 @@ function init() {
     landerScene.createStars();
     
     const spaceScene = new SpaceScene();
+     document.getElementById('zoomInBtn').addEventListener('click', () => {
+        if (gameManager.activeScene === spaceScene) {
+            // Calculate the new zoom level, adding 0.2 for a noticeable change
+            const newZoom = spaceScene.camera.targetZoom + 0.2;
+            // Use Math.min to ensure the zoom doesn't go past the maximum
+            spaceScene.camera.targetZoom = Math.min(newZoom, spaceScene.maxZoom);
+        }
+    });
+
+    document.getElementById('zoomOutBtn').addEventListener('click', () => {
+        if (gameManager.activeScene === spaceScene) {
+            // Calculate the new zoom level
+            const newZoom = spaceScene.camera.targetZoom - 0.2;
+            // Use Math.max to ensure the zoom doesn't go past the minimum
+            spaceScene.camera.targetZoom = Math.max(newZoom, spaceScene.minZoom);
+        }
+    });
+    document.getElementById('descentBtn').addEventListener('click', () => {
+        // We only want this to work if we are in the space scene and orbit is locked
+        if (gameManager.activeScene === spaceScene && spaceScene.ship.orbitLocked) {
+            console.log("Descent button clicked, changing scene.");
+
+            // This is the same logic from the old collision check
+            spaceScene.isPaused = true;
+            if (thrusterSound.isLoaded) thrusterSound.pause();
+            canvas.style.display = 'none';
+            shipSelectionMenu.style.display = 'block';
+            
+            // Also hide the descent button itself
+            descentUI.style.display = 'none'; 
+        }
+    });
 // ADD THIS NEW EVENT LISTENER
     document.getElementById('startBtn').addEventListener('click', () => {
         startScreen.style.display = 'none'; // Hide the start screen
@@ -981,7 +1052,6 @@ function init() {
         // NOW we play the music, after the user has clicked!
         musicManager.playPlaylistForScene('menu');
     });
-    
     document.getElementById('easyBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'easy' }));
     document.getElementById('mediumBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'medium' }));
     document.getElementById('hardBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'hard' }));

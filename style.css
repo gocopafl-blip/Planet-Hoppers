@@ -141,3 +141,36 @@ button:hover {
     background-color: #f1f7f163;
     color: #0c0606;
 }
+#descent-ui {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10; /* Ensures it appears above the canvas */
+}
+#zoom-controls {
+    position: absolute;
+    top: 230px; /* Positioned below the radar */
+    right: 75px; /* Aligned horizontally with the radar */
+    display: flex;
+    flex-direction: column; /* Stack the buttons vertically */
+    gap: 5px; /* Add a small space between them */
+}
+
+#zoom-controls button {
+    background-color: #000;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    width: 35px;
+    height: 35px;
+    font-size: 1.5em;
+    font-weight: bold;
+    padding: 0;
+    cursor: pointer;
+}
+
+#zoom-controls button:hover {
+    background-color: #00ff00;
+    color: #000;
+}
