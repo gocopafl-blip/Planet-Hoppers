@@ -223,6 +223,7 @@ class SpaceScene {
         this.name = 'space'; // Give the scene a name for the MusicManager
         this.ship = null;
         this.stars = [];
+        this.particles = []; // For thruster effects
         this.difficulty = 'easy';
         this.isPaused = false;
         this.camera = null;
@@ -248,20 +249,82 @@ class SpaceScene {
         this.zoomSmoothing = 0.03;
     }
 
+getRotatedPosition(offsetX, offsetY) {
+    const ship = this.ship;
+    const correctedAngle = ship.angle + Math.PI / 2;
+    const cos = Math.cos(correctedAngle);
+    const sin = Math.sin(correctedAngle);
+    return {
+        x: ship.x + (offsetX * cos) - (offsetY * sin),
+        y: ship.y + (offsetX * sin) + (offsetY * cos)
+    };
+}
+
+emitThrusterParticles() {
+    if (!this.ship) return;
+    const ship = this.ship;
+
+    // --- 1. Get Thruster POSITIONS from the ship's new definition object ---
+    const frontLeftPos = this.getRotatedPosition(ship.thrusters.front_left.x, ship.thrusters.front_left.y);
+    const frontRightPos = this.getRotatedPosition(ship.thrusters.front_right.x, ship.thrusters.front_right.y);
+    const rearLeftPos = this.getRotatedPosition(ship.thrusters.rear_left.x, ship.thrusters.rear_left.y);
+    const rearRightPos = this.getRotatedPosition(ship.thrusters.rear_right.x, ship.thrusters.rear_right.y);
+
+    // --- 2. Define Correct Outward ANGLES ---
+    const visualAngle = ship.angle + Math.PI / 2; // The ship's visual "up"
+    const angle45 = Math.PI / 4;
+
+    // --- 3. Fire Particles Based on Your Rules ---
+
+    if (ship.thrusting) { // Forward
+        this.particles.push(new this.Particle(rearLeftPos.x, rearLeftPos.y, visualAngle + Math.PI + angle45, 3));
+        this.particles.push(new this.Particle(rearRightPos.x, rearRightPos.y, visualAngle + Math.PI - angle45, 3));
+    }
+    if (ship.reversing) { // Backward
+        this.particles.push(new this.Particle(frontLeftPos.x, frontLeftPos.y, visualAngle - angle45, 2));
+        this.particles.push(new this.Particle(frontRightPos.x, frontRightPos.y, visualAngle + angle45, 2));
+    }
+    if (ship.rotatingRight) {
+        this.particles.push(new this.Particle(frontLeftPos.x, frontLeftPos.y, visualAngle + Math.PI - angle45, 1, true));
+        this.particles.push(new this.Particle(rearRightPos.x, rearRightPos.y, visualAngle + angle45, 1, true));
+    }
+    if (ship.rotatingLeft) {
+        this.particles.push(new this.Particle(frontRightPos.x, frontRightPos.y, visualAngle - angle45, 1, true));
+        this.particles.push(new this.Particle(rearLeftPos.x, rearLeftPos.y, visualAngle + Math.PI + angle45, 1, true));
+    }
+    if (ship.strafingRight) { // Strafe Right (fires from left side)
+        this.particles.push(new this.Particle(frontLeftPos.x, frontLeftPos.y, visualAngle - Math.PI / 2, 1.5, true));
+        this.particles.push(new this.Particle(rearLeftPos.x, rearLeftPos.y, visualAngle - Math.PI / 2, 1.5, true));
+    }
+    if (ship.strafingLeft) { // Strafe Left (fires from right side)
+        this.particles.push(new this.Particle(frontRightPos.x, frontRightPos.y, visualAngle + Math.PI / 2, 1.5, true));
+        this.particles.push(new this.Particle(rearRightPos.x, rearRightPos.y, visualAngle + Math.PI / 2, 1.5, true));
+    }
+}
     Ship = class {
         constructor(x, y, game) {
             this.x = x; this.y = y; this.velX = 0; this.velY = 0;
             this.angle = -Math.PI / 2;
             this.rotation = 0; this.thrusting = false;
             this.reversing = false;
+            this.rotatingLeft = false;
+            this.rotatingRight = false;
+            this.strafingLeft = false;
+            this.strafingRight = false;
             this.width = 100; // Adjusted for better visibility
             this.height = 120;
             this.orbitLocked = false;
             this.orbitingPlanet = null;
+            this.orbitLockRadius = 0;
             this.game = game; // Store reference to the game
+            this.thrusters = {
+                front_left:  { x: -this.width / 2.2, y: this.height / 2.2 },
+                front_right: { x: this.width / 2.2,  y: this.height / 2.2 },
+                rear_left:   { x: -this.width / 2.2, y: -this.height / 2.2 },
+                rear_right:  { x: this.width / 2.2,  y: -this.height / 2.2 }
         }
-        
-        draw() {
+        }
+       draw() {
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.rotate(this.angle + Math.PI / 2);
@@ -270,7 +333,13 @@ class SpaceScene {
         }
         
         update() {
-            this.angle += this.rotation;
+            // --- ROTATION LOGIC ---
+            // Apply rotational force if the keys are held down
+            if (this.rotatingLeft) this.rotation -= this.game.ROTATION_SPEED * 0.1;
+            if (this.rotatingRight) this.rotation += this.game.ROTATION_SPEED * 0.1;
+            this.angle += this.rotation; // Apply the rotation to the ship's angle
+
+            // --- FORWARD/REVERSE THRUST LOGIC (no change here) ---
             if (this.thrusting) {
                 this.velX += this.game.THRUST_POWER * Math.cos(this.angle);
                 this.velY += this.game.THRUST_POWER * Math.sin(this.angle);
@@ -279,6 +348,18 @@ class SpaceScene {
                 this.velX -= this.game.THRUST_POWER * Math.cos(this.angle);
                 this.velY -= this.game.THRUST_POWER * Math.sin(this.angle);
             }
+
+            // --- ADD NEW STRAFING LOGIC ---
+            const strafeAngle = this.angle + Math.PI / 2; // 90 degrees to the ship's facing
+            if (this.strafingLeft) {
+                this.velX -= this.game.THRUST_POWER * Math.cos(strafeAngle);
+                this.velY -= this.game.THRUST_POWER * Math.sin(strafeAngle);
+            }
+            if (this.strafingRight) {
+                this.velX += this.game.THRUST_POWER * Math.cos(strafeAngle);
+                this.velY += this.game.THRUST_POWER * Math.sin(strafeAngle);
+            }
+
             // No drag in space - objects maintain velocity (Newton's First Law)
             this.x += this.velX; this.y += this.velY;
             // World boundary checks
@@ -289,6 +370,42 @@ class SpaceScene {
             }
         }
     }
+
+     Particle = class {
+        constructor(x, y, angle, speed, isRotation = false) {
+        this.x = x;
+        this.y = y;
+        // Rotational puffs are smaller and shorter-lived
+        this.radius = isRotation ? Math.random() * 1.2 + 0.5 : Math.random() * 2 + 1;
+        this.lifespan = isRotation ? 15 + Math.random() * 10 : 40 + Math.random() * 20;
+        this.initialLifespan = this.lifespan;
+
+        // Calculate velocity based on angle and speed
+        this.velX = speed * Math.cos(angle);
+        this.velY = speed * Math.sin(angle);
+    }
+
+    draw(ctx) {
+        ctx.save();
+        // Fade the particle out over its lifespan
+        ctx.globalAlpha = this.lifespan / this.initialLifespan;
+        // Start as bright yellow/orange
+        const hue = 40; 
+        // Start at 100% lightness (pure white) and fade down to 50% (vibrant color)
+        const lightness = 100 - (50 * (1 - (this.lifespan / this.initialLifespan)));
+        ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    update() {
+        this.x += this.velX;
+        this.y += this.velY;
+        this.lifespan--;
+    }
+ }
 
     createStars() {
         this.stars = [];
@@ -371,9 +488,15 @@ class SpaceScene {
 
     update() {
         if (!this.ship || this.isPaused) return;
-        this.ship.update();
-        this.angle += this.rotation;
-        this.camera.update(); // Update camera position and zoom
+        this.emitThrusterParticles();
+        this.particles = this.particles.filter(p => {
+        p.update();
+        return p.lifespan > 0;
+    });
+    // -----------------------
+
+    this.ship.update();
+    this.camera.update();
         
         // Only clear orbital data if we're not in a locked orbit and not thrusting
         if (!this.ship.orbitLocked && !this.ship.thrusting) {
@@ -407,7 +530,8 @@ class SpaceScene {
                 const shipAngle = Math.atan2(this.ship.velY, this.ship.velX);
                 const radialAngle = Math.atan2(dy, dx);
                 const orbitAngle = Math.abs(shipAngle - radialAngle) % (Math.PI * 2);
-                const isOrbitalPath = (orbitAngle > Math.PI * 0.4 && orbitAngle < Math.PI * 0.6);
+                // Approach Angle Buffer - currently .3 to .7
+                const isOrbitalPath = (orbitAngle > Math.PI * 0.3 && orbitAngle < Math.PI * 0.7);
 
                 // Always update orbitData for the planet we're orbiting or near
                 if (this.ship.orbitLocked && this.ship.orbitingPlanet === planet || 
@@ -429,6 +553,7 @@ class SpaceScene {
                     // Lock into orbit
                     this.ship.orbitLocked = true;
                     this.ship.orbitingPlanet = planet;
+                    this.ship.orbitLockRadius = distance;
                     console.log("Orbit locked!"); // Debug message
 
                     this.camera.targetZoom = 1 / ( (planet.radius * 3.5) / canvas.height);
@@ -444,10 +569,22 @@ class SpaceScene {
                         this.ship.orbitingPlanet = null;
                         this.ship.rotation = 0;
                     } else {
-                        // Maintain perfect orbital velocity while locked
+                        // --- START: NEW STABLE ORBIT LOGIC ---
+                        // 1. Always use the original, perfect radius for speed calculations
+                        const orbitalVelocity = Math.sqrt(this.ORBITAL_CONSTANT * planet.mass / this.ship.orbitLockRadius);
                         const tangentialAngle = radialAngle + Math.PI / 2;
-                        this.ship.velX = orbitalVelocity * Math.cos(tangentialAngle);
-                        this.ship.velY = orbitalVelocity * Math.sin(tangentialAngle);
+
+                        // 2. Add a gentle corrective "nudge" back to the perfect orbit radius
+                        // This creates a small force pulling the ship back if it drifts too far or too close.
+                        const radiusError = this.ship.orbitLockRadius - distance;
+                        const correctionForce = radiusError * 0.005; // 0.005 is a small, gentle constant
+
+                        // 3. Combine the orbital velocity with the corrective nudge
+                        this.ship.velX = orbitalVelocity * Math.cos(tangentialAngle) + correctionForce * Math.cos(radialAngle);
+                        this.ship.velY = orbitalVelocity * Math.sin(tangentialAngle) + correctionForce * Math.sin(radialAngle);
+
+                        // --- END: NEW STABLE ORBIT LOGIC ---
+
                         let angleDiff = tangentialAngle - this.ship.angle;
                         // This ensures the ship rotates the shortest way around
                         while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
@@ -566,6 +703,7 @@ class SpaceScene {
         });
         
         this.ship.draw();
+        this.particles.forEach(p => p.draw(ctx));
         this.camera.end(ctx);
 
         if (this.ship.orbitLocked) {
@@ -576,6 +714,7 @@ class SpaceScene {
 
         this.drawCompass.call(this);
         this.drawRadar.call(this);
+        this.drawHud.call(this);
     }
 
    drawCompass() {
@@ -688,6 +827,49 @@ class SpaceScene {
 
         ctx.restore();
     }
+        drawHud() {
+        if (!this.orbitData) return; // Don't draw if there's no data
+
+        const { shipVelocity, orbitalVelocity, shipAngle } = this.orbitData;
+        const planet = this.orbitData.planet;
+
+        // Calculate the tangential angle for display (in degrees)
+        const dx = planet.x - this.ship.x;
+        const dy = planet.y - this.ship.y;
+        const radialAngle = Math.atan2(dy, dx);
+        const targetAngle = (radialAngle + Math.PI / 2) * (180 / Math.PI); // Convert to degrees
+        const currentAngle = shipAngle * (180 / Math.PI); // Convert to degrees
+
+        // Check if current stats are within the "lock" tolerance
+        const speedIsOk = shipVelocity > orbitalVelocity * 0.75 && shipVelocity < orbitalVelocity * 1.25;
+        const angleIsOk = Math.abs(targetAngle - currentAngle) < 36; // Our 72-degree window (36 deg each way)
+
+        // --- Drawing the HUD ---
+        ctx.save();
+        ctx.font = '20px "Consolas"';
+        ctx.textAlign = 'center';
+        const hudX = canvas.width / 2;
+        const hudY = 40;
+
+        // Draw Titles
+        ctx.fillStyle = '#ccc';
+        ctx.fillText('CURRENT', hudX - 100, hudY);
+        ctx.fillText('TARGET', hudX + 100, hudY);
+
+        // Draw Speed Values
+        ctx.fillStyle = speedIsOk ? '#00ff00' : '#ff4444'; // Green if OK, Red if not
+        ctx.fillText(`SPEED: ${shipVelocity.toFixed(2)}`, hudX - 100, hudY + 30);
+        ctx.fillStyle = '#00ff00'; // Target is always green
+        ctx.fillText(`SPEED: ${orbitalVelocity.toFixed(2)}`, hudX + 100, hudY + 30);
+
+        // Draw Angle Values
+        ctx.fillStyle = angleIsOk ? '#00ff00' : '#ff4444'; // Green if OK, Red if not
+        ctx.fillText(`ANGLE: ${currentAngle.toFixed(1)}°`, hudX - 100, hudY + 60);
+        ctx.fillStyle = '#00ff00'; // Target is always green
+        ctx.fillText(`ANGLE: ${targetAngle.toFixed(1)}°`, hudX + 100, hudY + 60);
+
+        ctx.restore();
+}
 
     handleKeys(e, isDown) {
         if (!this.ship || this.isPaused) return;
@@ -695,10 +877,15 @@ class SpaceScene {
         switch (e.key) {
             case 'ArrowUp': case 'w': this.ship.thrusting = isDown; break;
             case 'ArrowDown': case 's': this.ship.reversing = isDown; break;
-            case 'ArrowLeft': case 'a':  if (isDown) this.ship.rotation -= this.ROTATION_SPEED * 0.1;
-                break;
-            case 'ArrowRight': case 'd': if (isDown) this.ship.rotation += this.ROTATION_SPEED * 0.1;
-                break;
+
+            // --- NEW LOGIC FOR ROTATION & STRAFING ---
+            case 'ArrowLeft': case 'a': this.ship.rotatingLeft = isDown; break;
+            case 'ArrowRight': case 'd': this.ship.rotatingRight = isDown; break;
+            case 'q': case ',': this.ship.strafingLeft = isDown; break;
+            case 'e': case '.': this.ship.strafingRight = isDown; break;
+            case ' ': // Space bar for rotational dampeners
+         if (isDown) this.ship.rotation = 0;
+         break;
         }
                 const newThrusting = this.ship.thrusting || this.ship.reversing;
         if (thrusterSound.isLoaded) {
@@ -1078,6 +1265,28 @@ function init() {
             canvas.style.display = 'none';
         }
     });
+    canvas.addEventListener('wheel', event => {
+    // First, prevent the browser from scrolling the whole page
+    event.preventDefault();
+
+    // Only apply zoom if we are in the space scene
+    if (gameManager.activeScene === spaceScene) {
+        // Determine zoom direction (deltaY is negative for scroll up, positive for scroll down)
+        const zoomAmount = 0.1;
+        let newZoom;
+
+        if (event.deltaY < 0) {
+            // Scrolling up -> Zoom In
+            newZoom = spaceScene.camera.targetZoom + zoomAmount;
+        } else {
+            // Scrolling down -> Zoom Out
+            newZoom = spaceScene.camera.targetZoom - zoomAmount;
+        }
+
+        // Clamp the zoom level to the min/max values to prevent extreme zooming
+        spaceScene.camera.targetZoom = Math.max(spaceScene.minZoom, Math.min(newZoom, spaceScene.maxZoom));
+    }
+}, { passive: false }); // passive: false is needed to allow preventDefault
     
     // Start the main game loop
     gameManager.loop();
