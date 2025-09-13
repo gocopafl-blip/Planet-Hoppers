@@ -55,6 +55,7 @@ class MusicManager {
         this.currentTrack = null;
         this.currentPlaylist = [];
         this.currentTrackIndex = 0;
+        this.isMuted = false; // Track mute state
 
         // Preload all music files
         this.preloadAll();
@@ -99,10 +100,14 @@ class MusicManager {
             this.currentTrack = this.audioTracks[trackSrc];
             if (this.currentTrack && this.currentTrack.isLoaded) {
                 this.currentTrack.currentTime = 0;
+                // Set volume based on mute state before playing
+                this.currentTrack.volume = this.isMuted ? 0 : this.getCurrentTrackVolume();
                 this.currentTrack.play().catch(e => console.error("Music play failed:", e));
             } else if (this.currentTrack) {
                 // If not loaded, wait for it to load
                 this.currentTrack.addEventListener('canplaythrough', () => {
+                    // Set volume based on mute state before playing
+                    this.currentTrack.volume = this.isMuted ? 0 : this.getCurrentTrackVolume();
                     this.currentTrack.play().catch(e => console.error("Music play failed:", e));
                 }, { once: true });
             }
@@ -126,6 +131,27 @@ class MusicManager {
             this.currentPlaylist = [];
         }
     }
+
+    toggleMute() {
+        this.isMuted = !this.isMuted;
+        
+        if (this.currentTrack) {
+            this.currentTrack.volume = this.isMuted ? 0 : this.getCurrentTrackVolume();
+        }
+        
+        console.log(`Music ${this.isMuted ? 'muted' : 'unmuted'}`);
+        return this.isMuted;
+    }
+
+    getCurrentTrackVolume() {
+        // Get the original volume for the current track
+        const trackSrc = this.currentPlaylist[this.currentTrackIndex];
+        for (const scene in this.playlists) {
+            const track = this.playlists[scene].find(t => t.src === trackSrc);
+            if (track) return track.volume;
+        }
+        return 0.3; // Default fallback
+    }
 }
 
 // --- Create a single instance of the MusicManager ---
@@ -134,15 +160,27 @@ const musicManager = new MusicManager();
 // --- Sound Effects (unchanged) ---
 const thrusterSound = createSound('sounds/thruster.mp3', true, 0.5);
 const explosionSound = createSound('sounds/explosion.mp3', false, 0.7);
-
+const airlockSound = createSound('sounds/airlock.mp3', false, 0.7);
+let airlockSoundPlayed = false;
+const dockTypes = {
+    alpha: { 
+        src: 'images/spacedockalpha.png', 
+        img: new Image() 
+    },
+    // When you're ready for a second dock, you'd just add it here!
+    // beta: { 
+    //     src: 'images/spacedockbeta.png', 
+    //     img: new Image() 
+    // }
+};
 const shipTypes = {
     scout:  { src: 'images/lander-scout.png',  width: 40,  height: 40,  img: new Image(), thrusterOffset: 20 },
     classic:{ src: 'images/lander-classic.png', width: 80,  height: 80,  img: new Image(), thrusterOffset: 40 },
     heavy:  { src: 'images/lander-heavy.png',   width: 160, height: 160, img: new Image(), thrusterOffset: 65 }
 };
-const spaceShipeImage = new Image();
+const spaceShipImage = new Image();
 const planetImages = [new Image(), new Image(), new Image()];
-const spaceDockImage = new Image();
+const spaceDockImages = [new Image()];
 let celestialBodies = [];
 let settings = {};
 
@@ -232,6 +270,7 @@ class Ship {
             this.orbitingPlanet = null;
             this.orbitLockRadius = 0;
             this.game = game; // Store reference to the game
+            this.isDocked = false;
             this.thrusters = {
                 front_left:  { 
                     x: -this.width / 6.0, 
@@ -259,7 +298,7 @@ class Ship {
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.rotate(this.angle + Math.PI / 2);
-            ctx.drawImage(spaceShipeImage, -this.width / 2, -this.height / 2, this.width, this.height);
+            ctx.drawImage(spaceShipImage, -this.width / 2, -this.height / 2, this.width, this.height);
             ctx.restore();
         }
         
@@ -384,6 +423,8 @@ class SpaceScene {
         this.isPaused = false;
         this.camera = null;
         this.orbitData = null;
+        this.dockingRadius = 1000;
+        this.dockingSpeedmax = 1.0
 
         // --- World Settings ---
         this.WORLD_WIDTH = canvas.width * 100;
@@ -527,9 +568,7 @@ emitThrusterParticles() {
 
             if (!overlapping) {
                 celestialBodies.push(newPlanet);
-            }
-            if (!overlapping) {
-                celestialBodies.push(newPlanet);
+            
             }
 
             attempts++;
@@ -556,7 +595,7 @@ emitThrusterParticles() {
             this.createStars(); 
             this.createPlanets();
             // Create the main space dock
-            this.createSpaceDock('alpha', spaceDockImage, this.WORLD_WIDTH / 2 - 1000, this.WORLD_HEIGHT / 2, 2400, 2000);
+            this.createSpaceDock('alpha', dockTypes.alpha.img, this.WORLD_WIDTH / 2 - 1000, this.WORLD_HEIGHT / 2, 2400, 2000);
         }
 
         // Get the alpha dock's position for ship placement
@@ -585,15 +624,56 @@ emitThrusterParticles() {
 
     update() {
         if (!this.ship || this.isPaused) return;
+        
+        // --- 1. HANDLE UNDOCKING LOGIC ---
+        // Check if the player is trying to move WHILE docked.
+        const wantsToMove = this.ship.thrusting || this.ship.reversing || this.ship.strafingLeft || this.ship.strafingRight;
+        if (this.ship.isDocked && wantsToMove) {
+            this.ship.isDocked = false;
+        }
+
+        // --- 2. HANDLE SHIP MOVEMENT ---
+        this.ship.update();
+
+        // --- 3. HANDLE DOCKING LOGIC ---
+        
+        const dock = this.spaceDocks[0];
+        if (dock) {
+            const distance = Math.hypot(this.ship.x - dock.x, this.ship.y - dock.y);
+            const speed = Math.hypot(this.ship.velX, this.ship.velY);
+            
+            if (!wantsToMove && distance < this.dockingRadius && speed < this.dockingSpeedmax) {
+                this.ship.isDocked = true;
+                
+                this.ship.velX = 0; // Reduce residual velocity
+                this.ship.velY = 0; // Reduce residual velocity
+                if (this.ship.isDocked){
+                    if (!airlockSoundPlayed) {
+                        airlockSound.play(); // 3. Play the sound
+                        airlockSoundPlayed = true;  // 4. Flip the flag to true
+                        console.log("airlocksound played!");
+                    }
+                }
+            }
+            
+            // Reset the sound flag when not docked (moved outside the docking condition)
+            if (!this.ship.isDocked) {
+                airlockSoundPlayed = false;
+            }
+        }
+        
+        // --- 4. FINALLY, HANDLE VISUALS AND OTHER PHYSICS ---
         this.emitThrusterParticles();
         this.particles = this.particles.filter(p => {
-        p.update();
-        return p.lifespan > 0;
-    });
-    // -----------------------
-
-    this.ship.update();
-    this.camera.update();
+            p.update();
+            return p.lifespan > 0;
+        });
+        this.camera.update();
+        
+        if (this.ship.isDocked) {
+             this.orbitData = null;
+             return;
+        }
         
         // Only clear orbital data if we're not in a locked orbit and not thrusting
         if (!this.ship.orbitLocked && !this.ship.thrusting) {
@@ -942,6 +1022,17 @@ emitThrusterParticles() {
         ctx.restore();
     }
         drawHud() {
+        if (this.ship && this.ship.isDocked) {
+            ctx.save();
+            ctx.font = '30px "Orbitron"';
+            ctx.fillStyle = 'cyan';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 10;
+            ctx.fillText('SHIP DOCKED', canvas.width / 2, canvas.height / 1.2);
+            ctx.restore();
+            return;
+        }
         if (!this.orbitData) return; // Don't draw if there's no data
 
         const { shipVelocity, orbitalVelocity, shipAngle } = this.orbitData;
@@ -999,21 +1090,19 @@ emitThrusterParticles() {
 
     handleKeys(e, isDown) {
         if (!this.ship || this.isPaused) return;
+                   
+        
         const oldThrusting = this.ship.thrusting || this.ship.reversing;
         switch (e.key) {
             case 'ArrowUp': case 'w': this.ship.thrusting = isDown; break;
             case 'ArrowDown': case 's': this.ship.reversing = isDown; break;
-
-            // --- NEW LOGIC FOR ROTATION & STRAFING ---
             case 'ArrowLeft': case 'a': this.ship.rotatingLeft = isDown; break;
             case 'ArrowRight': case 'd': this.ship.rotatingRight = isDown; break;
             case 'q': case ',': this.ship.strafingLeft = isDown; break;
             case 'e': case '.': this.ship.strafingRight = isDown; break;
-            case ' ': // Space bar for rotational dampeners
-         if (isDown) this.ship.rotation = 0;
-         break;
+            case ' ': if (isDown) this.ship.rotation = 0; break;
         }
-                const newThrusting = this.ship.thrusting || this.ship.reversing;
+        const newThrusting = this.ship.thrusting || this.ship.reversing;
         if (thrusterSound.isLoaded) {
             if (newThrusting && !oldThrusting) { thrusterSound.currentTime = 0; thrusterSound.play().catch(e => console.error("Thruster sound play failed:", e)); }
             else if (!newThrusting && oldThrusting) { thrusterSound.pause(); }
@@ -1289,9 +1378,10 @@ const landerScene = {
 function init() {
     let imagesLoaded = 0;
     const allImages = [
-        ...Object.values(shipTypes).map(s => s.img), 
-        spaceShipeImage, 
-        ...planetImages
+        ...Object.values(shipTypes).map(s => s.img),
+        ...Object.values(dockTypes).map(d => d.img),
+        spaceShipImage,
+        ...planetImages,
     ];
     const totalImages = allImages.length;
 
@@ -1315,8 +1405,7 @@ function init() {
     });
 
     // Now set the src to trigger loading
-    spaceShipeImage.src = ASSET_BASE_URL + 'images/ship.png';
-    spaceDockImage.src = ASSET_BASE_URL + 'images/spacedockalpha.png';
+    spaceShipImage.src = ASSET_BASE_URL + 'images/ship.png';
     planetImages.forEach((img, index) => {
         img.src = ASSET_BASE_URL + `images/planet${index + 1}.png`;
         img.onerror = () => {
@@ -1328,7 +1417,9 @@ function init() {
     Object.values(shipTypes).forEach(ship => {
         ship.img.src = ASSET_BASE_URL + ship.src;
     });
-    
+    Object.values(dockTypes).forEach(dock => {
+        dock.img.src = ASSET_BASE_URL + dock.src;
+    });
     landerScene.createStars();
     
     const spaceScene = new SpaceScene();
@@ -1375,6 +1466,14 @@ function init() {
     document.getElementById('mediumBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'medium' }));
     document.getElementById('hardBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'hard' }));
 
+    // Mute button click handler
+    document.getElementById('muteBtn').addEventListener('click', () => {
+        const isMuted = musicManager.toggleMute();
+        const btn = document.getElementById('muteBtn');
+        btn.textContent = isMuted ? '♪̷' : '♪';
+        btn.blur(); // Remove focus to prevent space bar from triggering this button
+    });
+
     shipSelectionMenu.addEventListener('click', (event) => {
         const shipOption = event.target.closest('.ship-option');
         if (!shipOption) return;
@@ -1386,6 +1485,19 @@ function init() {
     
     window.addEventListener('keydown', e => { if (gameManager.activeScene?.handleKeys) { gameManager.activeScene.handleKeys(e, true); }});
     window.addEventListener('keyup', e => { if (gameManager.activeScene?.handleKeys) { gameManager.activeScene.handleKeys(e, false); }});
+    
+    // Global mute key handler - M key toggles music
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'm' || e.key === 'M') {
+            e.preventDefault(); // Prevent any other handlers from processing this key
+            const isMuted = musicManager.toggleMute();
+            // Update the button display if it exists
+            const muteBtn = document.getElementById('muteBtn');
+            if (muteBtn) {
+                muteBtn.textContent = isMuted ? '♪̷' : '♪';
+            }
+        }
+    });
     
     canvas.addEventListener('click', () => {
         if (gameManager.activeScene === landerScene && (landerScene.gameState === 'landed' || landerScene.gameState === 'crashed')) {
