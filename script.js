@@ -142,6 +142,7 @@ const shipTypes = {
 };
 const spaceShipeImage = new Image();
 const planetImages = [new Image(), new Image(), new Image()];
+const spaceDockImage = new Image();
 let celestialBodies = [];
 let settings = {};
 
@@ -215,93 +216,7 @@ class Camera {
         ctx.restore();
     }
 }
-
-// --- Space Scene ---
-class SpaceScene {
-    constructor() {
-        // --- Scene State ---
-        this.name = 'space'; // Give the scene a name for the MusicManager
-        this.ship = null;
-        this.stars = [];
-        this.particles = []; // For thruster effects
-        this.difficulty = 'easy';
-        this.isPaused = false;
-        this.camera = null;
-        this.orbitData = null;
-
-        // --- World Settings ---
-        this.WORLD_WIDTH = canvas.width * 20;
-        this.WORLD_HEIGHT = canvas.height * 20;
-
-        // --- Core Movement Settings ---
-        this.ROTATION_SPEED = 0.05;
-        this.THRUST_POWER = 0.05;  // Reduced for finer orbital control
-
-        // --- Orbital Mechanics Settings ---
-        this.GRAVITY_BOUNDARY_MULTIPLIER = 2.5;  // Gravity well extends to 2x planet radius
-        this.ORBITAL_CONSTANT = 0.00035;         // Reduced for more manageable orbital velocities
-        this.PLANET_MASS_SCALAR = 0.4;           // Reduced mass to prevent excessive gravitational acceleration
-
-        // --- Camera Settings ---
-        this.minZoom = 0.3; // minZoom is now used to configure the camera
-        this.maxZoom = 1.5;
-        this.maxSpeedForZoom = 15;
-        this.zoomSmoothing = 0.03;
-    }
-
-getRotatedPosition(offsetX, offsetY) {
-    const ship = this.ship;
-    const correctedAngle = ship.angle + Math.PI / 2;
-    const cos = Math.cos(correctedAngle);
-    const sin = Math.sin(correctedAngle);
-    return {
-        x: ship.x + (offsetX * cos) - (offsetY * sin),
-        y: ship.y + (offsetX * sin) + (offsetY * cos)
-    };
-}
-
-emitThrusterParticles() {
-    if (!this.ship) return;
-    const ship = this.ship;
-
-    // --- 1. Get Thruster POSITIONS from the ship's new definition object ---
-    const frontLeftPos = this.getRotatedPosition(ship.thrusters.front_left.x, ship.thrusters.front_left.y);
-    const frontRightPos = this.getRotatedPosition(ship.thrusters.front_right.x, ship.thrusters.front_right.y);
-    const rearLeftPos = this.getRotatedPosition(ship.thrusters.rear_left.x, ship.thrusters.rear_left.y);
-    const rearRightPos = this.getRotatedPosition(ship.thrusters.rear_right.x, ship.thrusters.rear_right.y);
-
-    // --- 2. Define Correct Outward ANGLES ---
-    const visualAngle = ship.angle + Math.PI / 2; // The ship's visual "up"
-    const angle45 = Math.PI / 4;
-
-    // --- 3. Fire Particles Based on Your Rules ---
-
-    if (ship.thrusting) { // Forward
-        this.particles.push(new this.Particle(rearLeftPos.x, rearLeftPos.y, visualAngle + Math.PI + angle45, 3));
-        this.particles.push(new this.Particle(rearRightPos.x, rearRightPos.y, visualAngle + Math.PI - angle45, 3));
-    }
-    if (ship.reversing) { // Backward
-        this.particles.push(new this.Particle(frontLeftPos.x, frontLeftPos.y, visualAngle - angle45, 2));
-        this.particles.push(new this.Particle(frontRightPos.x, frontRightPos.y, visualAngle + angle45, 2));
-    }
-    if (ship.rotatingRight) {
-        this.particles.push(new this.Particle(frontLeftPos.x, frontLeftPos.y, visualAngle + Math.PI - angle45, 1, true));
-        this.particles.push(new this.Particle(rearRightPos.x, rearRightPos.y, visualAngle + angle45, 1, true));
-    }
-    if (ship.rotatingLeft) {
-        this.particles.push(new this.Particle(frontRightPos.x, frontRightPos.y, visualAngle - angle45, 1, true));
-        this.particles.push(new this.Particle(rearLeftPos.x, rearLeftPos.y, visualAngle + Math.PI + angle45, 1, true));
-    }
-    if (ship.strafingRight) { // Strafe Right (fires from left side)
-        this.particles.push(new this.Particle(frontLeftPos.x, frontLeftPos.y, visualAngle - Math.PI / 2, 1.5, true));
-        this.particles.push(new this.Particle(rearLeftPos.x, rearLeftPos.y, visualAngle - Math.PI / 2, 1.5, true));
-    }
-    if (ship.strafingLeft) { // Strafe Left (fires from right side)
-        this.particles.push(new this.Particle(frontRightPos.x, frontRightPos.y, visualAngle + Math.PI / 2, 1.5, true));
-        this.particles.push(new this.Particle(rearRightPos.x, rearRightPos.y, visualAngle + Math.PI / 2, 1.5, true));
-    }
-}
-    Ship = class {
+class Ship {
         constructor(x, y, game) {
             this.x = x; this.y = y; this.velX = 0; this.velY = 0;
             this.angle = -Math.PI / 2;
@@ -311,18 +226,34 @@ emitThrusterParticles() {
             this.rotatingRight = false;
             this.strafingLeft = false;
             this.strafingRight = false;
-            this.width = 100; // Adjusted for better visibility
-            this.height = 120;
+            this.width = 200; // Adjusted for better visibility
+            this.height = 240;
             this.orbitLocked = false;
             this.orbitingPlanet = null;
             this.orbitLockRadius = 0;
             this.game = game; // Store reference to the game
             this.thrusters = {
-                front_left:  { x: -this.width / 2.2, y: this.height / 2.2 },
-                front_right: { x: this.width / 2.2,  y: this.height / 2.2 },
-                rear_left:   { x: -this.width / 2.2, y: -this.height / 2.2 },
-                rear_right:  { x: this.width / 2.2,  y: -this.height / 2.2 }
-        }
+                front_left:  { 
+                    x: -this.width / 6.0, 
+                    y: -this.height / 4.7,     // Moved to bottom
+                    outwardAngle: -Math.PI / 4  // 45 degrees outward
+                },
+                front_right: { 
+                    x: this.width / 6.0,  
+                    y: -this.height / 4.7,      // Moved to bottom
+                    outwardAngle: Math.PI / 4   // 45 degrees outward
+                },
+                rear_left:   { 
+                    x: -this.width / 6.0, 
+                    y: this.height / 2.7,       // Moved to top
+                    outwardAngle: Math.PI / 4  // 45 degrees outward
+                },
+                rear_right:  { 
+                    x: this.width / 5.2,  
+                    y: this.height / 2.7,       // Moved to top
+                    outwardAngle: -Math.PI / 4   // 45 degrees outward
+                }
+            }
         }
        draw() {
             ctx.save();
@@ -370,19 +301,38 @@ emitThrusterParticles() {
             }
         }
     }
-
-     Particle = class {
-        constructor(x, y, angle, speed, isRotation = false) {
+    
+     class SpaceParticle {
+        constructor(x, y, angle, speed, isRotation = false, shipVelX = 0, shipVelY = 0) {
         this.x = x;
         this.y = y;
+        
         // Rotational puffs are smaller and shorter-lived
         this.radius = isRotation ? Math.random() * 1.2 + 0.5 : Math.random() * 2 + 1;
         this.lifespan = isRotation ? 15 + Math.random() * 10 : 40 + Math.random() * 20;
         this.initialLifespan = this.lifespan;
 
-        // Calculate velocity based on angle and speed
-        this.velX = speed * Math.cos(angle);
-        this.velY = speed * Math.sin(angle);
+        // Add some randomness to the particle speed (variation in exhaust velocity)
+        const speedVariation = 0.2; // 20% variation
+        const finalSpeed = speed * (1 + (Math.random() * speedVariation - speedVariation/2));
+        
+        // Add slight random spread to the angle (exhaust cone)
+        const spread = isRotation ? 0.1 : 0.2; // Rotation particles spread less
+        const finalAngle = angle + (Math.random() * spread - spread/2);
+
+        // For rotation thrusters, only use thrust velocity (no ship velocity inheritance)
+        // For main thrusters, combine ship velocity and thrust velocity
+        //if (isRotation) {
+          //  this.velX = finalSpeed * Math.cos(finalAngle);
+           // this.velY = finalSpeed * Math.sin(finalAngle);
+        //} else {
+           // this.velX = shipVelX + (finalSpeed * Math.cos(finalAngle));
+           // this.velY = shipVelY + (finalSpeed * Math.sin(finalAngle));
+
+            // Combine ship velocity and thrust velocity
+        this.velX = shipVelX + (finalSpeed * Math.cos(finalAngle));
+        this.velY = shipVelY + (finalSpeed * Math.sin(finalAngle));
+        
     }
 
     draw(ctx) {
@@ -406,10 +356,124 @@ emitThrusterParticles() {
         this.lifespan--;
     }
  }
+ class SpaceDock {
+    constructor(x, y, width, height, image, type) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.image = image;
+        this.type = type; // e.g., 'alpha', 'beta', etc.
+    }
+
+    draw(ctx) {
+        ctx.drawImage(this.image, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+    }
+    }
+
+   // --- Space Scene ---
+class SpaceScene {
+    constructor() {
+        // --- Scene State ---
+        this.name = 'space'; // Give the scene a name for the MusicManager
+        this.ship = null;
+        this.stars = [];
+        this.particles = []; // For thruster effects
+        this.spaceDocks = []; // Array to hold all space docks
+        this.difficulty = 'easy';
+        this.isPaused = false;
+        this.camera = null;
+        this.orbitData = null;
+
+        // --- World Settings ---
+        this.WORLD_WIDTH = canvas.width * 100;
+        this.WORLD_HEIGHT = canvas.height * 100;
+
+        // --- Core Movement Settings ---
+        this.ROTATION_SPEED = 0.005;  // Halved for more precise rotation control
+        this.THRUST_POWER = 0.03;    // Reduced for smoother acceleration
+
+        // --- Orbital Mechanics Settings ---
+        this.GRAVITY_BOUNDARY_MULTIPLIER = 2.5;  // Gravity well extends to 2x planet radius
+        this.ORBITAL_CONSTANT = 0.00035;         // Reduced for more manageable orbital velocities
+        this.PLANET_MASS_SCALAR = 0.4;           // Reduced mass to prevent excessive gravitational acceleration
+
+        // --- Camera Settings ---
+        this.minZoom = 0.1; // minZoom is now used to configure the camera
+        this.maxZoom = 2.0;
+        this.maxSpeedForZoom = 15;
+        this.zoomSmoothing = 0.03;
+    }
+
+getRotatedPosition(offsetX, offsetY) {
+    const ship = this.ship;
+    const correctedAngle = ship.angle + Math.PI / 2;
+    const cos = Math.cos(correctedAngle);
+    const sin = Math.sin(correctedAngle);
+    return {
+        x: ship.x + (offsetX * cos) - (offsetY * sin),
+        y: ship.y + (offsetX * sin) + (offsetY * cos)
+    };
+}
+
+emitThrusterParticles() {
+    if (!this.ship) return;
+    const ship = this.ship;
+
+    // Helper function to emit a particle from a thruster
+    const emitFromThruster = (thruster, baseAngle, speed, isRotation = false) => {
+        const pos = this.getRotatedPosition(thruster.x, thruster.y);
+        // Calculate final angle based on ship's orientation and thruster's outward angle
+        const particleAngle = ship.angle + baseAngle + thruster.outwardAngle;
+        this.particles.push(new SpaceParticle(
+            pos.x, pos.y, 
+            particleAngle, 
+            speed, 
+            isRotation,
+            ship.velX,    // Pass ship's current X velocity
+            ship.velY     // Pass ship's current Y velocity
+        ));
+    };
+
+    if (ship.thrusting) { // Main engines (rear thrusters) firing backward
+        emitFromThruster(ship.thrusters.rear_left, Math.PI, 3);   // Rear left fires backward
+        emitFromThruster(ship.thrusters.rear_right, Math.PI, 3);  // Rear right fires backward
+    }
+
+    if (ship.reversing) { // Front RCS thrusters firing forward
+        emitFromThruster(ship.thrusters.front_left, 0, 2);    // Front left fires forward
+        emitFromThruster(ship.thrusters.front_right, 0, 2);   // Front right fires forward
+    }
+
+    if (ship.rotatingRight) { // Clockwise rotation
+        // Right side thrusters fire outward
+        emitFromThruster(ship.thrusters.front_left, 0, 1, true);       // Front right fires outward
+        emitFromThruster(ship.thrusters.rear_right, Math.PI, 1, true);  // Rear right fires outward
+    }
+
+    if (ship.rotatingLeft) { // Counter-clockwise rotation
+        // Left side thrusters fire outward
+        emitFromThruster(ship.thrusters.front_right, 0, 1, true);       // Front left fires outward
+        emitFromThruster(ship.thrusters.rear_left, Math.PI, 1, true);  // Rear left fires outward
+    }
+
+    if (ship.strafingRight) { // Strafe right (left thrusters fire right)
+        // Left thrusters fire to the right
+        emitFromThruster(ship.thrusters.front_left, -Math.PI/4, 1.5, true);  // Front left fires right
+        emitFromThruster(ship.thrusters.rear_left, -Math.PI/1.4, 1.5, true);   // Rear left fires right
+    }
+
+    if (ship.strafingLeft) { // Strafe left (right thrusters fire left)
+        // Right thrusters fire to the left
+        emitFromThruster(ship.thrusters.front_right, Math.PI/4, 1.5, true); // Front right fires left
+        emitFromThruster(ship.thrusters.rear_right, Math.PI/1.4, 1.5, true);  // Rear right fires left
+    }
+}
+
 
     createStars() {
         this.stars = [];
-        for (let i = 0; i < 2000; i++) {
+        for (let i = 0; i < 10000; i++) {
             this.stars.push({ x: Math.random() * this.WORLD_WIDTH, y: Math.random() * this.WORLD_HEIGHT, radius: Math.random() * 1.5 });
         }
     }
@@ -426,10 +490,10 @@ emitThrusterParticles() {
     createPlanets() {
         celestialBodies = [];
         const numPlanets = 8;
-        const minDistance = 400; 
+        const minDistance = 4000; 
         let attempts = 0; 
-        const minRadius = 200;  // Allows for smaller planets
-        const maxRadius = 500; // Allows for larger planets
+        const minRadius = 1200;  // Allows for smaller planets
+        const maxRadius = 2000; // Allows for larger planets
 
         while (celestialBodies.length < numPlanets && attempts < 1000) {
             const params = this.calculatePlanetParameters(minRadius, maxRadius);
@@ -451,7 +515,19 @@ emitThrusterParticles() {
                     break;
                 }
             }
+            // Check distance from space dock
+            for (const dock of this.spaceDocks) {
+            const distFromDock = Math.hypot(newPlanet.x - dock.x, newPlanet.y - dock.y);
+            const safeDockDistance = 6000;  // Safe distance from any dock
+            if (distFromDock < safeDockDistance + newPlanet.radius) {
+                overlapping = true;
+                break;
+            }
+            }
 
+            if (!overlapping) {
+                celestialBodies.push(newPlanet);
+            }
             if (!overlapping) {
                 celestialBodies.push(newPlanet);
             }
@@ -462,21 +538,42 @@ emitThrusterParticles() {
             console.warn("Could not place all planets without overlapping. The world might be too crowded.");
         }
     }
-
+    createSpaceDock(type, image, x, y, width, height) {
+        const dock = new SpaceDock(x, y, width, height, image, type);
+        this.spaceDocks.push(dock);
+        return dock;
+    }
     start(settings) {
         console.log("Starting Space Scene...");
         this.difficulty = settings.difficulty;
-        // Create the ship with a reference to this game instance
-        this.ship = new this.Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this);
-        this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, { 
-            zoomSmoothing: this.zoomSmoothing 
-        });
         this.isPaused = false;
         menu.style.display = 'none';
         shipSelectionMenu.style.display = 'none';
         canvas.style.display = 'block';
-        // NEW: Music is now handled by gameManager.switchScene
-        if (!this.stars.length) { this.createStars(); this.createPlanets(); }
+
+        // Initialize game world if not already done
+        if (!this.stars.length) { 
+            this.createStars(); 
+            this.createPlanets();
+            // Create the main space dock
+            this.createSpaceDock('alpha', spaceDockImage, this.WORLD_WIDTH / 2 - 1000, this.WORLD_HEIGHT / 2, 2400, 2000);
+        }
+
+        // Get the alpha dock's position for ship placement
+        const alphaDock = this.spaceDocks[0];
+        if (alphaDock) {
+            // Position the ship 1000 units to the right of the dock, and 300 units below
+            this.ship = new Ship(alphaDock.x + 980, alphaDock.y + 270, this);
+        } else {
+            // Fallback position if no dock exists
+            this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this);
+        }
+
+        // Set up the camera to follow the ship
+        this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, { 
+            zoomSmoothing: this.zoomSmoothing 
+        });
+
         canvas.style.display = 'block';
         zoomControls.style.display = 'flex';
     }
@@ -570,18 +667,31 @@ emitThrusterParticles() {
                         this.ship.rotation = 0;
                     } else {
                         // --- START: NEW STABLE ORBIT LOGIC ---
-                        // 1. Always use the original, perfect radius for speed calculations
-                        const orbitalVelocity = Math.sqrt(this.ORBITAL_CONSTANT * planet.mass / this.ship.orbitLockRadius);
+                        // 1. Always apply gravity first
+                        const force = this.ORBITAL_CONSTANT * planet.mass / (distance * distance);
+                        this.ship.velX += force * Math.cos(radialAngle);
+                        this.ship.velY += force * Math.sin(radialAngle);
+
+                        // 2. Calculate orbital parameters
+                        const targetOrbitalVel = Math.sqrt(this.ORBITAL_CONSTANT * planet.mass / this.ship.orbitLockRadius);
                         const tangentialAngle = radialAngle + Math.PI / 2;
+                        
+                        // 3. Calculate current velocity in tangential direction
+                        const currentVelX = this.ship.velX - (force * Math.cos(radialAngle));
+                        const currentVelY = this.ship.velY - (force * Math.sin(radialAngle));
+                        const currentSpeed = Math.hypot(currentVelX, currentVelY);
 
-                        // 2. Add a gentle corrective "nudge" back to the perfect orbit radius
-                        // This creates a small force pulling the ship back if it drifts too far or too close.
+                        // 4. Apply gentle correction to maintain orbit radius
                         const radiusError = this.ship.orbitLockRadius - distance;
-                        const correctionForce = radiusError * 0.005; // 0.005 is a small, gentle constant
-
-                        // 3. Combine the orbital velocity with the corrective nudge
-                        this.ship.velX = orbitalVelocity * Math.cos(tangentialAngle) + correctionForce * Math.cos(radialAngle);
-                        this.ship.velY = orbitalVelocity * Math.sin(tangentialAngle) + correctionForce * Math.sin(radialAngle);
+                        const correctionStrength = 0.001 * Math.sign(radiusError);
+                        
+                        // 5. Blend velocities
+                        const blendFactor = 0.98; // Very gentle velocity adjustment
+                        const finalVelocity = currentSpeed * blendFactor + targetOrbitalVel * (1 - blendFactor);
+                        
+                        // Update velocities
+                        this.ship.velX = finalVelocity * Math.cos(tangentialAngle) + correctionStrength * Math.cos(radialAngle);
+                        this.ship.velY = finalVelocity * Math.sin(tangentialAngle) + correctionStrength * Math.sin(radialAngle);
 
                         // --- END: NEW STABLE ORBIT LOGIC ---
 
@@ -702,6 +812,10 @@ emitThrusterParticles() {
             ctx.drawImage(p.image, p.x - p.radius, p.y - p.radius, p.radius * 2, p.radius * 2); 
         });
         
+        for (const dock of this.spaceDocks) {
+        dock.draw(ctx);
+        }
+
         this.ship.draw();
         this.particles.forEach(p => p.draw(ctx));
         this.camera.end(ctx);
@@ -837,12 +951,24 @@ emitThrusterParticles() {
         const dx = planet.x - this.ship.x;
         const dy = planet.y - this.ship.y;
         const radialAngle = Math.atan2(dy, dx);
-        const targetAngle = (radialAngle + Math.PI / 2) * (180 / Math.PI); // Convert to degrees
-        const currentAngle = shipAngle * (180 / Math.PI); // Convert to degrees
+        
+        // Normalize angles to 0-360 range
+        let targetAngle = ((radialAngle + Math.PI / 2) * (180 / Math.PI)); // Convert to degrees
+        let currentAngle = (shipAngle * (180 / Math.PI)); // Convert to degrees
+        
+        // Ensure angles are between 0 and 360
+        targetAngle = ((targetAngle % 360) + 360) % 360;
+        currentAngle = ((currentAngle % 360) + 360) % 360;
 
         // Check if current stats are within the "lock" tolerance
         const speedIsOk = shipVelocity > orbitalVelocity * 0.75 && shipVelocity < orbitalVelocity * 1.25;
-        const angleIsOk = Math.abs(targetAngle - currentAngle) < 36; // Our 72-degree window (36 deg each way)
+        
+        // Handle angle comparison across 0/360 boundary
+        let angleDiff = Math.abs(targetAngle - currentAngle);
+        if (angleDiff > 180) {
+            angleDiff = 360 - angleDiff;
+        }
+        const angleIsOk = angleDiff < 36; // Our 72-degree window (36 deg each way)
 
         // --- Drawing the HUD ---
         ctx.save();
@@ -962,7 +1088,12 @@ const landerScene = {
             ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
         }
-        update() { this.x += this.velX; this.y += this.velY; this.lifespan--; }
+        update() {
+            // Simple linear motion - once a particle is emitted, it continues in a straight line
+            this.x += this.velX;
+            this.y += this.velY;
+            this.lifespan--;
+        }
     },
     createStars() {
         this.stars = [];
@@ -1185,6 +1316,7 @@ function init() {
 
     // Now set the src to trigger loading
     spaceShipeImage.src = ASSET_BASE_URL + 'images/ship.png';
+    spaceDockImage.src = ASSET_BASE_URL + 'images/spacedockalpha.png';
     planetImages.forEach((img, index) => {
         img.src = ASSET_BASE_URL + `images/planet${index + 1}.png`;
         img.onerror = () => {
