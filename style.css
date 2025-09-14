@@ -102,7 +102,7 @@ button:hover {
     aspect-ratio: 1 / 1; 
     padding: 40px;
     box-sizing: border-box; /* Ensures padding is included in the width */
-    border: 2px solid #00ff00;
+    border: 2px solid #93d5e0;
     border-radius: 10px; /* Optional: adds rounded corners */
 
     background-image: url('https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/start_screen_background.png');
@@ -173,4 +173,105 @@ button:hover {
 #zoom-controls button:hover {
     background-color: #00ff00;
     color: #000;
+}
+
+#dock-menu {
+    position: absolute;
+    top: 150px;
+    right: 50px;
+    width: 300px;
+    border: 2px solid #a0e0ff;
+    border-radius: 35px;
+    background-color: #00000099; /* Semi-transparent black */
+    padding: 10px;
+    max-height: 450px; /* Set a maximum height for the menu */
+    overflow-y: auto;  /* Add a vertical scrollbar ONLY if needed */
+}
+
+/* This targets the <ul> list itself */
+#dock-menu ul {
+    list-style-type: none; /* Removes the default bullet points */
+    margin: 0;
+    padding: 0;
+    font-family: 'Orbitron', monospace;
+}
+
+/* Styling for each button in the list */
+#dock-menu li {
+    padding: 15px;
+    color: #a0e0ff;
+    border-bottom: 1px solid #f1f7f163; /* Dark green line between items */
+    cursor: pointer; /* Makes the mouse a pointer, like a link */
+    transition: all 0.2s ease-in-out; /* Smooth transition for hover effect */
+}
+
+/* Removes the line from the very last item */
+#dock-menu li:last-child {
+    border-bottom: none;
+}
+
+/* The hover effect for when the mouse is over a button */
+#dock-menu li:hover {
+    background-color: #f1f7f163;
+    color: #0c0606;
+}
+#departBtn {
+    position: absolute;
+    bottom: 50px;
+    right: 50px;
+    background-color: #00000099; /* Semi-transparent black */
+    color: #a0e0ff;
+    border: 2px solid #a0e0ff;
+    border-radius: 35px;
+    padding: 15px 30px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2em;
+    cursor: pointer;
+    text-shadow: 2px 2px 4px #000;
+    transition: all 0.2s ease; /* Smooth transition for hover effect */
+    /* REMOVE any margin-top you added. Flexbox handles the spacing now */
+}
+#departBtn:hover {
+    background-color: #f1f7f163;
+    color: #0c0606;
+}
+#accessDockBtn {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #00000099; /* Semi-transparent black */
+    color: #a0e0ff;
+    border: 2px solid #a0e0ff;
+    border-radius: 35px;
+    padding: 15px 30px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2em;
+    cursor: pointer;
+    text-shadow: 2px 2px 4px #000;
+    transition: all 0.2s ease;
+}
+#accessDockBtn:hover {
+    background-color: #f1f7f163;
+    color: #0c0606;
+}
+#launchBtn {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #00000099; /* Semi-transparent black */
+    color: #a0e0ff;
+    border: 2px solid #a0e0ff;
+    border-radius: 35px;
+    padding: 15px 30px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2em;
+    cursor: pointer;
+    text-shadow: 2px 2px 4px #000;
+    transition: all 0.2s ease;
+}
+#launchBtn:hover {
+    background-color: #f1f7f163;
+    color: #0c0606;
 }
