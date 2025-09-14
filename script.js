@@ -429,8 +429,8 @@ class SpaceScene {
         this.dockingSpeedmax = 1.0
 
         // --- World Settings ---
-        this.WORLD_WIDTH = canvas.width * 100;
-        this.WORLD_HEIGHT = canvas.height * 100;
+        this.WORLD_WIDTH = canvas.width * 200;
+        this.WORLD_HEIGHT = canvas.height * 200;
 
         // --- Core Movement Settings ---
         this.ROTATION_SPEED = 0.005;  // Halved for more precise rotation control
@@ -595,9 +595,10 @@ emitThrusterParticles() {
         // Initialize game world if not already done
         if (!this.stars.length) { 
             this.createStars(); 
-            this.createPlanets();
-            // Create the main space dock
+            // Create the main space dock BEFORE creating planets
             this.createSpaceDock('alpha', dockTypes.alpha.img, this.WORLD_WIDTH / 2 - 1000, this.WORLD_HEIGHT / 2, 2400, 2000);
+            // Now create planets - they will avoid the dock
+            this.createPlanets();
         }
 
         // Get the alpha dock's position for ship placement
