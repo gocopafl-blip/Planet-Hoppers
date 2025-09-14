@@ -850,7 +850,7 @@ emitThrusterParticles() {
 
             ctx.save();
             ctx.lineWidth = 15;
-            ctx.font = '16px "Orbitron"';
+            ctx.font = '16px "Orbitron", Arial, sans-serif';
 
             // --- Draw the color-coded arcs ---
             // Arc Outline (White)
@@ -908,7 +908,7 @@ emitThrusterParticles() {
             ctx.fillStyle = 'yellow'; // Yellow like gravity assist arc
             ctx.fillText('GRAV ASSIST', centerX, centerY + 80);
             } else if (speed > 20.0) {
-            ctx.font = '20px "Orbitron"';
+            ctx.font = '20px "Orbitron", Arial, sans-serif';
             ctx.fillStyle = 'red'; // Red for dangerous speeds
             ctx.fillText('OVERSPEED', centerX, centerY + 80);
             }
@@ -956,7 +956,7 @@ emitThrusterParticles() {
                 ctx.restore();
 
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                ctx.font = '22px "Consolas"';
+                ctx.font = '22px "Consolas", "Courier New", "Monaco", monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText(`${Math.floor(minDistance)}m`, hudX, hudY + compassRadius + 30);
             }
@@ -1027,7 +1027,7 @@ emitThrusterParticles() {
         drawHud() {
         if (this.ship && this.ship.isDocked) {
             ctx.save();
-            ctx.font = '30px "Orbitron"';
+            ctx.font = '30px "Orbitron", Arial, sans-serif';
             ctx.fillStyle = 'cyan';
             ctx.textAlign = 'center'; // Ensure text is centered
             ctx.shadowColor = 'black';
@@ -1067,7 +1067,7 @@ emitThrusterParticles() {
 
         // --- Drawing the HUD ---
         ctx.save();
-        ctx.font = '20px "Consolas"';
+        ctx.font = '20px "Consolas", "Courier New", "Monaco", monospace';
         ctx.textAlign = 'center';
         const hudX = canvas.width / 2;
         const hudY = 40;
@@ -1281,21 +1281,21 @@ const landerScene = {
         ctx.beginPath(); ctx.moveTo(this.terrain.padStart, padY); ctx.lineTo(this.terrain.padEnd, padY); ctx.stroke();
     },
     drawUI() {
-        ctx.fillStyle = '#fff'; ctx.font = '18px "Consolas"'; ctx.textAlign = 'left';
+        ctx.fillStyle = '#fff'; ctx.font = '18px "Consolas", "Courier New", "Monaco", monospace'; ctx.textAlign = 'left';
         ctx.fillText(`FUEL: ${Math.floor(this.lander.fuel)}`, 20, 30);
         ctx.fillText(`ALTITUDE: ${Math.floor(this.getAltitude())}m`, 20, 60);
         ctx.fillText(`H-SPEED: ${this.lander.velX.toFixed(2)}`, 20, 90);
         ctx.fillText(`V-SPEED: ${this.lander.velY.toFixed(2)}`, 20, 120);
         if (this.gameState === 'landed') {
-            ctx.textAlign = 'center'; ctx.font = '50px "Consolas"';
+            ctx.textAlign = 'center'; ctx.font = '50px "Consolas", "Courier New", "Monaco", monospace';
             ctx.fillStyle = '#0f0';
             ctx.fillText('THE EAGLE HAS LANDED', canvas.width / 2, canvas.height / 2);
         } else if (this.gameState === 'crashed') {
-            ctx.textAlign = 'center'; ctx.font = '50px "Consolas"'; ctx.fillStyle = '#f00';
+            ctx.textAlign = 'center'; ctx.font = '50px "Consolas", "Courier New", "Monaco", monospace'; ctx.fillStyle = '#f00';
             ctx.fillText('MISSION FAILED', canvas.width / 2, canvas.height / 2);
         }
         if (this.gameState === 'landed' || this.gameState === 'crashed') {
-            ctx.font = '20px "Consolas"';
+            ctx.font = '20px "Consolas", "Courier New", "Monaco", monospace';
             ctx.fillStyle = '#fff';
             ctx.fillText('Click to return to menu', canvas.width / 2, canvas.height / 2 + 40);
         }
@@ -1332,7 +1332,7 @@ const landerScene = {
         ctx.fillStyle = 'red'; ctx.beginPath();
         ctx.moveTo(0, -10); ctx.lineTo(-5, 5); ctx.lineTo(5, 5);
         ctx.closePath(); ctx.fill(); ctx.restore();
-        ctx.fillStyle = '#fff'; ctx.font = '18px "Consolas"'; ctx.textAlign = 'center';
+        ctx.fillStyle = '#fff'; ctx.font = '18px "Consolas", "Courier New", "Monaco", monospace'; ctx.textAlign = 'center';
         ctx.fillText(`${Math.floor(distance)}m`, hudX, hudY + 25);
         ctx.restore();
     },
@@ -1421,6 +1421,7 @@ const landerScene = {
 // --- INITIALIZATION ---
 function init() {
     let imagesLoaded = 0;
+    let fontsLoaded = false;
     const allImages = [
         ...Object.values(shipTypes).map(s => s.img),
         ...Object.values(dockTypes).map(d => d.img),
@@ -1429,15 +1430,40 @@ function init() {
     ];
     const totalImages = allImages.length;
 
-    function onAssetLoad() {
-        imagesLoaded++;
-        console.log(`Asset loaded (${imagesLoaded}/${totalImages})`);
-        if (imagesLoaded === totalImages) {
+    function checkAllAssetsLoaded() {
+        if (imagesLoaded === totalImages && fontsLoaded) {
             console.log("All game assets loaded!");
             loadingScreen.style.display = 'none';
             startScreen.style.display = 'block';
         }
     }
+
+    function onAssetLoad() {
+        imagesLoaded++;
+        console.log(`Asset loaded (${imagesLoaded}/${totalImages})`);
+        checkAllAssetsLoaded();
+    }
+
+    // Font loading check
+    function waitForFonts() {
+        if (document.fonts && document.fonts.ready) {
+            // Modern browsers with Font Loading API
+            document.fonts.ready.then(() => {
+                console.log("Fonts loaded!");
+                fontsLoaded = true;
+                checkAllAssetsLoaded();
+            });
+        } else {
+            // Fallback for older browsers
+            setTimeout(() => {
+                console.log("Font loading fallback completed");
+                fontsLoaded = true;
+                checkAllAssetsLoaded();
+            }, 1000);
+        }
+    }
+
+    waitForFonts();
     
     // Attach event handlers *before* setting src
     allImages.forEach(img => {

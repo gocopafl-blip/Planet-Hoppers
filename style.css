@@ -5,7 +5,7 @@ body {
     align-items: center;
     height: 100vh;
     background-color: #000;
-    font-family: 'Consolas', monospace;
+    font-family: 'Consolas', 'Courier New', 'Monaco', 'Menlo', monospace;
     overflow: hidden; /* Prevents scrollbars */
 }
 
@@ -193,7 +193,7 @@ button:hover {
     list-style-type: none; /* Removes the default bullet points */
     margin: 0;
     padding: 0;
-    font-family: 'Orbitron', monospace;
+    font-family: 'Orbitron', 'Consolas', 'Courier New', monospace;
 }
 
 /* Styling for each button in the list */
