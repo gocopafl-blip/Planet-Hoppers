@@ -267,12 +267,15 @@ class Ship {
             this.strafingRight = false;
             this.width = 200; // Adjusted for better visibility
             this.height = 240;
-            this.orbitLocked = false;
-            this.orbitingPlanet = null;
-            this.orbitLockRadius = 0;
             this.game = game; // Store reference to the game
             this.isDocked = false;
             this.inStableOrbit = false;
+            this.isOrbitLocked = false;
+            this.orbitingPlanet = null;
+            this.orbitRadius = 0;
+            this.orbitAngle = 0;
+            this.orbitTransitionProgress = 0; // For smooth orbit lock transition
+            this.initialApproachAngle = 0; // Store ship's angle when orbit lock starts
             this.thrusters = {
                 front_left:  { 
                     x: -this.width / 6.0, 
@@ -426,8 +429,7 @@ class SpaceScene {
         this.camera = null;
         this.orbitData = null;
         this.dockingRadius = 1000;
-        this.dockingSpeedmax = 1.0
-
+        
         // --- World Settings ---
         this.WORLD_WIDTH = canvas.width * 200;
         this.WORLD_HEIGHT = canvas.height * 200;
@@ -444,8 +446,21 @@ class SpaceScene {
         // --- Camera Settings ---
         this.minZoom = 0.1; // minZoom is now used to configure the camera
         this.maxZoom = 2.0;
-        this.maxSpeedForZoom = 15;
+        //this.maxSpeedForZoom = 15; Used for dynamic zoom - currently disabled
         this.zoomSmoothing = 0.03;
+
+        // --- Orbit Lock Settings ---
+        this.ORBIT_LOCK_DURATION = 2;       // Time in seconds to lock orbit.
+        this.orbitLockTimer = 0;
+
+        // Central place for all flight model speed definitions
+        this.MIN_DOCKING_SPEED = 0.1;
+        this.MAX_DOCKING_SPEED = 1.0;
+        this.MIN_ORBIT_SPEED = 2.0;
+        this.MAX_ORBIT_SPEED = 5.0;
+        this.GRAVITY_ASSIST_MIN_SPEED = 5.01;
+        this.GRAVITY_ASSIST_MAX_SPEED = 10.0;
+        this.MAX_SAFE_STRUCTURAL_SPEED = 25.0;
     }
 
 getRotatedPosition(offsetX, offsetY) {
@@ -613,7 +628,8 @@ emitThrusterParticles() {
 
         // Set up the camera to follow the ship
         this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, { 
-            zoomSmoothing: this.zoomSmoothing 
+            zoomSmoothing: this.zoomSmoothing,
+            followSmoothing: 0.5  // Instant camera following for tight ship centering
         });
 
         canvas.style.display = 'block';
@@ -629,7 +645,62 @@ emitThrusterParticles() {
 
     update() {
         if (!this.ship || this.isPaused) return;
+        // --- ORBIT LOCK LOGIC ---
+        if (this.ship.isOrbitLocked && this.ship.orbitingPlanet) {
+            const ship = this.ship;
+            const planet = this.ship.orbitingPlanet;
 
+            // Check if the player wants to break orbit by thrusting
+            const wantsToMove = ship.thrusting || ship.reversing || ship.strafingLeft || ship.strafingRight;
+            if (wantsToMove) {
+            // Calculate the current orbital velocity before breaking orbit
+            const orbitalSpeed = Math.sqrt(this.ORBITAL_CONSTANT * planet.mass / ship.orbitRadius) / ship.orbitRadius;
+            
+            // Convert orbital angular velocity to linear velocity components
+            // The velocity is tangential to the orbit (perpendicular to the radius)
+            const tangentAngle = ship.orbitAngle + Math.PI / 2; // 90 degrees to the radius
+            ship.velX = orbitalSpeed * ship.orbitRadius * Math.cos(tangentAngle);
+            ship.velY = orbitalSpeed * ship.orbitRadius * Math.sin(tangentAngle);
+            
+            ship.isOrbitLocked = false;
+            ship.orbitingPlanet = null;
+            
+            } else {
+                const orbitalSpeed = Math.sqrt(this.ORBITAL_CONSTANT * planet.mass / ship.orbitRadius) / ship.orbitRadius;
+                
+                ship.orbitAngle += orbitalSpeed;
+                const targetX = planet.x + Math.cos(ship.orbitAngle) * ship.orbitRadius;
+                const targetY = planet.y + Math.sin(ship.orbitAngle) * ship.orbitRadius;
+                const targetAngle = ship.orbitAngle + Math.PI / 2; // Target orbital angle
+                
+                // Smooth transition from approach angle to orbital angle
+                if (ship.orbitTransitionProgress < 1) {
+                    ship.orbitTransitionProgress += 0.02; // Adjust this for faster/slower transition
+                    ship.orbitTransitionProgress = Math.min(ship.orbitTransitionProgress, 1); // Cap at 100%
+                    
+                    // Smoothly interpolate the ship's angle
+                    const angleDiff = targetAngle - ship.initialApproachAngle;
+                    // Handle angle wrapping (shortest path between angles)
+                    let adjustedAngleDiff = angleDiff;
+                    if (angleDiff > Math.PI) adjustedAngleDiff -= 2 * Math.PI;
+                    if (angleDiff < -Math.PI) adjustedAngleDiff += 2 * Math.PI;
+                    
+                    ship.angle = ship.initialApproachAngle + (adjustedAngleDiff * ship.orbitTransitionProgress);
+                    
+                    // Position follows orbital path immediately
+                    ship.x = targetX;
+                    ship.y = targetY;
+                } else {
+                    // Full orbital motion once transition is complete
+                    ship.x = targetX;
+                    ship.y = targetY;
+                    ship.angle = targetAngle;
+                }
+
+                this.camera.update();
+                return; 
+            }
+        }
         // --- UNDOCKING LOGIC ---
         const wantsToMove = this.ship.thrusting || this.ship.reversing || this.ship.strafingLeft || this.ship.strafingRight;
         if (this.ship.isDocked && wantsToMove) {
@@ -643,16 +714,15 @@ emitThrusterParticles() {
             const distance = Math.hypot(this.ship.x - dock.x, this.ship.y - dock.y);
             const speed = Math.hypot(this.ship.velX, this.ship.velY);
             
-            if (!wantsToMove && distance < this.dockingRadius && speed < this.dockingSpeedmax) {
+            if (!wantsToMove && distance < this.dockingRadius && speed < this.MAX_DOCKING_SPEED && speed > this.MIN_DOCKING_SPEED) {
                 this.ship.isDocked = true;
 
                 this.ship.velX = 0; // Reduce residual velocity
                 this.ship.velY = 0; // Reduce residual velocity
                 if (this.ship.isDocked){
                     if (!airlockSoundPlayed) {
-                        airlockSound.play(); // 3. Play the sound
-                        airlockSoundPlayed = true;  // 4. Flip the flag to true
-                        console.log("airlocksound played!");
+                        airlockSound.play();
+                        airlockSoundPlayed = true;
                     }
                 }
             }
@@ -677,14 +747,14 @@ emitThrusterParticles() {
         }
         
         // Only clear orbital data if we're not in a locked orbit and not thrusting
-        if (!this.ship.orbitLocked && !this.ship.thrusting) {
+        if (!this.ship.isOrbitLocked && !this.ship.thrusting) {
             this.orbitData = null;
         }
 
         // --- Orbital Mechanics Logic ---
         for (const planet of celestialBodies) {
             // If we are locked in an orbit, ignore all other planets.
-            if (this.ship.orbitLocked && this.ship.orbitingPlanet !== planet) {
+            if (this.ship.isOrbitLocked && this.ship.orbitingPlanet !== planet) {
                 continue;
             }
             const dx = planet.x - this.ship.x;
@@ -696,27 +766,36 @@ emitThrusterParticles() {
 
             // Only apply gravity if the ship is within the planet's gravity well
             if (distance < gravityWellEdge && distance > planet.radius) {
-            const force = this.ORBITAL_CONSTANT * planet.mass / (distance * distance);
-            const angle = Math.atan2(dy, dx);
-            this.ship.velX += force * Math.cos(angle);
-            this.ship.velY += force * Math.sin(angle);
-
-            // 2. Define our "stable orbit" speed range.
-            const minOrbitSpeed = 2.0;
-            const maxOrbitSpeed = 5.0; // You can tweak these values!
-
-            // 3. Check the ship's current speed.
             const shipSpeed = Math.hypot(this.ship.velX, this.ship.velY);
 
-            // 4. Set a simple true/false state if the ship is in the sweet spot.
-            if (shipSpeed > minOrbitSpeed && shipSpeed < maxOrbitSpeed) {
+            // 1. Apply gravity only when speed is high enough for an assist.
+            if (shipSpeed >= this.GRAVITY_ASSIST_MIN_SPEED) {
+                const force = this.ORBITAL_CONSTANT * planet.mass / (distance * distance);
+                const angle = Math.atan2(dy, dx);
+                this.ship.velX += force * Math.cos(angle);
+                this.ship.velY += force * Math.sin(angle);
+            }
+
+            // 2. Check for stable orbit conditions to engage the lock-in timer.
+            if (shipSpeed > this.MIN_ORBIT_SPEED && shipSpeed < this.MAX_ORBIT_SPEED && !this.ship.isOrbitLocked) {
                 this.ship.inStableOrbit = true;
+                this.orbitLockTimer += 1 / 60; // Convert frames to seconds
+
+                if (this.orbitLockTimer >= this.ORBIT_LOCK_DURATION) {
+                    this.ship.isOrbitLocked = true;
+                    this.ship.orbitingPlanet = planet;
+                    this.ship.orbitRadius = distance;
+                    this.ship.orbitAngle = Math.atan2(dy, dx) + Math.PI;
+                    this.ship.orbitTransitionProgress = 0; // Start transition at 0%
+                    this.ship.initialApproachAngle = this.ship.angle; // Store current ship angle
+                }
             } else {
                 this.ship.inStableOrbit = false;
+                this.orbitLockTimer = 0;
             }
             }
 
-            // Collision check
+            // Collision check (functionality disabled - handled by orbit lock system)
             if (distance < planet.radius) {
                 //console.log("Approaching planet, showing ship selection...");
                 //this.isPaused = true;
@@ -747,7 +826,7 @@ emitThrusterParticles() {
             
             // Visual feedback for orbital mechanics
             ctx.lineWidth = 2;
-            if (this.ship.orbitLocked && this.ship.orbitingPlanet === planet) {
+            if (this.ship.isOrbitLocked && this.ship.orbitingPlanet === planet) {
                 // Locked orbit indicator - always visible while locked
                 const pulse = (Math.sin(Date.now() / 200) + 1) / 2; // 0 to 1 pulsing
                 // Locked orbit indicator - pulsing green ring
@@ -807,12 +886,14 @@ emitThrusterParticles() {
         this.ship.draw();
         this.particles.forEach(p => p.draw(ctx));
         this.camera.end(ctx);
-
-        if (this.ship.orbitLocked) {
+/*
+        if (this.ship.isOrbitLocked) {
             descentUI.style.display = 'block';
         } else {
             descentUI.style.display = 'none';
-        }
+
+            }
+*/
         this.drawSpeedometer.call(this);
         this.drawCompass.call(this);
         this.drawRadar.call(this);
@@ -828,7 +909,7 @@ emitThrusterParticles() {
 
         // Launch Drop Ship Button visibility based on stable orbit
         const launchUI = document.getElementById('launch-ui');
-        if (this.ship.inStableOrbit) {
+        if (this.ship.isOrbitLocked) {
             launchUI.style.display = 'block';
         } else {
             launchUI.style.display = 'none';
@@ -1038,7 +1119,7 @@ emitThrusterParticles() {
             return;
         }
         if (!this.orbitData) return; // Don't draw if there's no data
-
+/*
         const { shipVelocity, orbitalVelocity, shipAngle } = this.orbitData;
         const planet = this.orbitData.planet;
 
@@ -1090,7 +1171,8 @@ emitThrusterParticles() {
         ctx.fillText(`ANGLE: ${targetAngle.toFixed(1)}°`, hudX + 100, hudY + 60);
 
         ctx.restore();
-}
+*/
+        }
 
     handleKeys(e, isDown) {
         if (!this.ship || this.isPaused) return;
@@ -1513,7 +1595,7 @@ function init() {
     });
     document.getElementById('descentBtn').addEventListener('click', () => {
         // We only want this to work if we are in the space scene and orbit is locked
-        if (gameManager.activeScene === spaceScene && spaceScene.ship.orbitLocked) {
+        if (gameManager.activeScene === spaceScene && spaceScene.ship.isOrbitLocked) {
             console.log("Descent button clicked, changing scene.");
 
             // This is the same logic from the old collision check
