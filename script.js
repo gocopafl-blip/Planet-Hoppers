@@ -215,7 +215,9 @@ class Camera {
         this.x = target ? target.x : 0;
         this.y = target ? target.y : 0;
         this.zoomLevel = 1.0;
-        this.targetZoom = 1.0;
+        this.targetZoom = 1.0; // The zoom level we are smoothly moving towards
+        this.isManualZooming = false;
+        this.manualZoomTimer = 0;
 
         // Apply settings with defaults using nullish coalescing
         this.zoomSmoothing = settings.zoomSmoothing ?? 0.05;
@@ -229,7 +231,9 @@ class Camera {
             this.y += (this.target.y - this.y) * this.followSmoothing;
         }
         // Smoothly adjust the zoom level
+        if (!this.isManualZooming) {
         this.zoomLevel += (this.targetZoom - this.zoomLevel) * this.zoomSmoothing;
+        }
     }
 
     begin(ctx) {
@@ -274,6 +278,7 @@ class Ship {
             this.orbitingPlanet = null;
             this.orbitRadius = 0;
             this.orbitAngle = 0;
+            this.lockedOrbitSpeed = 0;
             this.orbitTransitionProgress = 0; // For smooth orbit lock transition
             this.initialApproachAngle = 0; // Store ship's angle when orbit lock starts
             this.thrusters = {
@@ -427,7 +432,7 @@ class SpaceScene {
         this.difficulty = 'easy';
         this.isPaused = false;
         this.camera = null;
-        this.orbitData = null;
+        //this.orbitData = null;
         this.dockingRadius = 1000;
         
         // --- World Settings ---
@@ -439,7 +444,7 @@ class SpaceScene {
         this.THRUST_POWER = 0.03;    // Reduced for smoother acceleration
 
         // --- Orbital Mechanics Settings ---
-        this.GRAVITY_BOUNDARY_MULTIPLIER = 2.5;  // Gravity well extends to 2x planet radius
+        this.GRAVITY_BOUNDARY_MULTIPLIER = 1.35;  // Gravity well extends to 1.5x planet radius
         this.ORBITAL_CONSTANT = 0.00035;         // Reduced for more manageable orbital velocities
         this.PLANET_MASS_SCALAR = 0.4;           // Reduced mass to prevent excessive gravitational acceleration
 
@@ -654,7 +659,7 @@ emitThrusterParticles() {
             const wantsToMove = ship.thrusting || ship.reversing || ship.strafingLeft || ship.strafingRight;
             if (wantsToMove) {
             // Calculate the current orbital velocity before breaking orbit
-            const orbitalSpeed = Math.sqrt(this.ORBITAL_CONSTANT * planet.mass / ship.orbitRadius) / ship.orbitRadius;
+            const orbitalSpeed = ship.lockedOrbitSpeed / ship.orbitRadius;
             
             // Convert orbital angular velocity to linear velocity components
             // The velocity is tangential to the orbit (perpendicular to the radius)
@@ -664,9 +669,11 @@ emitThrusterParticles() {
             
             ship.isOrbitLocked = false;
             ship.orbitingPlanet = null;
-            
+            this.orbitLockTimer = 0;
+            this.camera.targetZoom = 1.0;
+                                    
             } else {
-                const orbitalSpeed = Math.sqrt(this.ORBITAL_CONSTANT * planet.mass / ship.orbitRadius) / ship.orbitRadius;
+                const orbitalSpeed = ship.lockedOrbitSpeed / ship.orbitRadius;
                 
                 ship.orbitAngle += orbitalSpeed;
                 const targetX = planet.x + Math.cos(ship.orbitAngle) * ship.orbitRadius;
@@ -675,7 +682,7 @@ emitThrusterParticles() {
                 
                 // Smooth transition from approach angle to orbital angle
                 if (ship.orbitTransitionProgress < 1) {
-                    ship.orbitTransitionProgress += 0.02; // Adjust this for faster/slower transition
+                    ship.orbitTransitionProgress += 0.01; // Adjust this for faster/slower transition
                     ship.orbitTransitionProgress = Math.min(ship.orbitTransitionProgress, 1); // Cap at 100%
                     
                     // Smoothly interpolate the ship's angle
@@ -741,7 +748,7 @@ emitThrusterParticles() {
         });
         this.camera.update();
         
-        if (this.ship.isDocked) {
+    /*    if (this.ship.isDocked) {
              this.orbitData = null;
              return;
         }
@@ -750,7 +757,7 @@ emitThrusterParticles() {
         if (!this.ship.isOrbitLocked && !this.ship.thrusting) {
             this.orbitData = null;
         }
-
+    */
         // --- Orbital Mechanics Logic ---
         for (const planet of celestialBodies) {
             // If we are locked in an orbit, ignore all other planets.
@@ -767,13 +774,25 @@ emitThrusterParticles() {
             // Only apply gravity if the ship is within the planet's gravity well
             if (distance < gravityWellEdge && distance > planet.radius) {
             const shipSpeed = Math.hypot(this.ship.velX, this.ship.velY);
+            const startSpeed = this.MAX_ORBIT_SPEED; // Starts ramping up at 5.0
+            const fullSpeed = this.GRAVITY_ASSIST_MAX_SPEED; // Reaches 100% at 10.0
+            
+            let gravityFactor = 0; // Default to 0% gravity
+            if (shipSpeed > startSpeed) {
+                // Calculate how far the ship's speed is into the transition zone
+                const progress = (shipSpeed - startSpeed) / (fullSpeed - startSpeed);
+                // Clamp the value between 0 and 1 to create the 0% to 100% factor
+                gravityFactor = Math.max(0, Math.min(progress, 1));
+            }
 
-            // 1. Apply gravity only when speed is high enough for an assist.
-            if (shipSpeed >= this.GRAVITY_ASSIST_MIN_SPEED) {
-                const force = this.ORBITAL_CONSTANT * planet.mass / (distance * distance);
+            if (gravityFactor > 0) {
+                const baseForce = this.ORBITAL_CONSTANT * planet.mass / (distance * distance);
+                // Apply the force scaled by our gravityFactor
+                const appliedForce = baseForce * gravityFactor;
+                
                 const angle = Math.atan2(dy, dx);
-                this.ship.velX += force * Math.cos(angle);
-                this.ship.velY += force * Math.sin(angle);
+                this.ship.velX += appliedForce * Math.cos(angle);
+                this.ship.velY += appliedForce * Math.sin(angle);
             }
 
             // 2. Check for stable orbit conditions to engage the lock-in timer.
@@ -786,8 +805,10 @@ emitThrusterParticles() {
                     this.ship.orbitingPlanet = planet;
                     this.ship.orbitRadius = distance;
                     this.ship.orbitAngle = Math.atan2(dy, dx) + Math.PI;
+                    this.ship.lockedOrbitSpeed = Math.hypot(this.ship.velX, this.ship.velY);
                     this.ship.orbitTransitionProgress = 0; // Start transition at 0%
                     this.ship.initialApproachAngle = this.ship.angle; // Store current ship angle
+                    this.camera.targetZoom = 0.5; // Set target zoom for orbit view
                 }
             } else {
                 this.ship.inStableOrbit = false;
@@ -821,7 +842,7 @@ emitThrusterParticles() {
         this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); ctx.fill(); });
         
         // Draw orbital indicators if we have orbital data
-        if (this.orbitData) {
+ /*       if (this.orbitData) {
             const { planet, distance, shipAngle, orbitQuality, velocityRatio } = this.orbitData;
             
             // Visual feedback for orbital mechanics
@@ -873,7 +894,7 @@ emitThrusterParticles() {
                 ctx.stroke();
             }
         }
-        
+     */   
         // Draw planets over the trajectory lines
         celestialBodies.forEach(p => { 
             ctx.drawImage(p.image, p.x - p.radius, p.y - p.radius, p.radius * 2, p.radius * 2); 
@@ -898,6 +919,7 @@ emitThrusterParticles() {
         this.drawCompass.call(this);
         this.drawRadar.call(this);
         this.drawHud.call(this);
+        this.drawDebugInfo.call(this);
 
             // Show or hide the "Access Dock" UI based on docking status
         const accessDockUI = document.getElementById('access-dock-ui');
@@ -1118,68 +1140,42 @@ emitThrusterParticles() {
             ctx.restore();
             return;
         }
-        if (!this.orbitData) return; // Don't draw if there's no data
-/*
-        const { shipVelocity, orbitalVelocity, shipAngle } = this.orbitData;
-        const planet = this.orbitData.planet;
+        //if (!this.orbitData) return; // Don't draw if there's no data
 
-        // Calculate the tangential angle for display (in degrees)
-        const dx = planet.x - this.ship.x;
-        const dy = planet.y - this.ship.y;
-        const radialAngle = Math.atan2(dy, dx);
-        
-        // Normalize angles to 0-360 range
-        let targetAngle = ((radialAngle + Math.PI / 2) * (180 / Math.PI)); // Convert to degrees
-        let currentAngle = (shipAngle * (180 / Math.PI)); // Convert to degrees
-        
-        // Ensure angles are between 0 and 360
-        targetAngle = ((targetAngle % 360) + 360) % 360;
-        currentAngle = ((currentAngle % 360) + 360) % 360;
+    }
+        drawDebugInfo() {
+            if (!this.ship || !celestialBodies.length) return;
 
-        // Check if current stats are within the "lock" tolerance
-        const speedIsOk = shipVelocity > orbitalVelocity * 0.75 && shipVelocity < orbitalVelocity * 1.25;
-        
-        // Handle angle comparison across 0/360 boundary
-        let angleDiff = Math.abs(targetAngle - currentAngle);
-        if (angleDiff > 180) {
-            angleDiff = 360 - angleDiff;
+            // Find the closest planet to the ship
+            const closestPlanet = celestialBodies.reduce((closest, planet) => {
+                const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
+                if (dist < closest.dist) {
+                    return { dist, planet };
+                }
+                return closest;
+            }, { dist: Infinity, planet: null }).planet;
+
+            if (!closestPlanet) return;
+            
+            // Calculate the distance (radius) from the ship to the center of the planet
+            const radius = Math.hypot(this.ship.x - closestPlanet.x, this.ship.y - closestPlanet.y);
+            const zoom = this.camera.zoomLevel;
+
+            // --- Draw the text on the screen ---
+            ctx.save();
+            ctx.font = '16px "Orbitron"';
+            ctx.fillStyle = 'yellow';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Radius: ${radius.toFixed(0)}`, 10, canvas.height - 30);
+            ctx.fillText(`Zoom: ${zoom.toFixed(2)}`, 10, canvas.height - 10);
+            ctx.restore();
         }
-        const angleIsOk = angleDiff < 36; // Our 72-degree window (36 deg each way)
+    
+        handleKeys(e, isDown) {
+            if (!this.ship || this.isPaused) return;
 
-        // --- Drawing the HUD ---
-        ctx.save();
-        ctx.font = '20px "Consolas", "Courier New", "Monaco", monospace';
-        ctx.textAlign = 'center';
-        const hudX = canvas.width / 2;
-        const hudY = 40;
-
-        // Draw Titles
-        ctx.fillStyle = '#ccc';
-        ctx.fillText('CURRENT', hudX - 100, hudY);
-        ctx.fillText('TARGET', hudX + 100, hudY);
-
-        // Draw Speed Values
-        ctx.fillStyle = speedIsOk ? '#00ff00' : '#ff4444'; // Green if OK, Red if not
-        ctx.fillText(`SPEED: ${shipVelocity.toFixed(2)}`, hudX - 100, hudY + 30);
-        ctx.fillStyle = '#00ff00'; // Target is always green
-        ctx.fillText(`SPEED: ${orbitalVelocity.toFixed(2)}`, hudX + 100, hudY + 30);
-
-        // Draw Angle Values
-        ctx.fillStyle = angleIsOk ? '#00ff00' : '#ff4444'; // Green if OK, Red if not
-        ctx.fillText(`ANGLE: ${currentAngle.toFixed(1)}°`, hudX - 100, hudY + 60);
-        ctx.fillStyle = '#00ff00'; // Target is always green
-        ctx.fillText(`ANGLE: ${targetAngle.toFixed(1)}°`, hudX + 100, hudY + 60);
-
-        ctx.restore();
-*/
-        }
-
-    handleKeys(e, isDown) {
-        if (!this.ship || this.isPaused) return;
-                   
-        
-        const oldThrusting = this.ship.thrusting || this.ship.reversing;
-        switch (e.key) {
+            const oldThrusting = this.ship.thrusting || this.ship.reversing;
+            switch (e.key) {
             case 'ArrowUp': case 'w': this.ship.thrusting = isDown; break;
             case 'ArrowDown': case 's': this.ship.reversing = isDown; break;
             case 'ArrowLeft': case 'a': this.ship.rotatingLeft = isDown; break;
