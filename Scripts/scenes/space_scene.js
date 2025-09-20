@@ -13,6 +13,9 @@ class SpaceScene {
         //this.orbitData = null;
         this.dockingRadius = 1000;
         
+        // --- State Preservation ---
+        this.savedState = null; // Stores scene state during scene transitions
+        
         // --- World Settings ---
         this.WORLD_WIDTH = canvas.width * 200;
         this.WORLD_HEIGHT = canvas.height * 200;
@@ -136,15 +139,23 @@ emitThrusterParticles() {
         const minRadius = 1200;  // Allows for smaller planets
         const maxRadius = 2000; // Allows for larger planets
 
+        const planetBackgrounds = [
+        ['assets/images/BluePlanet_1a.png', 'assets/images/BluePlanet_1b.png'], // Backgrounds for planet 1
+        ['assets/images/EarthPlanet_2a.png', 'assets/images/EarthPlanet_2b.png'], // Backgrounds for planet 2
+        ['assets/images/SwirlingPlanet_3a.png', 'assets/images/SwirlingPlanet_3b.png']  // Backgrounds for planet 3
+    ];
+
         while (celestialBodies.length < numPlanets && attempts < 1000) {
             const params = this.calculatePlanetParameters(minRadius, maxRadius);
+            const planetIndex = celestialBodies.length % planetImages.length;
             let newPlanet = {
                 x: Math.random() * this.WORLD_WIDTH * 0.8 + this.WORLD_WIDTH * 0.1,
                 y: Math.random() * this.WORLD_HEIGHT * 0.8 + this.WORLD_HEIGHT * 0.1,
                 radius: params.radius,
                 mass: params.mass,
-                image: planetImages[celestialBodies.length % planetImages.length]
-            };
+                image: planetImages[celestialBodies.length % planetImages.length],
+                backgroundOptions: planetBackgrounds[planetIndex] // Assign the backgrounds (renamed to match lander scene expectation)
+                };
 
             let overlapping = false;
             for (const existingPlanet of celestialBodies) {
@@ -199,21 +210,27 @@ emitThrusterParticles() {
             this.createPlanets();
         }
 
-        // Get the alpha dock's position for ship placement
-        const alphaDock = this.spaceDocks[0];
-        if (alphaDock) {
-            // Position the ship 1000 units to the right of the dock, and 300 units below
-            this.ship = new Ship(alphaDock.x + 980, alphaDock.y + 270, this);
-        } else {
-            // Fallback position if no dock exists
-            this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this);
-        }
+        // Try to restore saved state first, otherwise create new ship and camera
+        if (!this.restoreState()) {
+            // No saved state, create new ship and camera at starting position
+            const alphaDock = this.spaceDocks[0];
+            if (alphaDock) {
+                // Position the ship 1000 units to the right of the dock, and 300 units below
+                this.ship = new Ship(alphaDock.x + 980, alphaDock.y + 270, this);
+            } else {
+                // Fallback position if no dock exists
+                this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this);
+            }
 
-        // Set up the camera to follow the ship
-        this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, { 
-            zoomSmoothing: this.zoomSmoothing,
-            followSmoothing: 0.5  // Instant camera following for tight ship centering
-        });
+            // Set up the camera to follow the ship
+            this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, { 
+                zoomSmoothing: this.zoomSmoothing,
+                followSmoothing: 0.5  // Instant camera following for tight ship centering
+            });
+        } else {
+            // State was restored, but make sure camera target is set correctly
+            this.camera.target = this.ship;
+        }
 
         canvas.style.display = 'block';
         zoomControls.style.display = 'flex';
@@ -768,5 +785,56 @@ emitThrusterParticles() {
             else if (!newThrusting && oldThrusting) { thrusterSound.pause(); }
         }
     }
-};
 
+    // --- State Preservation Methods ---
+    saveState() {
+        if (this.ship && this.camera) {
+            this.savedState = {
+                ship: {
+                    x: this.ship.x,
+                    y: this.ship.y,
+                    vx: this.ship.vx,
+                    vy: this.ship.vy,
+                    rotation: this.ship.rotation,
+                    isOrbitLocked: this.ship.isOrbitLocked,
+                    inStableOrbit: this.ship.inStableOrbit,
+                    orbitingPlanet: this.ship.orbitingPlanet,
+                    isDocked: this.ship.isDocked
+                },
+                camera: {
+                    x: this.camera.x,
+                    y: this.camera.y,
+                    zoom: this.camera.zoom,
+                    targetZoom: this.camera.targetZoom
+                }
+            };
+            console.log('SpaceScene state saved:', this.savedState);
+        }
+    }
+
+    restoreState() {
+        if (this.savedState && this.ship && this.camera) {
+            // Restore ship state
+            this.ship.x = this.savedState.ship.x;
+            this.ship.y = this.savedState.ship.y;
+            this.ship.vx = this.savedState.ship.vx;
+            this.ship.vy = this.savedState.ship.vy;
+            this.ship.rotation = this.savedState.ship.rotation;
+            this.ship.isOrbitLocked = this.savedState.ship.isOrbitLocked;
+            this.ship.inStableOrbit = this.savedState.ship.inStableOrbit;
+            this.ship.orbitingPlanet = this.savedState.ship.orbitingPlanet;
+            this.ship.isDocked = this.savedState.ship.isDocked;
+
+            // Restore camera state
+            this.camera.x = this.savedState.camera.x;
+            this.camera.y = this.savedState.camera.y;
+            this.camera.zoom = this.savedState.camera.zoom;
+            this.camera.targetZoom = this.savedState.camera.targetZoom;
+
+            console.log('SpaceScene state restored:', this.savedState);
+            this.savedState = null; // Clear saved state after restoration
+            return true;
+        }
+        return false;
+    }
+};

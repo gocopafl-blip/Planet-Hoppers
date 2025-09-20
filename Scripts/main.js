@@ -150,13 +150,12 @@ function init() {
         }
     });
     document.getElementById('launchBtn').addEventListener('click', () => {
-    // Check if the current scene is the spaceScene and we are in orbit
-    if (gameManager.activeScene === spaceScene && spaceScene.ship.inStableOrbit) {
-        // Use the existing settings to switch to the lander scene
+    if (gameManager.activeScene === spaceScene && spaceScene.ship.isOrbitLocked) {
+        gameManager.saveState(); // <-- ADD THIS LINE
         settings.selectedShip = shipTypes.classic;
         gameManager.switchScene(landerScene, settings);
     }
-    });
+});
     document.getElementById('easyBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'easy' }));
     document.getElementById('mediumBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'medium' }));
     document.getElementById('hardBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'hard' }));
@@ -195,15 +194,12 @@ function init() {
     });
     
     canvas.addEventListener('click', () => {
-        if (gameManager.activeScene === landerScene && (landerScene.gameState === 'landed' || landerScene.gameState === 'crashed')) {
-            musicManager.stop(); // NEW: Tell the manager to stop all music
-            if (thrusterSound.isLoaded) thrusterSound.pause();
-            gameManager.activeScene = null; // Stop the animation loop for the scene
-            menu.style.display = 'block';
-            shipSelectionMenu.style.display = 'none';
-            canvas.style.display = 'none';
-        }
-    });
+    if (gameManager.activeScene === landerScene && (landerScene.gameState === 'landed' || landerScene.gameState === 'crashed')) {
+        // This now takes you back to the space scene instead of the menu
+        gameManager.switchScene(spaceScene, settings);
+        gameManager.restoreState(); // <-- ADD THIS LINE
+    }
+});
     canvas.addEventListener('wheel', event => {
     // First, prevent the browser from scrolling the whole page
     event.preventDefault();

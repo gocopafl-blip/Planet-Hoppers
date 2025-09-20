@@ -1,11 +1,16 @@
 // --- Lander Scene ---
 const landerScene = {
     name: 'lander', // Give the scene a name for the MusicManager
+    backgroundImage: null,
     lander: null, terrain: null, particles: [], stars: [], camera: null,
     baseGravity: 0, difficultySettings: null, selectedShip: null, 
     gameState: 'playing', zoomLevel: 1.5,
-    ZOOM_IN: 1.5, ZOOM_OUT: 0.75,
-    WORLD_WIDTH: canvas.width * 3, WORLD_HEIGHT: canvas.height * 2,
+    ZOOM_IN: 1.5, 
+    ZOOM_OUT: 0.75,
+    minZoom: 0.5,
+    maxZoom: 2.0,
+    WORLD_WIDTH: canvas.width * 3, 
+    WORLD_HEIGHT: canvas.height * 3,
     BASE_THRUST_POWER: 0.035, ROTATION_SPEED: 0.05,
     Lander: class {
         constructor(x, y, initialFuel, shipData) {
@@ -112,6 +117,29 @@ const landerScene = {
         }
     },
     drawWorld() {
+        if (this.backgroundImage && this.backgroundImage.complete) {
+            // Calculate 16:9 aspect ratio dimensions that fit the world
+            const aspectRatio = 16 / 9;
+            const worldAspectRatio = this.WORLD_WIDTH / this.WORLD_HEIGHT;
+            
+            let bgWidth, bgHeight, bgX, bgY;
+            
+            if (worldAspectRatio > aspectRatio) {
+                // World is wider than 16:9, fit to width
+                bgWidth = this.WORLD_WIDTH;
+                bgHeight = bgWidth / aspectRatio;
+                bgX = 0;
+                bgY = (this.WORLD_HEIGHT - bgHeight) / 2;
+            } else {
+                // World is taller than 16:9, fit to height
+                bgHeight = this.WORLD_HEIGHT;
+                bgWidth = bgHeight * aspectRatio;
+                bgX = (this.WORLD_WIDTH - bgWidth) / 2;
+                bgY = 0;
+            }
+            
+            ctx.drawImage(this.backgroundImage, bgX, bgY, bgWidth, bgHeight);
+        }
         ctx.fillStyle = 'white';
         this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); ctx.fill(); });
         const padY = this.terrain.points.find(p => p.x >= this.terrain.padStart)?.y || this.WORLD_HEIGHT - 100;
@@ -134,7 +162,7 @@ const landerScene = {
         if (this.gameState === 'landed') {
             ctx.textAlign = 'center'; ctx.font = '50px "Consolas", "Courier New", "Monaco", monospace';
             ctx.fillStyle = '#0f0';
-            ctx.fillText('THE EAGLE HAS LANDED', canvas.width / 2, canvas.height / 2);
+            ctx.fillText('SUCCESS!', canvas.width / 2, canvas.height / 2);
         } else if (this.gameState === 'crashed') {
             ctx.textAlign = 'center'; ctx.font = '50px "Consolas", "Courier New", "Monaco", monospace'; ctx.fillStyle = '#f00';
             ctx.fillText('MISSION FAILED', canvas.width / 2, canvas.height / 2);
@@ -142,7 +170,8 @@ const landerScene = {
         if (this.gameState === 'landed' || this.gameState === 'crashed') {
             ctx.font = '20px "Consolas", "Courier New", "Monaco", monospace';
             ctx.fillStyle = '#fff';
-            ctx.fillText('Click to return to menu', canvas.width / 2, canvas.height / 2 + 40);
+            const returnText = this.gameState === 'landed' ? 'Click to return to ship' : 'Click to return to menu';
+            ctx.fillText(returnText, canvas.width / 2, canvas.height / 2 + 40);
         }
     },
     getAltitude() {
@@ -196,12 +225,12 @@ const landerScene = {
                     if (thrusterSound.isLoaded) thrusterSound.pause();
                 } else { this.triggerCrash(); }
             }
-            const zoomOutZone = { left: this.terrain.padStart - canvas.width * 0.2, right: this.terrain.padEnd + canvas.width * 0.2 };
+            /*const zoomOutZone = { left: this.terrain.padStart - canvas.width * 0.2, right: this.terrain.padEnd + canvas.width * 0.2 };
             if (this.camera.targetZoom === this.ZOOM_IN && (this.lander.x < zoomOutZone.left || this.lander.x > zoomOutZone.right)) {
                 this.camera.targetZoom = this.ZOOM_OUT;
             } else if (this.camera.targetZoom === this.ZOOM_OUT && (this.lander.x > zoomOutZone.left && this.lander.x < zoomOutZone.right)) {
                 this.camera.targetZoom = this.ZOOM_IN;
-            }
+            }*/
         }
         this.particles = this.particles.filter(p => {
             p.update();
@@ -231,19 +260,36 @@ const landerScene = {
             case 'medium': this.difficultySettings = { gravity: 0.01, fuel: 700, safeSpeed: 1.0, padWidth: 100 }; break;
             case 'hard': this.difficultySettings = { gravity: 0.012, fuel: 500, safeSpeed: 0.7, padWidth: 60 }; break;
         }
-        this.baseGravity = this.difficultySettings.gravity;
-        this.generateTerrain();
-        this.lander = new this.Lander(this.WORLD_WIDTH / 2, 150, this.difficultySettings.fuel, this.selectedShip);
-        this.camera = new Camera(this.lander, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
-            followSmoothing: 0.08, // A slightly slower, smoother follow for the lander
-            zoomSmoothing: 0.04    // A custom zoom speed for the lander scene
-        });
-        this.camera.targetZoom = this.ZOOM_IN;
-        this.particles = [];
-        this.gameState = 'playing';
-        shipSelectionMenu.style.display = 'none';
-        canvas.style.display = 'block';
-    },
+        if (settings.planet && settings.planet.backgroundOptions) {
+        const backgrounds = settings.planet.backgroundOptions;
+        const randomIndex = Math.floor(Math.random() * backgrounds.length);
+        const randomBackgroundSrc = ASSET_BASE_URL + backgrounds[randomIndex];
+
+        this.backgroundImage = new Image();
+        this.backgroundImage.src = randomBackgroundSrc;
+        this.backgroundImage.onload = () => {
+            console.log(`Lander background loaded: ${randomBackgroundSrc}`);
+        };
+        this.backgroundImage.onerror = () => {
+            console.error(`Failed to load lander background: ${randomBackgroundSrc}`);
+            this.backgroundImage = null; // Set to null if it fails to load
+        };
+        } else {
+            this.backgroundImage = null; // No background if no planet data is provided
+        }    
+            this.baseGravity = this.difficultySettings.gravity;
+            this.generateTerrain();
+            this.lander = new this.Lander(this.WORLD_WIDTH / 2, 150, this.difficultySettings.fuel, this.selectedShip);
+            this.camera = new Camera(this.lander, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
+                followSmoothing: 0.08, // A slightly slower, smoother follow for the lander
+                zoomSmoothing: 0.04    // A custom zoom speed for the lander scene
+            });
+            this.camera.targetZoom = this.ZOOM_IN;
+            this.particles = [];
+            this.gameState = 'playing';
+            shipSelectionMenu.style.display = 'none';
+            canvas.style.display = 'block';
+        },
     handleKeys(e, isDown) {
         if (!this.lander || this.gameState !== 'playing') return;
         const oldThrusting = this.lander.thrusting;
@@ -262,4 +308,3 @@ const landerScene = {
         console.log("Stopping Lander Scene...");
     }
 };
-
