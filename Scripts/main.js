@@ -151,8 +151,15 @@ function init() {
     });
     document.getElementById('launchBtn').addEventListener('click', () => {
     if (gameManager.activeScene === spaceScene && spaceScene.ship.isOrbitLocked) {
-        gameManager.saveState(); // <-- ADD THIS LINE
+        spaceScene.saveState(); // Save space scene state before switching
+        
+        // Get the planet the ship is orbiting
+        const orbitingPlanet = spaceScene.ship.orbitingPlanet;
+        
         settings.selectedShip = shipTypes.classic;
+        settings.planet = orbitingPlanet; // Pass the planet data to lander scene
+        
+        console.log('Launching to planet:', orbitingPlanet);
         gameManager.switchScene(landerScene, settings);
     }
 });
