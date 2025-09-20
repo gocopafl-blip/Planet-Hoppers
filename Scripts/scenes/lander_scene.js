@@ -139,9 +139,11 @@ const landerScene = {
             }
             
             ctx.drawImage(this.backgroundImage, bgX, bgY, bgWidth, bgHeight);
+        } else {
+            // Only draw stars if there's no background image
+            ctx.fillStyle = 'white';
+            this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); ctx.fill(); });
         }
-        ctx.fillStyle = 'white';
-        this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); ctx.fill(); });
         const padY = this.terrain.points.find(p => p.x >= this.terrain.padStart)?.y || this.WORLD_HEIGHT - 100;
         ctx.strokeStyle = '#fff'; ctx.fillStyle = '#808080'; ctx.lineWidth = 2;
         ctx.beginPath();
@@ -260,21 +262,26 @@ const landerScene = {
             case 'medium': this.difficultySettings = { gravity: 0.01, fuel: 700, safeSpeed: 1.0, padWidth: 100 }; break;
             case 'hard': this.difficultySettings = { gravity: 0.012, fuel: 500, safeSpeed: 0.7, padWidth: 60 }; break;
         }
+        console.log('Lander scene settings:', settings);
+        console.log('Planet data:', settings.planet);
         if (settings.planet && settings.planet.backgroundOptions) {
+        console.log('Background options found:', settings.planet.backgroundOptions);
         const backgrounds = settings.planet.backgroundOptions;
         const randomIndex = Math.floor(Math.random() * backgrounds.length);
         const randomBackgroundSrc = ASSET_BASE_URL + backgrounds[randomIndex];
+        console.log('Loading background:', randomBackgroundSrc);
 
         this.backgroundImage = new Image();
         this.backgroundImage.src = randomBackgroundSrc;
         this.backgroundImage.onload = () => {
-            console.log(`Lander background loaded: ${randomBackgroundSrc}`);
+            console.log(`Lander background loaded successfully: ${randomBackgroundSrc}`);
         };
         this.backgroundImage.onerror = () => {
             console.error(`Failed to load lander background: ${randomBackgroundSrc}`);
             this.backgroundImage = null; // Set to null if it fails to load
         };
         } else {
+            console.log('No background options found, using starry background');
             this.backgroundImage = null; // No background if no planet data is provided
         }    
             this.baseGravity = this.difficultySettings.gravity;

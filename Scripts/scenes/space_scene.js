@@ -140,9 +140,9 @@ emitThrusterParticles() {
         const maxRadius = 2000; // Allows for larger planets
 
         const planetBackgrounds = [
-        ['assets/images/BluePlanet_1a.png', 'assets/images/BluePlanet_1b.png'], // Backgrounds for planet 1
-        ['assets/images/EarthPlanet_2a.png', 'assets/images/EarthPlanet_2b.png'], // Backgrounds for planet 2
-        ['assets/images/SwirlingPlanet_3a.png', 'assets/images/SwirlingPlanet_3b.png']  // Backgrounds for planet 3
+        ['images/BluePlanet_1a.png', 'images/BluePlanet_1b.png'], // Backgrounds for planet 1
+        ['images/EarthPlanet_2a.png', 'images/EarthPlanet_2b.png'], // Backgrounds for planet 2
+        ['images/SwirlingPlanet_3a.png', 'images/SwirlingPlanet_3b.png']  // Backgrounds for planet 3
     ];
 
         while (celestialBodies.length < numPlanets && attempts < 1000) {
