@@ -201,12 +201,20 @@ function init() {
     });
     
     canvas.addEventListener('click', () => {
-    if (gameManager.activeScene === landerScene && (landerScene.gameState === 'landed' || landerScene.gameState === 'crashed')) {
-        // This now takes you back to the space scene instead of the menu
-        gameManager.switchScene(spaceScene, settings);
-        gameManager.restoreState(); // <-- ADD THIS LINE
-    }
-});
+        if (gameManager.activeScene === landerScene && (landerScene.gameState === 'landed' || landerScene.gameState === 'crashed')) {
+            if (thrusterSound.isLoaded) thrusterSound.pause();
+            
+            if (landerScene.gameState === 'landed') {
+                // SUCCESS: Return to space scene with preserved state
+                console.log('Lander mission successful, returning to space scene with preserved state');
+                gameManager.switchScene(spaceScene, settings);
+            } else {
+                // CRASHED: Return to spacedock scene (no state preservation needed)
+                console.log('Lander mission failed, returning to spacedock');
+                gameManager.switchScene(spaceDockScene);
+            }
+        }
+    });
     canvas.addEventListener('wheel', event => {
     // First, prevent the browser from scrolling the whole page
     event.preventDefault();
