@@ -210,23 +210,23 @@ function init() {
     canvas.addEventListener('wheel', event => {
     // First, prevent the browser from scrolling the whole page
     event.preventDefault();
+ const scene = gameManager.activeScene; // Get the currently active scene
 
-    // Only apply zoom if we are in the space scene
-    if (gameManager.activeScene === spaceScene) {
-        // Determine zoom direction (deltaY is negative for scroll up, positive for scroll down)
+    // Check if the active scene has a camera and zoom limits
+    if (scene && scene.camera && scene.minZoom && scene.maxZoom) {
         const zoomAmount = 0.1;
         let newZoom;
 
         if (event.deltaY < 0) {
             // Scrolling up -> Zoom In
-            newZoom = spaceScene.camera.targetZoom + zoomAmount;
+            newZoom = scene.camera.targetZoom + zoomAmount;
         } else {
             // Scrolling down -> Zoom Out
-            newZoom = spaceScene.camera.targetZoom - zoomAmount;
+            newZoom = scene.camera.targetZoom - zoomAmount;
         }
 
         // Clamp the zoom level to the min/max values to prevent extreme zooming
-        spaceScene.camera.targetZoom = Math.max(spaceScene.minZoom, Math.min(newZoom, spaceScene.maxZoom));
+        scene.camera.targetZoom = Math.max(scene.minZoom, Math.min(newZoom, scene.maxZoom));
     }
 }, { passive: false }); // passive: false is needed to allow preventDefault
     
