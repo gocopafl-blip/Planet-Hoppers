@@ -8,6 +8,7 @@ function getNewPlayerData() {
         cargoCoName: "StarHopper Cargo",
         playerBankBalance: 2500,
         activeShipId: 1,
+        activeMissionId: null,
 
         // Player's Fleet
         fleet: [

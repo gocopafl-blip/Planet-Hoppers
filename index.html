@@ -20,6 +20,13 @@
             <div id="hud-bank-balance"></div>
         </div>
 
+        <div id="mission-board" style="display: none;">
+            <h2>Orbital Cargo Solutions - Mission Board</h2>
+            <div id="mission-list">
+            </div>
+            <button id="closeMissionBoardBtn">Close</button>
+        </div>
+
         <!-- Music controls button -->
         <div id="music-controls" style="position: absolute; top: 10px; left: 10px; z-index: 1000;">
             <button id="muteBtn"
@@ -36,6 +43,9 @@
         </div>
 
         <div id="dock-ui" style="display: none;">
+            <button id="getPaidBtn" style="position: absolute; top: 60px; right: 50px;">Get Paid</button>
+            <button id="completeMissionBtn" style="position: absolute; top: 60px; right: 250px;">Complete
+                Mission</button>
             <button id="departBtn">Depart Station</button>
             <div id="dock-menu">
                 <ul>
@@ -98,9 +108,11 @@
 
     <script src="scripts/core/constants.js"></script>
     <script src="scripts/core/player_data.js"></script>
+    <script src="scripts/core/mission_catalogue.js"></script>
     <script src="scripts/managers/music_manager.js"></script>
     <script src="scripts/managers/game_manager.js"></script>
     <script src="scripts/managers/player_data_manager.js"></script>
+    <script src="scripts/managers/mission_manager.js"></script>
     <script src="scripts/core/camera.js"></script>
     <script src="scripts/game_objects/particle.js"></script>
     <script src="scripts/game_objects/ship.js"></script>

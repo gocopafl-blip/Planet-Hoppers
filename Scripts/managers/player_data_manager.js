@@ -31,6 +31,13 @@ class PlayerDataManager {
     getBalance() {
         return this.data.playerBankBalance;
     }
+    addMoney(amount) {
+        if (this.data) {
+            this.data.playerBankBalance += amount;
+            console.log(`Added ${amount} credits. New balance: ${this.data.playerBankBalance}`);
+            this.saveData(); // This is the crucial step!
+        }
+    }
 
     // A helper function to easily get the player's company name.
     getCompanyName() {
@@ -42,5 +49,17 @@ class PlayerDataManager {
         if (!this.data || !this.data.fleet) return null;
 
         return this.data.fleet.find(ship => ship.id === this.data.activeShipId);
+    }
+    setActiveMissionId(missionId) {
+        if (this.data) {
+            this.data.activeMissionId = missionId;
+            console.log(`Player's active mission set to: ${missionId}`);
+            this.saveData();
+        }
+    }
+
+    // Gets the ID of the player's currently active mission.
+    getActiveMissionId() {
+        return this.data ? this.data.activeMissionId : null;
     }
 }

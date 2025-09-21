@@ -23,6 +23,7 @@ const spaceDockTerminalImage = new Image();
 let celestialBodies = [];
 let settings = {};
 const playerDataManager = new PlayerDataManager();
+const missionManager = new MissionManager();
 
 // --- INITIALIZATION ---
 function init() {
@@ -100,6 +101,30 @@ function init() {
     });
     landerScene.createStars();
 
+    const missionBoard = document.getElementById('mission-board');
+    const missionList = document.getElementById('mission-list');
+
+    // Listener for the "Orbital Cargo Solutions" button in the dock menu
+    document.querySelector('#dock-menu li:nth-child(2)').addEventListener('click', () => {
+        if (gameManager.activeScene === spaceDockScene) {
+            spaceDockScene.showMissionBoard();
+        }
+    });
+
+    // Listener for the "Close" button on the mission board
+    document.getElementById('closeMissionBoardBtn').addEventListener('click', () => {
+        missionBoard.style.display = 'none';
+    });
+
+    // Listener for accepting a mission (using event delegation)
+    missionList.addEventListener('click', (event) => {
+        if (event.target.classList.contains('accept-btn')) {
+            const missionId = event.target.dataset.missionId;
+            missionManager.acceptMission(missionId);
+            missionBoard.style.display = 'none'; // Close board after accepting
+        }
+    });
+
     const spaceScene = new SpaceScene();
     document.getElementById('zoomInBtn').addEventListener('click', () => {
         if (gameManager.activeScene === spaceScene) {
@@ -144,7 +169,13 @@ function init() {
     document.getElementById('departBtn').addEventListener('click', () => {
         gameManager.switchScene(spaceScene, { difficulty: 'easy' }); // For now, it will always be 'easy'
     });
-
+    // Event listener for our new test button
+    document.getElementById('getPaidBtn').addEventListener('click', () => {
+        playerDataManager.addMoney(500); // Give the player 500 credits
+    });
+    document.getElementById('completeMissionBtn').addEventListener('click', () => {
+        missionManager.completeMission();
+    })
     document.getElementById('accessDockBtn').addEventListener('click', () => {
         // Check if the current scene is the spaceScene before switching
         if (gameManager.activeScene === spaceScene) {
