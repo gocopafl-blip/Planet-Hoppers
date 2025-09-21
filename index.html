@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,38 +10,44 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div id="loading-screen" style="display: none;"></div>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        
+        <div id="player-hud" style="display: none;">
+            <div id="hud-company-name"></div>
+            <div id="hud-bank-balance"></div>
+        </div>
+
         <!-- Music controls button -->
         <div id="music-controls" style="position: absolute; top: 10px; left: 10px; z-index: 1000;">
-            <button id="muteBtn" style="padding: 8px 12px; background: rgba(0,0,0,0.7); color: white; border: 1px solid #666; border-radius: 4px; font-size: 16px; cursor: pointer;">♪</button>
+            <button id="muteBtn"
+                style="padding: 8px 12px; background: rgba(0,0,0,0.7); color: white; border: 1px solid #666; border-radius: 4px; font-size: 16px; cursor: pointer;">♪</button>
         </div>
-        
+
         <div id="zoom-controls" style="display: none;">
-        <button id="zoomInBtn">+</button>
-        <button id="zoomOutBtn">-</button>
-    </div>
+            <button id="zoomInBtn">+</button>
+            <button id="zoomOutBtn">-</button>
+        </div>
 
         <div id="descent-ui" style="display: none;">
-        <button id="descentBtn">Begin Descent</button>
+            <button id="descentBtn">Begin Descent</button>
         </div>
 
         <div id="dock-ui" style="display: none;">
             <button id="departBtn">Depart Station</button>
             <div id="dock-menu">
-            <ul>
-            <li>Titan Supply Services</li>
-            <li>Orbital Cargo Solutions</li>
-            <li>Aegis Banking Systems</li>
-            <li>Galactic Trade Hub</li>
-            <li>Apex Outfitting & Repair</li>
-            <li>Star-Propulsion R&D</li>
-            <li>Local Governance Office</li>
-        </ul>
-    </div>
+                <ul>
+                    <li>Titan Supply Services</li>
+                    <li>Orbital Cargo Solutions</li>
+                    <li>Aegis Banking Systems</li>
+                    <li>Galactic Trade Hub</li>
+                    <li>Apex Outfitting & Repair</li>
+                    <li>Star-Propulsion R&D</li>
+                    <li>Local Governance Office</li>
+                </ul>
+            </div>
         </div>
 
         <div id="access-dock-ui" style="display: none;">
@@ -67,17 +74,20 @@
             <h2>Select Your Lander</h2>
             <div class="ship-options-container">
                 <div class="ship-option" data-ship="scout">
-                    <img src="https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/lander-scout.png" alt="Scout Lander">
+                    <img src="https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/lander-scout.png"
+                        alt="Scout Lander">
                     <p>Scout</p>
                     <span>(Small)</span>
                 </div>
                 <div class="ship-option" data-ship="classic">
-                    <img src="https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/lander-classic.png" alt="Classic Lander">
+                    <img src="https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/lander-classic.png"
+                        alt="Classic Lander">
                     <p>Classic</p>
                     <span>(Medium)</span>
                 </div>
                 <div class="ship-option" data-ship="heavy">
-                    <img src="https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/lander-heavy.png" alt="Heavy Lander">
+                    <img src="https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/lander-heavy.png"
+                        alt="Heavy Lander">
                     <p>Heavy</p>
                     <span>(Large)</span>
                 </div>
@@ -90,6 +100,7 @@
     <script src="scripts/core/player_data.js"></script>
     <script src="scripts/managers/music_manager.js"></script>
     <script src="scripts/managers/game_manager.js"></script>
+    <script src="scripts/managers/player_data_manager.js"></script>
     <script src="scripts/core/camera.js"></script>
     <script src="scripts/game_objects/particle.js"></script>
     <script src="scripts/game_objects/ship.js"></script>
@@ -99,4 +110,5 @@
     <script src="scripts/scenes/space_dock_scene.js"></script>
     <script src="scripts/main.js"></script>
 </body>
+
 </html>
