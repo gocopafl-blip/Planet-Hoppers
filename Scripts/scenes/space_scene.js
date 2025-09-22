@@ -133,7 +133,7 @@ class SpaceScene {
 
     createPlanets() {
         celestialBodies = [];
-        const numPlanets = 8;
+        const numPlanets = 1;
         const minDistance = 4000;
         let attempts = 0;
         const minRadius = 1200;  // Allows for smaller planets
@@ -302,6 +302,9 @@ class SpaceScene {
                 }
 
                 this.camera.update();
+                // Check for mission completion every frame
+                missionManager.completeMission(this); // ADD THIS LINE
+
                 return;
             }
         }

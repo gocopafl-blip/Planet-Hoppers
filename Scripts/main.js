@@ -192,12 +192,12 @@ function init() {
         gameManager.switchScene(spaceScene, { difficulty: 'easy' }); // For now, it will always be 'easy'
     });
     // Event listener for our new test button
-    document.getElementById('getPaidBtn').addEventListener('click', () => {
+    /*document.getElementById('getPaidBtn').addEventListener('click', () => {
         playerDataManager.addMoney(500); // Give the player 500 credits
     });
     document.getElementById('completeMissionBtn').addEventListener('click', () => {
         missionManager.completeMission();
-    })
+    })*/
     document.getElementById('accessDockBtn').addEventListener('click', () => {
         // Check if the current scene is the spaceScene before switching
         if (gameManager.activeScene === spaceScene) {

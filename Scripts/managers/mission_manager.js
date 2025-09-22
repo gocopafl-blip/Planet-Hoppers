@@ -60,14 +60,16 @@ class MissionManager {
         }
     }
     // Checks for and completes the player's active mission.
-    completeMission() {
-        const activeMissionId = playerDataManager.getActiveMissionId();
-
-        // 1. Check if the player actually has a mission.
-        if (!activeMissionId) {
-            console.log("Player has no active mission to complete.");
+    completeMission(spaceScene) {
+        // --- Diagnostic Safeguard ---
+        if (!spaceScene || !spaceScene.ship) {
+            // This will now print a warning to the console if a "ghost call" happens.
+            console.warn("completeMission was called without a valid spaceScene. Ignoring.");
             return;
         }
+
+        const activeMissionId = playerDataManager.getActiveMissionId();
+        if (!activeMissionId) return;
 
         // 2. Find the mission's data in our master catalogue.
         const missionData = missionCatalogue[activeMissionId];
@@ -75,19 +77,42 @@ class MissionManager {
             console.error(`Could not find mission data for ID: ${activeMissionId}`);
             return;
         }
+        let isCompleted = false; // A flag to track if we met the conditions.
 
-        // For now, we assume all missions are completed by returning to the dock.
+        // Check the mission's type to decide how to complete it.
+        switch (missionData.type) {
+            case 'DELIVER_TO_DOCK':
+                // For this type, completion happens when the ship is docked.
+                if (spaceScene.ship.isDocked) {
+                    isCompleted = true;
+                }
+                break;
+
+            case 'ORBIT_PLANET':
+                // For this type, completion happens when orbiting the correct planet.
+                const targetPlanet = celestialBodies[missionData.destinationPlanetIndex];
+                if (spaceScene.ship.isOrbitLocked && spaceScene.ship.orbitingPlanet === targetPlanet) {
+                    isCompleted = true;
+                }
+                break;
+
+            // You can add more 'case' statements here for future mission types!
+        }
+
+        // If any of the conditions above were met, finalize the mission.
+        if (isCompleted) {
+            playerDataManager.addMoney(missionData.reward);
+            playerDataManager.setActiveMissionId(null);
+            console.log(`Mission "${missionData.title}" completed! Player earned ${missionData.reward} credits.`);
+
+            // We'll use a simple alert for now to notify the player.
+            alert(`Mission Complete: ${missionData.title}\n\nReward: ¢ ${missionData.reward.toLocaleString()}`);
+        }
+
         // In the future, you could add checks here, like:
         // if (missionData.type === 'DELIVER_TO_PLANET' && player.location === missionData.destination)
 
-        // 3. Give the player their reward.
-        playerDataManager.addMoney(missionData.reward);
-
-        // 4. Clear the active mission from the player's data.
-        playerDataManager.setActiveMissionId(null);
-
-        console.log(`Mission "${missionData.title}" completed! Player earned ${missionData.reward} credits.`);
-        // In a real game, you would show a success message on the screen!
+        // You could also add a system for failed missions, time limits, etc.
     }
 }
 // --- Future Functions ---

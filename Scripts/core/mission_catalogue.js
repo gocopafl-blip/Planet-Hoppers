@@ -35,6 +35,13 @@ const missionCatalogue = {
         type: 'DELIVER_TO_DOCK',
     },
 
+    "SCAN_PLANET_01": {
+        title: "Scan Gas Giant",
+        description: "Travel to the gas giant designated Planet Zero and perform a full orbital scan.",
+        reward: 750,
+        type: 'ORBIT_PLANET', // Our new mission type!
+        destinationPlanetIndex: 0, // The target is the first planet created (index 0).
+    },
     // --- ADD YOUR NEXT MISSION HERE ---
     // "DELIVERY_BETA_01": { ... },
 
