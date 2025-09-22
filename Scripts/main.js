@@ -20,6 +20,7 @@ const spaceShipImage = new Image();
 const planetImages = [new Image(), new Image(), new Image()];
 const spaceDockImages = [new Image()];
 const spaceDockTerminalImage = new Image();
+const missionBoardBackgroundImage = new Image();
 let celestialBodies = [];
 let settings = {};
 const playerDataManager = new PlayerDataManager();
@@ -84,6 +85,7 @@ function init() {
 
     // Now set the src to trigger loading
     spaceShipImage.src = ASSET_BASE_URL + 'images/ship.png';
+    missionBoardBackgroundImage.src = ASSET_BASE_URL + 'images/OrbitalCargoSystems.jpg';
     spaceDockTerminalImage.src = ASSET_BASE_URL + 'images/spaceDockTerminal.png';
     planetImages.forEach((img, index) => {
         img.src = ASSET_BASE_URL + `images/planet${index + 1}.png`;
@@ -107,21 +109,41 @@ function init() {
     // Listener for the "Orbital Cargo Solutions" button in the dock menu
     document.querySelector('#dock-menu li:nth-child(2)').addEventListener('click', () => {
         if (gameManager.activeScene === spaceDockScene) {
-            spaceDockScene.showMissionBoard();
+            gameManager.switchScene(missionBoardScene);
         }
     });
 
     // Listener for the "Close" button on the mission board
     document.getElementById('closeMissionBoardBtn').addEventListener('click', () => {
-        missionBoard.style.display = 'none';
+        if (gameManager.activeScene === missionBoardScene) {
+            const missionBoard = document.getElementById('mission-board');
+            missionBoard.classList.remove('slide-in');
+            missionBoard.classList.add('slide-out');
+
+            // Wait for the animation to finish before switching scenes
+            setTimeout(() => {
+                gameManager.switchScene(spaceDockScene);
+            }, 500); // This MUST match the animation duration in the CSS
+        }
     });
 
-    // Listener for accepting a mission (using event delegation)
+    // Modify the "Accept" mission listener
     missionList.addEventListener('click', (event) => {
         if (event.target.classList.contains('accept-btn')) {
+            const missionBoard = document.getElementById('mission-board');
             const missionId = event.target.dataset.missionId;
+
             missionManager.acceptMission(missionId);
-            missionBoard.style.display = 'none'; // Close board after accepting
+
+            missionBoard.classList.remove('slide-in');
+            missionBoard.classList.add('slide-out');
+
+            // Wait for animation to finish
+            setTimeout(() => {
+                if (gameManager.activeScene === missionBoardScene) {
+                    gameManager.switchScene(spaceDockScene);
+                }
+            }, 500);
         }
     });
 

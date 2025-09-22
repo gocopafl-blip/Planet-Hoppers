@@ -20,7 +20,7 @@ const spaceDockScene = {
         document.getElementById('mission-board').style.display = 'none';
     },
 
-    showMissionBoard() {
+    /*showMissionBoard() {
         const missionBoard = document.getElementById('mission-board');
         const missionList = document.getElementById('mission-list');
 
@@ -48,7 +48,7 @@ const spaceDockScene = {
 
         // 4. Finally, show the mission board
         missionBoard.style.display = 'flex';
-    },
+    },*/
 
     update() {
         // Nothing is moving yet, so this is empty for now.

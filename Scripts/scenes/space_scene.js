@@ -140,9 +140,9 @@ class SpaceScene {
         const maxRadius = 2000; // Allows for larger planets
 
         const planetBackgrounds = [
-            ['images/BluePlanet_1a.png', 'images/BluePlanet_1b.png'], // Backgrounds for planet 1
-            ['images/EarthPlanet_2a.png', 'images/EarthPlanet_2b.png'], // Backgrounds for planet 2
-            ['images/SwirlingPlanet_3a.png', 'images/SwirlingPlanet_3b.png']  // Backgrounds for planet 3
+            ['images/BluePlanet_1a.jpg', 'images/BluePlanet_1b.jpg'], // Backgrounds for planet 1
+            ['images/EarthPlanet_2a.jpg', 'images/EarthPlanet_2b.jpg'], // Backgrounds for planet 2
+            ['images/SwirlingPlanet_3a.jpg', 'images/SwirlingPlanet_3b.jpg']  // Backgrounds for planet 3
         ];
 
         while (celestialBodies.length < numPlanets && attempts < 1000) {
@@ -438,60 +438,7 @@ class SpaceScene {
         ctx.fillStyle = 'white';
         this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); ctx.fill(); });
 
-        // Draw orbital indicators if we have orbital data
-        /*       if (this.orbitData) {
-                   const { planet, distance, shipAngle, orbitQuality, velocityRatio } = this.orbitData;
-                   
-                   // Visual feedback for orbital mechanics
-                   ctx.lineWidth = 2;
-                   if (this.ship.isOrbitLocked && this.ship.orbitingPlanet === planet) {
-                       // Locked orbit indicator - always visible while locked
-                       const pulse = (Math.sin(Date.now() / 200) + 1) / 2; // 0 to 1 pulsing
-                       // Locked orbit indicator - pulsing green ring
-                       ctx.lineWidth = 2;
-                       ctx.strokeStyle = `rgba(0, 255, 0, ${0.3 + pulse * 0.2})`; // More subtle pulsing
-                       ctx.beginPath();
-                       ctx.arc(planet.x, planet.y, distance, 0, Math.PI * 2);
-                       ctx.stroke();
-       
-                       // Draw orbit locked text at top
-                       ctx.save();
-                       ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-                       ctx.font = '20px Arial';
-                       ctx.textAlign = 'center';
-                       ctx.fillText('ORBIT LOCKED', canvas.width / 2, 30);
-                       ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
-                       ctx.fillText('ORBIT LOCKED', canvas.width / 2, 30);
-                       ctx.restore();
-                   } else if (velocityRatio < 0.6 || velocityRatio > 1.4) {
-                       // Too fast or too slow - red indicator
-                       ctx.strokeStyle = 'rgba(255, 100, 100, 0.3)';
-                       ctx.beginPath();
-                       ctx.arc(planet.x, planet.y, distance, 0, Math.PI * 2);
-                       ctx.stroke();
-                       
-                       // Speed guidance text
-                       ctx.save();
-                       ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-                       ctx.font = '18px Arial';
-                       ctx.textAlign = 'center';
-                       const text = velocityRatio > 1.4 ? 'Too fast' : 'Too slow';
-                       ctx.fillText(text, this.ship.x, this.ship.y - 30);
-                       ctx.fillStyle = 'rgba(255, 100, 100, 0.7)';
-                       ctx.fillText(text, this.ship.x, this.ship.y - 30);
-                       ctx.restore();
-                   }
-                   
-                   // Draw predicted trajectory arc
-                   if (!this.ship.thrusting && velocityRatio > 0.6 && velocityRatio < 1.4) {
-                       ctx.beginPath();
-                       ctx.strokeStyle = 'rgba(100, 100, 255, 0.3)';
-                       // Draw an arc that shows the next quarter orbit
-                       ctx.arc(planet.x, planet.y, distance, shipAngle, shipAngle + Math.PI/2);
-                       ctx.stroke();
-                   }
-               }
-            */
+
         // Draw planets over the trajectory lines
         celestialBodies.forEach(p => {
             ctx.drawImage(p.image, p.x - p.radius, p.y - p.radius, p.radius * 2, p.radius * 2);

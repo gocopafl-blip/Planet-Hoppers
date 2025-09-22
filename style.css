@@ -348,10 +348,11 @@ button:hover {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, 100vh);
+    /* NEW: Default position is off-screen at the bottom */
     width: 600px;
     max-height: 80vh;
-    background-color: rgba(0, 20, 40, 0.9);
+    background-color: rgba(0, 20, 40, 0.243);
     border: 2px solid #a0e0ff;
     border-radius: 10px;
     color: #a0e0ff;
@@ -406,8 +407,64 @@ button:hover {
     /* Green for money */
 }
 
-#closeMissionBoardBtn {
-    margin-top: 20px;
-    align-self: center;
-    /* Center the close button */
+.close-button {
+    position: absolute;
+    /* Position it relative to the #mission-board container */
+    bottom: 10px;
+    left: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    /* This makes the button a perfect circle */
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #a0e0ff;
+    border: 1px solid #a0e0ff;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.close-button:hover {
+    background-color: #a0e0ff;
+    color: #000;
+}
+
+@keyframes slideInFromBottom {
+    from {
+        transform: translate(-50%, 100vh);
+        /* Start off-screen at the bottom */
+    }
+
+    to {
+        transform: translate(-50%, -50%);
+        /* End at its final centered position */
+    }
+}
+
+/* This defines the "fly-out" animation */
+@keyframes slideOutToBottom {
+    from {
+        transform: translate(-50%, -50%);
+        /* Start at its centered position */
+    }
+
+    to {
+        transform: translate(-50%, 100vh);
+        /* End off-screen at the bottom */
+    }
+}
+
+/* We will add this class with JavaScript to trigger the fly-in */
+#mission-board.slide-in {
+    animation: slideInFromBottom 0.5s ease-out forwards;
+}
+
+/* We will add this class with JavaScript to trigger the fly-out */
+#mission-board.slide-out {
+    animation: slideOutToBottom 0.5s ease-in forwards;
 }
