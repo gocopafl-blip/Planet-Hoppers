@@ -1,9 +1,9 @@
 // scripts/main.js
 
 const dockTypes = {
-    alpha: { 
-        src: 'images/spacedockalpha.png', 
-        img: new Image() 
+    alpha: {
+        src: 'images/spacedockalpha.png',
+        img: new Image()
     },
     // When you're ready for a second dock, you'd just add it here!
     // beta: { 
@@ -12,19 +12,23 @@ const dockTypes = {
     // }
 };
 const shipTypes = {
-    scout:  { src: 'images/lander-scout.png',  width: 40,  height: 40,  img: new Image(), thrusterOffset: 20 },
-    classic:{ src: 'images/lander-classic.png', width: 80,  height: 80,  img: new Image(), thrusterOffset: 40 },
-    heavy:  { src: 'images/lander-heavy.png',   width: 160, height: 160, img: new Image(), thrusterOffset: 65 }
+    scout: { src: 'images/lander-scout.png', width: 40, height: 40, img: new Image(), thrusterOffset: 20 },
+    classic: { src: 'images/lander-classic.png', width: 80, height: 80, img: new Image(), thrusterOffset: 40 },
+    heavy: { src: 'images/lander-heavy.png', width: 160, height: 160, img: new Image(), thrusterOffset: 65 }
 };
 const spaceShipImage = new Image();
 const planetImages = [new Image(), new Image(), new Image()];
 const spaceDockImages = [new Image()];
 const spaceDockTerminalImage = new Image();
+const missionBoardBackgroundImage = new Image();
 let celestialBodies = [];
 let settings = {};
+const playerDataManager = new PlayerDataManager();
+const missionManager = new MissionManager();
 
 // --- INITIALIZATION ---
 function init() {
+    playerDataManager.loadData();
     let imagesLoaded = 0;
     let fontsLoaded = false;
     const allImages = [
@@ -69,7 +73,7 @@ function init() {
     }
 
     waitForFonts();
-    
+
     // Attach event handlers *before* setting src
     allImages.forEach(img => {
         img.onload = onAssetLoad;
@@ -81,6 +85,7 @@ function init() {
 
     // Now set the src to trigger loading
     spaceShipImage.src = ASSET_BASE_URL + 'images/ship.png';
+    missionBoardBackgroundImage.src = ASSET_BASE_URL + 'images/OrbitalCargoSystems.jpg';
     spaceDockTerminalImage.src = ASSET_BASE_URL + 'images/spaceDockTerminal.png';
     planetImages.forEach((img, index) => {
         img.src = ASSET_BASE_URL + `images/planet${index + 1}.png`;
@@ -97,9 +102,53 @@ function init() {
         dock.img.src = ASSET_BASE_URL + dock.src;
     });
     landerScene.createStars();
-    
+
+    const missionBoard = document.getElementById('mission-board');
+    const missionList = document.getElementById('mission-list');
+
+    // Listener for the "Orbital Cargo Solutions" button in the dock menu
+    document.querySelector('#dock-menu li:nth-child(2)').addEventListener('click', () => {
+        if (gameManager.activeScene === spaceDockScene) {
+            gameManager.switchScene(missionBoardScene);
+        }
+    });
+
+    // Listener for the "Close" button on the mission board
+    document.getElementById('closeMissionBoardBtn').addEventListener('click', () => {
+        if (gameManager.activeScene === missionBoardScene) {
+            const missionBoard = document.getElementById('mission-board');
+            missionBoard.classList.remove('slide-in');
+            missionBoard.classList.add('slide-out');
+
+            // Wait for the animation to finish before switching scenes
+            setTimeout(() => {
+                gameManager.switchScene(spaceDockScene);
+            }, 500); // This MUST match the animation duration in the CSS
+        }
+    });
+
+    // Modify the "Accept" mission listener
+    missionList.addEventListener('click', (event) => {
+        if (event.target.classList.contains('accept-btn')) {
+            const missionBoard = document.getElementById('mission-board');
+            const missionId = event.target.dataset.missionId;
+
+            missionManager.acceptMission(missionId);
+
+            missionBoard.classList.remove('slide-in');
+            missionBoard.classList.add('slide-out');
+
+            // Wait for animation to finish
+            setTimeout(() => {
+                if (gameManager.activeScene === missionBoardScene) {
+                    gameManager.switchScene(spaceDockScene);
+                }
+            }, 500);
+        }
+    });
+
     const spaceScene = new SpaceScene();
-     document.getElementById('zoomInBtn').addEventListener('click', () => {
+    document.getElementById('zoomInBtn').addEventListener('click', () => {
         if (gameManager.activeScene === spaceScene) {
             // Calculate the new zoom level, adding 0.2 for a noticeable change
             const newZoom = spaceScene.camera.targetZoom + 0.2;
@@ -126,12 +175,12 @@ function init() {
             if (thrusterSound.isLoaded) thrusterSound.pause();
             canvas.style.display = 'none';
             shipSelectionMenu.style.display = 'block';
-            
+
             // Also hide the descent button itself
-            descentUI.style.display = 'none'; 
+            descentUI.style.display = 'none';
         }
     });
-// ADD THIS NEW EVENT LISTENER
+    // ADD THIS NEW EVENT LISTENER
     document.getElementById('startBtn').addEventListener('click', () => {
         startScreen.style.display = 'none'; // Hide the start screen
         //menu.style.display = 'block';      // Show the main menu
@@ -142,7 +191,13 @@ function init() {
     document.getElementById('departBtn').addEventListener('click', () => {
         gameManager.switchScene(spaceScene, { difficulty: 'easy' }); // For now, it will always be 'easy'
     });
-
+    // Event listener for our new test button
+    document.getElementById('getPaidBtn').addEventListener('click', () => {
+        playerDataManager.addMoney(500); // Give the player 500 credits
+    });
+    document.getElementById('completeMissionBtn').addEventListener('click', () => {
+        missionManager.completeMission();
+    })
     document.getElementById('accessDockBtn').addEventListener('click', () => {
         // Check if the current scene is the spaceScene before switching
         if (gameManager.activeScene === spaceScene) {
@@ -150,19 +205,19 @@ function init() {
         }
     });
     document.getElementById('launchBtn').addEventListener('click', () => {
-    if (gameManager.activeScene === spaceScene && spaceScene.ship.isOrbitLocked) {
-        spaceScene.saveState(); // Save space scene state before switching
-        
-        // Get the planet the ship is orbiting
-        const orbitingPlanet = spaceScene.ship.orbitingPlanet;
-        
-        settings.selectedShip = shipTypes.classic;
-        settings.planet = orbitingPlanet; // Pass the planet data to lander scene
-        
-        console.log('Launching to planet:', orbitingPlanet);
-        gameManager.switchScene(landerScene, settings);
-    }
-});
+        if (gameManager.activeScene === spaceScene && spaceScene.ship.isOrbitLocked) {
+            spaceScene.saveState(); // Save space scene state before switching
+
+            // Get the planet the ship is orbiting
+            const orbitingPlanet = spaceScene.ship.orbitingPlanet;
+
+            settings.selectedShip = shipTypes.classic;
+            settings.planet = orbitingPlanet; // Pass the planet data to lander scene
+
+            console.log('Launching to planet:', orbitingPlanet);
+            gameManager.switchScene(landerScene, settings);
+        }
+    });
     document.getElementById('easyBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'easy' }));
     document.getElementById('mediumBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'medium' }));
     document.getElementById('hardBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'hard' }));
@@ -178,15 +233,15 @@ function init() {
     shipSelectionMenu.addEventListener('click', (event) => {
         const shipOption = event.target.closest('.ship-option');
         if (!shipOption) return;
-        
+
         const shipName = shipOption.getAttribute('data-ship');
         settings.selectedShip = shipTypes[shipName];
         gameManager.switchScene(landerScene, settings);
     });
-    
-    window.addEventListener('keydown', e => { if (gameManager.activeScene?.handleKeys) { gameManager.activeScene.handleKeys(e, true); }});
-    window.addEventListener('keyup', e => { if (gameManager.activeScene?.handleKeys) { gameManager.activeScene.handleKeys(e, false); }});
-    
+
+    window.addEventListener('keydown', e => { if (gameManager.activeScene?.handleKeys) { gameManager.activeScene.handleKeys(e, true); } });
+    window.addEventListener('keyup', e => { if (gameManager.activeScene?.handleKeys) { gameManager.activeScene.handleKeys(e, false); } });
+
     // Global mute key handler - M key toggles music
     window.addEventListener('keydown', (e) => {
         if (e.key === 'm' || e.key === 'M') {
@@ -199,11 +254,11 @@ function init() {
             }
         }
     });
-    
+
     canvas.addEventListener('click', () => {
         if (gameManager.activeScene === landerScene && (landerScene.gameState === 'landed' || landerScene.gameState === 'crashed')) {
             if (thrusterSound.isLoaded) thrusterSound.pause();
-            
+
             if (landerScene.gameState === 'landed') {
                 // SUCCESS: Return to space scene with preserved state
                 console.log('Lander mission successful, returning to space scene with preserved state');
@@ -216,28 +271,28 @@ function init() {
         }
     });
     canvas.addEventListener('wheel', event => {
-    // First, prevent the browser from scrolling the whole page
-    event.preventDefault();
- const scene = gameManager.activeScene; // Get the currently active scene
+        // First, prevent the browser from scrolling the whole page
+        event.preventDefault();
+        const scene = gameManager.activeScene; // Get the currently active scene
 
-    // Check if the active scene has a camera and zoom limits
-    if (scene && scene.camera && scene.minZoom && scene.maxZoom) {
-        const zoomAmount = 0.1;
-        let newZoom;
+        // Check if the active scene has a camera and zoom limits
+        if (scene && scene.camera && scene.minZoom && scene.maxZoom) {
+            const zoomAmount = 0.1;
+            let newZoom;
 
-        if (event.deltaY < 0) {
-            // Scrolling up -> Zoom In
-            newZoom = scene.camera.targetZoom + zoomAmount;
-        } else {
-            // Scrolling down -> Zoom Out
-            newZoom = scene.camera.targetZoom - zoomAmount;
+            if (event.deltaY < 0) {
+                // Scrolling up -> Zoom In
+                newZoom = scene.camera.targetZoom + zoomAmount;
+            } else {
+                // Scrolling down -> Zoom Out
+                newZoom = scene.camera.targetZoom - zoomAmount;
+            }
+
+            // Clamp the zoom level to the min/max values to prevent extreme zooming
+            scene.camera.targetZoom = Math.max(scene.minZoom, Math.min(newZoom, scene.maxZoom));
         }
+    }, { passive: false }); // passive: false is needed to allow preventDefault
 
-        // Clamp the zoom level to the min/max values to prevent extreme zooming
-        scene.camera.targetZoom = Math.max(scene.minZoom, Math.min(newZoom, scene.maxZoom));
-    }
-}, { passive: false }); // passive: false is needed to allow preventDefault
-    
     // Start the main game loop
     gameManager.loop();
 }

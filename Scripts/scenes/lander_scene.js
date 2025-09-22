@@ -1,15 +1,16 @@
 // --- Lander Scene ---
 const landerScene = {
     name: 'lander', // Give the scene a name for the MusicManager
+    isReady: false,
     backgroundImage: null,
     lander: null, terrain: null, particles: [], stars: [], camera: null,
-    baseGravity: 0, difficultySettings: null, selectedShip: null, 
+    baseGravity: 0, difficultySettings: null, selectedShip: null,
     gameState: 'playing', zoomLevel: 1.5,
-    ZOOM_IN: 1.5, 
+    ZOOM_IN: 1.5,
     ZOOM_OUT: 0.75,
     minZoom: 0.5,
     maxZoom: 2.0,
-    WORLD_WIDTH: canvas.width * 3, 
+    WORLD_WIDTH: canvas.width * 3,
     WORLD_HEIGHT: canvas.height * 3,
     BASE_THRUST_POWER: 0.035, ROTATION_SPEED: 0.05,
     Lander: class {
@@ -121,9 +122,9 @@ const landerScene = {
             // Calculate 16:9 aspect ratio dimensions that fit the world
             const aspectRatio = 16 / 9;
             const worldAspectRatio = this.WORLD_WIDTH / this.WORLD_HEIGHT;
-            
+
             let bgWidth, bgHeight, bgX, bgY;
-            
+
             if (worldAspectRatio > aspectRatio) {
                 // World is wider than 16:9, fit to width
                 bgWidth = this.WORLD_WIDTH;
@@ -137,7 +138,7 @@ const landerScene = {
                 bgX = (this.WORLD_WIDTH - bgWidth) / 2;
                 bgY = 0;
             }
-            
+
             ctx.drawImage(this.backgroundImage, bgX, bgY, bgWidth, bgHeight);
         } else {
             // Only draw stars if there's no background image
@@ -180,14 +181,14 @@ const landerScene = {
         if (!this.terrain) return this.WORLD_HEIGHT;
         let groundY = this.WORLD_HEIGHT;
         for (let i = 0; i < this.terrain.points.length - 1; i++) {
-            if (this.lander.x >= this.terrain.points[i].x && this.lander.x < this.terrain.points[i+1].x) {
+            if (this.lander.x >= this.terrain.points[i].x && this.lander.x < this.terrain.points[i + 1].x) {
                 groundY = this.terrain.points[i].y;
                 break;
             }
         }
-        return Math.floor(groundY - this.lander.y - this.lander.height/2);
+        return Math.floor(groundY - this.lander.y - this.lander.height / 2);
     },
-    
+
     drawCompass() {
         if (this.gameState !== 'playing' || !this.terrain) return;
         const padY = this.terrain.points.find(p => p.x >= this.terrain.padStart)?.y;
@@ -213,6 +214,8 @@ const landerScene = {
         ctx.restore();
     },
     update() {
+        // If the gate is closed, do nothing.
+        if (!this.isReady) return;
         if (this.gameState === 'playing') {
             this.lander.update();
             this.camera.update();
@@ -240,6 +243,15 @@ const landerScene = {
         });
     },
     draw() {
+        if (!this.isReady) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Optional: You could draw "Loading..." text here
+            ctx.fillStyle = 'white';
+            ctx.font = '20px "Consolas"';
+            ctx.textAlign = 'center';
+            ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2);
+            return;
+        }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         this.camera.begin(ctx);
@@ -255,48 +267,56 @@ const landerScene = {
     },
     start(settings) {
         console.log("Starting Lander Scene...");
+        this.isReady = false;
         this.selectedShip = settings.selectedShip;
         const difficulty = settings.difficulty;
-        switch(difficulty) {
+        switch (difficulty) {
             case 'easy': this.difficultySettings = { gravity: 0.008, fuel: 1000, safeSpeed: 1.5, padWidth: 140 }; break;
             case 'medium': this.difficultySettings = { gravity: 0.01, fuel: 700, safeSpeed: 1.0, padWidth: 100 }; break;
             case 'hard': this.difficultySettings = { gravity: 0.012, fuel: 500, safeSpeed: 0.7, padWidth: 60 }; break;
         }
         console.log('Lander scene settings:', settings);
         console.log('Planet data:', settings.planet);
-        if (settings.planet && settings.planet.backgroundOptions) {
-        console.log('Background options found:', settings.planet.backgroundOptions);
-        const backgrounds = settings.planet.backgroundOptions;
-        const randomIndex = Math.floor(Math.random() * backgrounds.length);
-        const randomBackgroundSrc = ASSET_BASE_URL + backgrounds[randomIndex];
-        console.log('Loading background:', randomBackgroundSrc);
 
-        this.backgroundImage = new Image();
-        this.backgroundImage.src = randomBackgroundSrc;
-        this.backgroundImage.onload = () => {
-            console.log(`Lander background loaded successfully: ${randomBackgroundSrc}`);
-        };
-        this.backgroundImage.onerror = () => {
-            console.error(`Failed to load lander background: ${randomBackgroundSrc}`);
-            this.backgroundImage = null; // Set to null if it fails to load
-        };
+        // --- IMAGE LOADING LOGIC ---
+        if (settings.planet && settings.planet.backgroundOptions) {
+            console.log('Background options found:', settings.planet.backgroundOptions);
+            const backgrounds = settings.planet.backgroundOptions;
+            const randomIndex = Math.floor(Math.random() * backgrounds.length);
+            const randomBackgroundSrc = ASSET_BASE_URL + backgrounds[randomIndex];
+            console.log('Loading background:', randomBackgroundSrc);
+
+            this.backgroundImage = new Image();
+            this.backgroundImage.src = randomBackgroundSrc;
+
+            // The 'onload' handler will now "open the gate"
+            this.backgroundImage.onload = () => {
+                console.log(`Lander background loaded successfully.`);
+                this.isReady = true; // Open the gate!
+            };
+            this.backgroundImage.onerror = () => {
+                console.error(`Failed to load lander background: ${randomBackgroundSrc}`);
+                this.backgroundImage = null; // Set to null if it fails to load
+                this.isReady = true; // Still open the gate, but with no background.
+            };
         } else {
             console.log('No background options found, using starry background');
             this.backgroundImage = null; // No background if no planet data is provided
-        }    
-            this.baseGravity = this.difficultySettings.gravity;
-            this.generateTerrain();
-            this.lander = new this.Lander(this.WORLD_WIDTH / 2, 150, this.difficultySettings.fuel, this.selectedShip);
-            this.camera = new Camera(this.lander, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
-                followSmoothing: 0.08, // A slightly slower, smoother follow for the lander
-                zoomSmoothing: 0.04    // A custom zoom speed for the lander scene
-            });
-            this.camera.targetZoom = this.ZOOM_IN;
-            this.particles = [];
-            this.gameState = 'playing';
-            shipSelectionMenu.style.display = 'none';
-            canvas.style.display = 'block';
-        },
+            this.isReady = true; // Open the gate immediately if there's nothing to load.
+        }
+        this.baseGravity = this.difficultySettings.gravity;
+        this.generateTerrain();
+        this.lander = new this.Lander(this.WORLD_WIDTH / 2, 150, this.difficultySettings.fuel, this.selectedShip);
+        this.camera = new Camera(this.lander, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
+            followSmoothing: 0.08, // A slightly slower, smoother follow for the lander
+            zoomSmoothing: 0.04    // A custom zoom speed for the lander scene
+        });
+        this.camera.targetZoom = this.ZOOM_IN;
+        this.particles = [];
+        this.gameState = 'playing';
+        shipSelectionMenu.style.display = 'none';
+        canvas.style.display = 'block';
+    },
     handleKeys(e, isDown) {
         if (!this.lander || this.gameState !== 'playing') return;
         const oldThrusting = this.lander.thrusting;

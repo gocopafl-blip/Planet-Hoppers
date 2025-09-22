@@ -6,7 +6,8 @@ body {
     height: 100vh;
     background-color: #000;
     font-family: 'Consolas', 'Courier New', 'Monaco', 'Menlo', monospace;
-    overflow: hidden; /* Prevents scrollbars */
+    overflow: hidden;
+    /* Prevents scrollbars */
 }
 
 #game-container {
@@ -47,6 +48,7 @@ button:hover {
     background-color: #00ff00;
     color: #000;
 }
+
 #ship-selection {
     position: absolute;
     top: 50%;
@@ -90,6 +92,7 @@ button:hover {
     font-size: 0.9em;
     color: #aaa;
 }
+
 #start-screen {
     position: absolute;
     top: 50%;
@@ -97,35 +100,48 @@ button:hover {
     transform: translate(-50%, -50%);
     text-align: center;
     color: #fff;
-    width: 80%; /* Give it some width */
-    max-width: 700px; 
-    aspect-ratio: 1 / 1; 
+    width: 80%;
+    /* Give it some width */
+    max-width: 700px;
+    aspect-ratio: 1 / 1;
     padding: 40px;
-    box-sizing: border-box; /* Ensures padding is included in the width */
+    box-sizing: border-box;
+    /* Ensures padding is included in the width */
     border: 2px solid #93d5e0;
-    border-radius: 10px; /* Optional: adds rounded corners */
+    border-radius: 10px;
+    /* Optional: adds rounded corners */
 
     background-image: url('https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/start_screen_background.png');
-    background-size: cover; /* Stretches the image to cover the div */
-    background-position: center; /* Centers the image */
+    background-size: cover;
+    /* Stretches the image to cover the div */
+    background-position: center;
+    /* Centers the image */
 
     /* --- FLEXBOX LAYOUT --- */
     /* ADD these properties to control the layout of items inside */
     display: flex;
-    flex-direction: column; /* Stack items vertically */
-    justify-content: space-between; /* Push items to the top and bottom */
-    align-items: center; /* Center items horizontally */
+    flex-direction: column;
+    /* Stack items vertically */
+    justify-content: space-between;
+    /* Push items to the top and bottom */
+    align-items: center;
+    /* Center items horizontally */
 }
 
 #start-screen h1 {
-    font-family: "Orbitron", sans-serif; /* A cool sci-fi font from Google Fonts */
-    font-size: 4em; /* Make it even bigger */
-    color: #a0e0ff; /* A light, icy blue */
-    text-shadow: 6px 6px 6px #000000; /* A more pronounced shadow */
+    font-family: "Orbitron", sans-serif;
+    /* A cool sci-fi font from Google Fonts */
+    font-size: 4em;
+    /* Make it even bigger */
+    color: #a0e0ff;
+    /* A light, icy blue */
+    text-shadow: 6px 6px 6px #000000;
+    /* A more pronounced shadow */
 }
 
 #start-screen button {
-    background-color: #00000099; /* Semi-transparent black */
+    background-color: #00000099;
+    /* Semi-transparent black */
     color: #a0e0ff;
     border: 2px solid #a0e0ff;
     border-radius: 35px;
@@ -134,28 +150,37 @@ button:hover {
     font-size: 1.5em;
     cursor: pointer;
     text-shadow: 2px 2px 4px #000;
-    transition: all 0.2s ease; /* Smooth transition for hover effect */
+    transition: all 0.2s ease;
+    /* Smooth transition for hover effect */
     /* REMOVE any margin-top you added. Flexbox handles the spacing now */
 }
+
 #start-screen button:hover {
     background-color: #f1f7f163;
     color: #0c0606;
 }
+
 #descent-ui {
     position: absolute;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
-    z-index: 10; /* Ensures it appears above the canvas */
+    z-index: 10;
+    /* Ensures it appears above the canvas */
 }
+
 #zoom-controls {
     position: absolute;
-    top: 230px; /* Positioned below the radar */
-    right: 75px; /* Aligned horizontally with the radar */
+    top: 230px;
+    /* Positioned below the radar */
+    right: 75px;
+    /* Aligned horizontally with the radar */
     display: flex;
-    flex-direction: column; /* Stack the buttons vertically */
-    gap: 5px; /* Add a small space between them */
+    flex-direction: column;
+    /* Stack the buttons vertically */
+    gap: 5px;
+    /* Add a small space between them */
 }
 
 #zoom-controls button {
@@ -182,15 +207,19 @@ button:hover {
     width: 300px;
     border: 2px solid #a0e0ff;
     border-radius: 35px;
-    background-color: #00000099; /* Semi-transparent black */
+    background-color: #00000099;
+    /* Semi-transparent black */
     padding: 10px;
-    max-height: 450px; /* Set a maximum height for the menu */
-    overflow-y: auto;  /* Add a vertical scrollbar ONLY if needed */
+    max-height: 450px;
+    /* Set a maximum height for the menu */
+    overflow-y: auto;
+    /* Add a vertical scrollbar ONLY if needed */
 }
 
 /* This targets the <ul> list itself */
 #dock-menu ul {
-    list-style-type: none; /* Removes the default bullet points */
+    list-style-type: none;
+    /* Removes the default bullet points */
     margin: 0;
     padding: 0;
     font-family: 'Orbitron', 'Consolas', 'Courier New', monospace;
@@ -200,9 +229,12 @@ button:hover {
 #dock-menu li {
     padding: 15px;
     color: #a0e0ff;
-    border-bottom: 1px solid #f1f7f163; /* Dark green line between items */
-    cursor: pointer; /* Makes the mouse a pointer, like a link */
-    transition: all 0.2s ease-in-out; /* Smooth transition for hover effect */
+    border-bottom: 1px solid #f1f7f163;
+    /* Dark green line between items */
+    cursor: pointer;
+    /* Makes the mouse a pointer, like a link */
+    transition: all 0.2s ease-in-out;
+    /* Smooth transition for hover effect */
 }
 
 /* Removes the line from the very last item */
@@ -215,11 +247,13 @@ button:hover {
     background-color: #f1f7f163;
     color: #0c0606;
 }
+
 #departBtn {
     position: absolute;
     bottom: 50px;
     right: 50px;
-    background-color: #00000099; /* Semi-transparent black */
+    background-color: #00000099;
+    /* Semi-transparent black */
     color: #a0e0ff;
     border: 2px solid #a0e0ff;
     border-radius: 35px;
@@ -228,19 +262,23 @@ button:hover {
     font-size: 1.2em;
     cursor: pointer;
     text-shadow: 2px 2px 4px #000;
-    transition: all 0.2s ease; /* Smooth transition for hover effect */
+    transition: all 0.2s ease;
+    /* Smooth transition for hover effect */
     /* REMOVE any margin-top you added. Flexbox handles the spacing now */
 }
+
 #departBtn:hover {
     background-color: #f1f7f163;
     color: #0c0606;
 }
+
 #accessDockBtn {
     position: absolute;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #00000099; /* Semi-transparent black */
+    background-color: #00000099;
+    /* Semi-transparent black */
     color: #a0e0ff;
     border: 2px solid #a0e0ff;
     border-radius: 35px;
@@ -251,16 +289,19 @@ button:hover {
     text-shadow: 2px 2px 4px #000;
     transition: all 0.2s ease;
 }
+
 #accessDockBtn:hover {
     background-color: #f1f7f163;
     color: #0c0606;
 }
+
 #launchBtn {
     position: absolute;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #00000099; /* Semi-transparent black */
+    background-color: #00000099;
+    /* Semi-transparent black */
     color: #a0e0ff;
     border: 2px solid #a0e0ff;
     border-radius: 35px;
@@ -271,7 +312,159 @@ button:hover {
     text-shadow: 2px 2px 4px #000;
     transition: all 0.2s ease;
 }
+
 #launchBtn:hover {
     background-color: #f1f7f163;
     color: #0c0606;
+}
+
+#player-hud {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    z-index: 1000;
+    color: #a0e0ff;
+    /* Light, icy blue */
+    font-family: "Orbitron", sans-serif;
+    font-size: 1.2em;
+    text-align: right;
+    text-shadow: 2px 2px 4px #000;
+    background-color: #00000099;
+    /* Semi-transparent black */
+    padding: 10px 15px;
+    border: 1px solid #a0e0ff;
+    border-radius: 8px;
+}
+
+#hud-bank-balance {
+    color: #00ff00;
+    /* Green for money */
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+/* Mission Board Styles */
+#mission-board {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 100vh);
+    /* NEW: Default position is off-screen at the bottom */
+    width: 600px;
+    max-height: 80vh;
+    background-color: rgba(0, 20, 40, 0.243);
+    border: 2px solid #a0e0ff;
+    border-radius: 10px;
+    color: #a0e0ff;
+    padding: 20px;
+    z-index: 1100;
+    /* Make sure it's on top of other UI */
+    font-family: 'Consolas', 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+}
+
+#mission-board h2 {
+    text-align: center;
+    margin-top: 0;
+    font-family: "Orbitron", sans-serif;
+}
+
+#mission-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    /* Add scrollbar if list is long */
+    padding-right: 10px;
+    /* Space for the scrollbar */
+}
+
+.mission-item {
+    background-color: rgba(10, 30, 50, 0.8);
+    border: 1px solid #507090;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.mission-item h3 {
+    margin: 0 0 10px 0;
+    color: #fff;
+}
+
+.mission-item p {
+    margin: 0 0 10px 0;
+}
+
+.mission-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mission-reward {
+    font-weight: bold;
+    color: #00ff00;
+    /* Green for money */
+}
+
+.close-button {
+    position: absolute;
+    /* Position it relative to the #mission-board container */
+    bottom: 10px;
+    left: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    /* This makes the button a perfect circle */
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #a0e0ff;
+    border: 1px solid #a0e0ff;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.close-button:hover {
+    background-color: #a0e0ff;
+    color: #000;
+}
+
+@keyframes slideInFromBottom {
+    from {
+        transform: translate(-50%, 100vh);
+        /* Start off-screen at the bottom */
+    }
+
+    to {
+        transform: translate(-50%, -50%);
+        /* End at its final centered position */
+    }
+}
+
+/* This defines the "fly-out" animation */
+@keyframes slideOutToBottom {
+    from {
+        transform: translate(-50%, -50%);
+        /* Start at its centered position */
+    }
+
+    to {
+        transform: translate(-50%, 100vh);
+        /* End off-screen at the bottom */
+    }
+}
+
+/* We will add this class with JavaScript to trigger the fly-in */
+#mission-board.slide-in {
+    animation: slideInFromBottom 0.5s ease-out forwards;
+}
+
+/* We will add this class with JavaScript to trigger the fly-out */
+#mission-board.slide-out {
+    animation: slideOutToBottom 0.5s ease-in forwards;
 }
