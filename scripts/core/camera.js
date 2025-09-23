@@ -25,7 +25,7 @@ class Camera {
         }
         // Smoothly adjust the zoom level
         if (!this.isManualZooming) {
-        this.zoomLevel += (this.targetZoom - this.zoomLevel) * this.zoomSmoothing;
+            this.zoomLevel += (this.targetZoom - this.zoomLevel) * this.zoomSmoothing;
         }
     }
 

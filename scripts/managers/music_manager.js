@@ -32,7 +32,7 @@ class MusicManager {
             ],
             lander: [
                 { src: 'sounds/music_battle_tense.mp3', volume: 0.5 }, // Tense lander music
-               // { src: 'sounds/music_lander_calm.mp3', volume: 0.5 }
+                // { src: 'sounds/music_lander_calm.mp3', volume: 0.5 }
             ]
         };
 
@@ -119,11 +119,11 @@ class MusicManager {
 
     toggleMute() {
         this.isMuted = !this.isMuted;
-        
+
         if (this.currentTrack) {
             this.currentTrack.volume = this.isMuted ? 0 : this.getCurrentTrackVolume();
         }
-        
+
         console.log(`Music ${this.isMuted ? 'muted' : 'unmuted'}`);
         return this.isMuted;
     }
