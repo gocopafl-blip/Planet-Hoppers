@@ -303,7 +303,7 @@ class SpaceScene {
 
                 this.camera.update();
                 // Check for mission completion every frame
-                missionManager.completeMission(this); // ADD THIS LINE
+
 
                 return;
             }
@@ -430,7 +430,9 @@ class SpaceScene {
         //const speed = Math.hypot(this.ship.velX, this.ship.velY);
         //const speedRatio = Math.min(speed / this.maxSpeedForZoom, 1); 
         //this.camera.targetZoom = this.maxZoom - (this.maxZoom - this.minZoom) * speedRatio;
+        missionManager.completeMission(this); // ADD THIS LINE
     }
+
 
     draw() {
         if (!this.ship || this.isPaused) return;
