@@ -9,7 +9,7 @@ class MissionManager {
     // This is the main function to generate a new list of missions.
     // In the future, this could get very complex (e.g., based on player level or location).
     // For now, it will just pick a few random missions from our catalogue.
-    generateAvailableMissions(count = 2) {
+    generateAvailableMissions(count = 5) {
         // Clear the old list
         this.availableMissions = [];
 
@@ -60,11 +60,10 @@ class MissionManager {
         }
     }
     // Checks for and completes the player's active mission.
-    completeMission(spaceScene) {
+    completeMission(scene) {
         // --- Diagnostic Safeguard ---
-        if (!spaceScene || !spaceScene.ship) {
-            // This will now print a warning to the console if a "ghost call" happens.
-            console.warn("completeMission was called without a valid spaceScene. Ignoring.");
+        if (!scene) {
+            console.warn("completeMission was called without a valid scene. Ignoring.");
             return;
         }
 
@@ -82,21 +81,38 @@ class MissionManager {
         // Check the mission's type to decide how to complete it.
         switch (missionData.type) {
             case 'DELIVER_TO_DOCK':
-                // For this type, completion happens when the ship is docked.
-                if (spaceScene.ship.isDocked) {
+                // This check is specific to the space scene and is complete when the ship is docked.
+                if (scene.name === 'space' && scene.ship && scene.ship.isDocked) {
                     isCompleted = true;
                 }
                 break;
 
             case 'ORBIT_PLANET':
                 // For this type, completion happens when orbiting the correct planet.
-                const targetPlanet = celestialBodies[missionData.destinationPlanetIndex];
-                if (spaceScene.ship.isOrbitLocked && spaceScene.ship.orbitingPlanet === targetPlanet) {
+                //const targetPlanet = celestialBodies[missionData.destinationPlanetIndex];
+                if (scene.name === 'space' && scene.ship && scene.ship.isOrbitLocked && scene.ship.orbitingPlanet) {
                     isCompleted = true;
                 }
                 break;
 
+            case 'LAND_ON_PLANET':
+                // This check is specific to the lander scene
+                if (scene.name === 'lander' && scene.gameState === 'landed') {
+                    isCompleted = true;
+                }
+                break;
             // You can add more 'case' statements here for future mission types!
+            /*
+            case 'PICK_UP_CARGO':
+                // This requires orbiting a planet (to "pick up cargo"), then returning to dock.
+                if (scene.name === 'space' && scene.ship && scene.ship.isOrbitLocked && scene.ship.orbitingPlanet) {
+                    // Player is orbiting a planet - we could set a flag here if needed.
+                    hasPickedUpCargo = true; // You'd need to define this variable somewhere.
+            
+                    isCompleted = true;
+                }
+                break;
+            */
         }
 
         // If any of the conditions above were met, finalize the mission.

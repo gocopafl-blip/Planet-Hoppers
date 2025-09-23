@@ -133,7 +133,7 @@ class SpaceScene {
 
     createPlanets() {
         celestialBodies = [];
-        const numPlanets = 1;
+        const numPlanets = 9;
         const minDistance = 4000;
         let attempts = 0;
         const minRadius = 1200;  // Allows for smaller planets

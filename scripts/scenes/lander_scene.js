@@ -241,6 +241,7 @@ const landerScene = {
             p.update();
             return p.lifespan > 0;
         });
+        missionManager.completeMission(this);
     },
     draw() {
         if (!this.isReady) {
