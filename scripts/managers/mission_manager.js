@@ -55,6 +55,7 @@ class MissionManager {
         const missionExists = this.availableMissions.some(m => m.id === missionId);
         if (missionExists) {
             playerDataManager.setActiveMissionId(missionId);
+            playerDataManager.updateActiveMissionState({});
         } else {
             console.error(`Attempted to accept a mission that is not available: ${missionId}`);
         }

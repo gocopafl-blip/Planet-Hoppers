@@ -57,9 +57,25 @@ class PlayerDataManager {
             this.saveData();
         }
     }
+    // Gets the state object for the currently active mission.
+    getActiveMissionState() {
+        return this.data ? this.data.activeMissionState : null;
+    }
+
+    // Updates the state of the active mission and saves the game.
+    updateActiveMissionState(newState) {
+        if (this.data) {
+            // Object.assign merges the new state with the old one.
+            this.data.activeMissionState = Object.assign(this.data.activeMissionState || {}, newState);
+            console.log("Active mission state updated:", this.data.activeMissionState);
+            this.saveData();
+        }
+
+    }
 
     // Gets the ID of the player's currently active mission.
     getActiveMissionId() {
         return this.data ? this.data.activeMissionId : null;
     }
+
 }
