@@ -9,7 +9,7 @@ const spaceDockScene = {
         descentUI.style.display = 'none';
         //zoomControls.style.display = 'none';
         document.getElementById('dock-ui').style.display = 'block';
-
+        this.updateCargoManifest();
         canvas.style.display = 'block';
     },
 
@@ -20,6 +20,42 @@ const spaceDockScene = {
         document.getElementById('mission-board').style.display = 'none';
     },
 
+    updateCargoManifest() {
+        // 1. Find the list element in our HTML.
+        const cargoListElement = document.getElementById('cargo-list');
+
+        // 2. Get the player's ship and its cargo hold.
+        const activeShip = playerDataManager.getActiveShip();
+        if (!activeShip) return; // Safety check in case there's no ship
+
+        console.log('UPDATING MANIFEST. Reading hold:', activeShip.cargoHold);
+
+        // 3. Clear out any old items from the list.
+        cargoListElement.innerHTML = '';
+
+        // 4. Check if the cargo hold is empty.
+        if (activeShip.cargoHold.length === 0) {
+            const emptyMessage = document.createElement('li');
+            emptyMessage.textContent = 'Hold is empty.';
+            cargoListElement.appendChild(emptyMessage);
+        } else {
+            // 5. Loop through each item in the cargo hold.
+            for (const item of activeShip.cargoHold) {
+                // Look up the item's full details in our catalogue.
+                const itemDetails = cargoCatalogue[item.id];
+                if (itemDetails) {
+                    // Create a new list item element (<li>).
+                    const listItem = document.createElement('li');
+
+                    // Set the text of the list item.
+                    listItem.textContent = `${itemDetails.name} (Size: ${itemDetails.size})`;
+
+                    // Add the new item to the list on the screen.
+                    cargoListElement.appendChild(listItem);
+                }
+            }
+        }
+    },
     /*showMissionBoard() {
         const missionBoard = document.getElementById('mission-board');
         const missionList = document.getElementById('mission-list');

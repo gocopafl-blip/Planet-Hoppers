@@ -43,22 +43,59 @@ class MissionManager {
         console.log("Generated available missions:", this.availableMissions);
         return this.availableMissions;
     }
+    // Located in: scripts/managers/mission_manager.js
+
     acceptMission(missionId) {
-        // First, check if the player is already on a mission.
+        // 1. Check if the player is already on a mission.
         if (playerDataManager.getActiveMissionId()) {
-            // In a real game, you'd show an error message to the player.
             console.warn("Cannot accept new mission, player already has an active mission.");
+            alert("You already have an active mission! Complete or abandon it first.");
             return;
         }
 
-        // Check if the mission we're trying to accept is actually available.
-        const missionExists = this.availableMissions.some(m => m.id === missionId);
-        if (missionExists) {
-            playerDataManager.setActiveMissionId(missionId);
-            playerDataManager.updateActiveMissionState({});
-        } else {
-            console.error(`Attempted to accept a mission that is not available: ${missionId}`);
+        // 2. Get the mission and ship data.
+        const missionData = missionCatalogue[missionId];
+        if (!missionData) {
+            console.error(`Attempted to accept a mission that does not exist: ${missionId}`);
+            return;
         }
+        const activeShip = playerDataManager.getActiveShip();
+        console.log('INTERROGATING missionData:', missionData);
+
+        // 3. Check for cargo space requirement.
+        if (missionData.requiredCargoSpace > 0) {
+            let usedCargoSpace = 0;
+            for (const cargoItem of activeShip.cargoHold) {
+                const itemDetails = cargoCatalogue[cargoItem.id];
+                if (itemDetails) { usedCargoSpace += itemDetails.size; }
+            }
+
+            const availableSpace = activeShip.maxCargoSpace - usedCargoSpace;
+            if (availableSpace < missionData.requiredCargoSpace) {
+                alert(`Mission Denied: Requires ${missionData.requiredCargoSpace} cargo space, but you only have ${availableSpace} available.`);
+                return;
+            }
+        }
+
+        // 4. Accept the mission & add cargo
+        playerDataManager.setActiveMissionId(missionId);
+        if (missionData.cargoItemId) {
+            activeShip.cargoHold.push({ id: missionData.cargoItemId, quantity: 1 });
+        }
+        console.log('CARGO ADDED. Current hold:', activeShip.cargoHold);
+        playerDataManager.updateActiveMissionState({});
+        playerDataManager.saveData(); // Save all changes!
+        alert(`Mission Accepted: ${missionData.title}`);
+
+        // 5. --- THE FIX ---
+        // Now that all data is saved, animate the board away and THEN switch the scene.
+        const missionBoard = document.getElementById('mission-board');
+        missionBoard.classList.remove('slide-in');
+        missionBoard.classList.add('slide-out');
+
+        setTimeout(() => {
+            gameManager.switchScene(spaceDockScene);
+        }, 500); // This delay MUST match the animation time in style.css
     }
     // Checks for and completes the player's active mission.
     completeMission(scene) {

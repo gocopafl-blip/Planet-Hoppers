@@ -505,3 +505,42 @@ button:hover {
     color: #92f2a2;
     border: 1px solid #96f38a;
 }
+#cargo-manifest {
+    position: absolute;
+    top: 150px;
+    left: 50px;
+    /* Position it on the left side */
+    width: 300px;
+    border: 2px solid #a0e0ff;
+    border-radius: 35px;
+    background-color: #00000099;
+    padding: 10px;
+    max-height: 450px;
+    overflow-y: auto;
+    /* Add a scrollbar if the list gets too long */
+    color: #a0e0ff;
+    font-family: 'Orbitron', 'Consolas', 'Courier New', monospace;
+}
+
+#cargo-manifest h2 {
+    text-align: center;
+    font-size: 1.5em;
+    margin: 10px 0;
+    text-shadow: 2px 2px 4px #000;
+}
+
+#cargo-manifest ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+#cargo-manifest li {
+    padding: 15px;
+    border-bottom: 1px solid #f1f7f163;
+    transition: all 0.2s ease-in-out;
+}
+
+#cargo-manifest li:last-child {
+    border-bottom: none;
+}

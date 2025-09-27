@@ -130,21 +130,11 @@ function init() {
 
     // Modify the "Accept" mission listener
     missionList.addEventListener('click', (event) => {
+        // Check if an "accept" button was clicked
         if (event.target.classList.contains('accept-btn')) {
-            const missionBoard = document.getElementById('mission-board');
             const missionId = event.target.dataset.missionId;
-
+            // Just tell the mission manager to handle everything.
             missionManager.acceptMission(missionId);
-
-            missionBoard.classList.remove('slide-in');
-            missionBoard.classList.add('slide-out');
-
-            // Wait for animation to finish
-            setTimeout(() => {
-                if (gameManager.activeScene === missionBoardScene) {
-                    gameManager.switchScene(spaceDockScene);
-                }
-            }, 500);
         }
     });
 

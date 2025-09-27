@@ -17,6 +17,8 @@ function getNewPlayerData() {
                 id: 1,
                 shipTypeId: 'stardust_drifter',
                 name: 'Stardust Drifter',
+                maxCargoSpace: 50,
+                cargoHold: [], // Empty cargo hold at start
                 state: 'disrepaired',
                 upgrades: [],
                 consumables: {
