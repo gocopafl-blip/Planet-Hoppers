@@ -468,3 +468,38 @@ button:hover {
 #mission-board.slide-out {
     animation: slideOutToBottom 0.5s ease-in forwards;
 }
+
+#nav-screen {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 750px;
+    /* Adjust as needed */
+    height: 550px;
+    /* Adjust as needed */
+
+    background-color: rgba(0, 15, 30, 0.75);
+    border: 2px solid #42f62b;
+    border-radius: 8px;
+    z-index: 1050;
+    box-shadow: 0 0 20px rgba(54, 219, 96, 0.5);
+    overflow: hidden;
+    /* This is important to contain the canvas */
+}
+
+#nav-screen canvas {
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+}
+
+/* We can reuse the .close-button style, but we need to position this one */
+#closeNavScreenBtn {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 30px;
+    height: 30px;
+    color: #92f2a2;
+    border: 1px solid #96f38a;
+}

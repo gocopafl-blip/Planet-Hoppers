@@ -7,7 +7,7 @@ const spaceDockScene = {
         menu.style.display = 'none';
         shipSelectionMenu.style.display = 'none';
         descentUI.style.display = 'none';
-        zoomControls.style.display = 'none';
+        //zoomControls.style.display = 'none';
         document.getElementById('dock-ui').style.display = 'block';
 
         canvas.style.display = 'block';

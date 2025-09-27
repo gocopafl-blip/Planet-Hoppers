@@ -24,6 +24,7 @@ const missionBoardBackgroundImage = new Image();
 let celestialBodies = [];
 let settings = {};
 const playerDataManager = new PlayerDataManager();
+const planetManager = new PlanetManager();
 const missionManager = new MissionManager();
 
 // --- INITIALIZATION ---
@@ -148,6 +149,30 @@ function init() {
     });
 
     const spaceScene = new SpaceScene();
+    canvas.addEventListener('click', (event) => {
+        if (gameManager.activeScene === spaceScene) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            // Define the radar's position and size (from space_scene.js)
+            const radarRadius = 100;
+            const radarX = canvas.width - radarRadius - 20;
+            const radarY = radarRadius + 20;
+
+            // Check if the click was inside the radar circle
+            if (Math.hypot(x - radarX, y - radarY) <= radarRadius) {
+                spaceScene.navScreen.toggle();
+            }
+        }
+    });
+
+    document.getElementById('closeNavScreenBtn').addEventListener('click', () => {
+        if (gameManager.activeScene === spaceScene) {
+            spaceScene.navScreen.hide();
+        }
+    });
+    /*
     document.getElementById('zoomInBtn').addEventListener('click', () => {
         if (gameManager.activeScene === spaceScene) {
             // Calculate the new zoom level, adding 0.2 for a noticeable change
@@ -165,6 +190,7 @@ function init() {
             spaceScene.camera.targetZoom = Math.max(newZoom, spaceScene.minZoom);
         }
     });
+    */
     document.getElementById('descentBtn').addEventListener('click', () => {
         // We only want this to work if we are in the space scene and orbit is locked
         if (gameManager.activeScene === spaceScene && spaceScene.ship.isOrbitLocked) {
