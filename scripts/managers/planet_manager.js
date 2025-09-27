@@ -15,7 +15,7 @@ class PlanetManager {
     generatePlanets(count, worldWidth, worldHeight, spaceDocks) {
         this.celestialBodies = []; // Clear any old planets
         const planetTypes = Object.keys(planetCatalogue);
-        const minDistance = 4000;
+        const minDistance = 20000;
         let attempts = 0;
 
         while (this.celestialBodies.length < count && attempts < 1000) {

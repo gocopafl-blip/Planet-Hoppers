@@ -180,18 +180,32 @@ function init() {
         }
     });
 
-    // Listen for mouse down to start panning
+
+    // This event listener handles left, middle, and right clicks
     navScreenElement.addEventListener('mousedown', (event) => {
-        if (spaceScene.navScreen.isOpen && event.button === 1) { // 1 is the middle mouse button
-            event.preventDefault();
-            spaceScene.navScreen.handlePanStart(event);
+        if (spaceScene.navScreen.isOpen) {
+            event.preventDefault(); // Prevent default browser actions for all buttons
+
+            if (event.button === 0) { // 0 is the left mouse button
+                spaceScene.navScreen.handleSetWaypoint(event);
+            } else if (event.button === 1) { // 1 is the middle mouse button
+                spaceScene.navScreen.handlePanStart(event);
+            } else if (event.button === 2) { // 2 is the right mouse button
+                spaceScene.navScreen.handleSetWaypoint(event);
+            }
         }
+    });
+
+    // We also need to prevent the right-click context menu from appearing
+    navScreenElement.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
     });
 
     // Listen for mouse move to pan the map
     navScreenElement.addEventListener('mousemove', (event) => {
         if (spaceScene.navScreen.isOpen) {
             spaceScene.navScreen.handlePanMove(event);
+            spaceScene.navScreen.handleMouseMove(event);
         }
     });
 

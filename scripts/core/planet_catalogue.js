@@ -8,7 +8,7 @@ const planetCatalogue = {
     "gas_giant": {
         planetTypeId: "gas_giant",
         namePrefixes: ["Jovin", "Aerlon", "Strato", "Helios"], // For random name generation
-        baseRadius: { min: 1800, max: 2200 },
+        baseRadius: { min: 2600, max: 3000 },
         planetImages: ["images/planet1.png", "images/planet3.png"], // Can use these images
         landerBackgrounds: [
             "images/EarthPlanet_2a.jpg"
@@ -27,7 +27,7 @@ const planetCatalogue = {
     "terran_world": {
         planetTypeId: "terran_world",
         namePrefixes: ["Terra", "Gaea", "Veridia", "Eden"],
-        baseRadius: { min: 1200, max: 1600 },
+        baseRadius: { min: 1800, max: 2200 },
         planetImages: ["images/planet2.png"],
         landerBackgrounds: [
             "images/EarthPlanet_2a.jpg",
@@ -44,7 +44,7 @@ const planetCatalogue = {
     "volcanic_world": {
         planetTypeId: "volcanic_world",
         namePrefixes: ["Hades", "Crematoria", "Infernus", "Pyra"],
-        baseRadius: { min: 1000, max: 1400 },
+        baseRadius: { min: 1400, max: 1800 },
         planetImages: ["images/planet3.png"], // Could use a reddish planet image here
         landerBackgrounds: [
             "images/SwirlingPlanet_3a.jpg",

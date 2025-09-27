@@ -22,6 +22,12 @@ class NavScreen {
         // --- Waypoints ---
         this.waypoints = [];
         this.finalWaypoint = null;
+
+        // --- Mouse State ---
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.mouseWorldX = 0; // Mouse position in world coordinates
+        this.mouseWorldY = 0; // Mouse position in world coordinates
     }
 
     // Toggles the nav screen between open and closed
@@ -68,9 +74,6 @@ class NavScreen {
     // --- NEW DRAWING LOGIC ---
     draw() {
         if (!this.isOpen) return;
-
-
-
         const ctx = this.navCtx; // Use our dedicated nav canvas context
         ctx.clearRect(0, 0, this.navCanvas.width, this.navCanvas.height);
 
@@ -145,7 +148,86 @@ class NavScreen {
             ctx.fill();
             ctx.restore();
         }
+        // --- Tooltip Logic Hover & Display Data ---
+        let hoveredObject = null;
+        // Check for hover over planets
+        for (const p of celestialBodies) {
+            const dist = Math.hypot(this.mouseWorldX - p.x, this.mouseWorldY - p.y);
+            if (dist < p.radius) {
+                hoveredObject = { ...p, type: 'Planet' };
+                break;
+            }
+        }
 
+        // Check for hover over docks (if no planet was found)
+        if (!hoveredObject) {
+            for (const d of this.spaceScene.spaceDocks) {
+                if (this.mouseWorldX > d.x - 1000 && this.mouseWorldX < d.x + 1000 &&
+                    this.mouseWorldY > d.y - 1000 && this.mouseWorldY < d.y + 1000) {
+                    hoveredObject = { ...d, type: 'Dock', name: 'Space Dock Alpha' };
+                    break;
+                }
+            }
+        }
+
+        // If we found a hovered object, draw its tooltip
+        if (hoveredObject) {
+            const ship = this.spaceScene.ship;
+            const distance = Math.hypot(ship.x - hoveredObject.x, ship.y - hoveredObject.y);
+
+            const fontSize = Math.max(800, 25 / this.zoom); // Dynamic font size that scales with zoom
+            ctx.font = `bold ${fontSize}px "Orbitron"`;
+            ctx.fillStyle = '#a0e0ff';
+            ctx.textAlign = 'center';
+
+            const textYOffset = (hoveredObject.radius || 500) + fontSize * 1.5;
+
+            ctx.fillText(hoveredObject.name, hoveredObject.x, hoveredObject.y + textYOffset);
+            ctx.font = `${fontSize * 0.8}px "Consolas"`;
+            ctx.fillText(`${Math.floor(distance).toLocaleString()} m`, hoveredObject.x, hoveredObject.y + textYOffset + fontSize);
+        }
+        // --- NEW WAYPOINT DRAWING LOGIC ---
+        ctx.lineWidth = 400; // Make rings thick enough to see when zoomed out
+
+        // Draw intermediate waypoints (white rings)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        this.waypoints.forEach(wp => {
+            ctx.beginPath();
+            ctx.arc(wp.x, wp.y, (wp.radius || 2000) + 800, 0, Math.PI * 2);
+            ctx.stroke();
+        });
+
+        // Draw the final waypoint (yellow ring)
+        if (this.finalWaypoint) {
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.9)';
+            ctx.beginPath();
+            ctx.arc(this.finalWaypoint.x, this.finalWaypoint.y, (this.finalWaypoint.radius || 2000) + 800, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        // --- NEW NAVIGATION LINE LOGIC ---
+        // First, create a complete, ordered list of all points on the route.
+        const routePoints = [this.spaceScene.ship, ...this.waypoints];
+        if (this.finalWaypoint) {
+            routePoints.push(this.finalWaypoint);
+        }
+
+        // Now, draw the lines connecting each point in the route.
+        if (routePoints.length > 1) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 250; // Thin line
+            ctx.setLineDash([1000, 1500]); // Creates a dashed line effect!
+
+            ctx.beginPath();
+            // Start the line at the first point (always the ship)
+            ctx.moveTo(routePoints[0].x, routePoints[0].y);
+
+            // Draw a line to each subsequent point in the array
+            for (let i = 1; i < routePoints.length; i++) {
+                ctx.lineTo(routePoints[i].x, routePoints[i].y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset to a solid line for other drawing
+        }
         ctx.restore(); // This restores the context, removing the pan and zoom for any UI drawing
     }
 
@@ -201,6 +283,7 @@ class NavScreen {
         this.navScreenElement.style.cursor = 'default'; // Change cursor back to normal
     }
 
+
     clampPan() {
         // Calculate the position of the world's center point on the map
         const worldCenterX = this.spaceScene.WORLD_WIDTH / 2;
@@ -227,6 +310,76 @@ class NavScreen {
             this.panY = this.navCanvas.height / 2;
         }
     }
+
+    handleMouseMove(event) {
+        const rect = this.navCanvas.getBoundingClientRect();
+        this.mouseX = event.clientX - rect.left;
+        this.mouseY = event.clientY - rect.top;
+
+        // Convert screen coordinates to world coordinates
+        const worldCenterX = this.spaceScene.WORLD_WIDTH / 2;
+        const worldCenterY = this.spaceScene.WORLD_HEIGHT / 2;
+        this.mouseWorldX = (this.mouseX - this.panX) / this.zoom + worldCenterX;
+        this.mouseWorldY = (this.mouseY - this.panY) / this.zoom + worldCenterY;
+    }
+
+    getObjectAtMouse() {
+        // Check for planets first
+        for (const p of celestialBodies) {
+            if (Math.hypot(this.mouseWorldX - p.x, this.mouseWorldY - p.y) < p.radius) {
+                return p;
+            }
+        }
+        // Then check for docks
+        for (const d of this.spaceScene.spaceDocks) {
+            if (this.mouseWorldX > d.x - 1000 && this.mouseWorldX < d.x + 1000 &&
+                this.mouseWorldY > d.y - 1000 && this.mouseWorldY < d.y + 1000) {
+                return { ...d, name: 'Space Dock Alpha' }; // Return a consistent object
+            }
+        }
+        return null; // Nothing found
+    }
+    // --- ADD THIS MAIN WAYPOINT FUNCTION ---
+    handleSetWaypoint(event) {
+        const clickedObject = this.getObjectAtMouse();
+        if (!clickedObject) return; // Exit if the click was on empty space
+
+        // --- LEFT CLICK LOGIC (Final Waypoint) ---
+        if (event.button === 0) {
+            // If we clicked the object that is ALREADY the final waypoint, deselect it.
+            if (this.finalWaypoint && this.finalWaypoint.id === clickedObject.id) {
+                this.finalWaypoint = null;
+            } else {
+                // Otherwise, set it as the new final waypoint.
+                this.finalWaypoint = clickedObject;
+            }
+        }
+
+        // --- RIGHT CLICK LOGIC (Intermediate Waypoints) ---
+        if (event.button === 2) {
+            const index = this.waypoints.findIndex(wp => wp.id === clickedObject.id);
+            // If the object is already in the waypoints array, remove it.
+            if (index > -1) {
+                this.waypoints.splice(index, 1);
+            } else {
+                // Otherwise, add it to the array.
+                this.waypoints.push(clickedObject);
+            }
+        }
+    }
+
+    arriveAtNextWaypoint() {
+        if (this.waypoints.length > 0) {
+            // Remove the first waypoint from the list.
+            this.waypoints.shift();
+            console.log("Waypoint reached. Advancing to next.");
+        } else if (this.finalWaypoint) {
+            // If there are no more intermediate waypoints, clear the final one.
+            this.finalWaypoint = null;
+            console.log("Final destination reached.");
+        }
+    }
+
 
     update() {
         if (!this.isOpen) return;
