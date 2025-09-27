@@ -643,11 +643,7 @@ class SpaceScene {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Draw the player's blip in the center
-        ctx.beginPath();
-        ctx.arc(radarX, radarY, 3, 0, Math.PI * 2);
-        ctx.fillStyle = 'lime';
-        ctx.fill();
+
 
         // Draw each planet as a blip on the radar
         for (const planet of celestialBodies) {
@@ -674,8 +670,54 @@ class SpaceScene {
             ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
             ctx.fill();
         }
+        // Draw each dock as a blip on the radar
+        for (const dock of this.spaceDocks) {
+            const dx = dock.x - this.ship.x;
+            const dy = dock.y - this.ship.y;
+            const distance = Math.hypot(dx, dy);
 
+            let blipX, blipY;
+
+            if (distance < radarRange) {
+                // Dock is inside radar range, position it proportionally
+                blipX = radarX + dx * radarScale;
+                blipY = radarY + dy * radarScale;
+            } else {
+                // Dock is outside range, pin it to the edge of the radar
+                const angle = Math.atan2(dy, dx);
+                blipX = radarX + Math.cos(angle) * radarRadius;
+                blipY = radarY + Math.sin(angle) * radarRadius;
+            }
+
+            // Draw the dock's blip
+            ctx.beginPath();
+            // Draw a star shape for the dock
+            const spikes = 5;
+            const outerRadius = 4;
+            const innerRadius = 2;
+            for (let i = 0; i < spikes * 2; i++) {
+                const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                const angle = (i * Math.PI) / spikes;
+                const x = blipX + Math.cos(angle) * radius;
+                const y = blipY + Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(40, 219, 239, 0.9)';
+            ctx.fill();
+        }
+
+        // Draw the player's blip in the center (using radarX, radarY - the center of the radar)
+        ctx.beginPath();
+        ctx.moveTo(radarX, radarY - 3);     // Top point
+        ctx.lineTo(radarX - 3, radarY + 3); // Bottom left
+        ctx.lineTo(radarX + 3, radarY + 3); // Bottom right
+        ctx.closePath();
+        ctx.fillStyle = 'red';
+        ctx.fill();
         ctx.restore();
+
     }
     drawHud() {
         if (this.ship && this.ship.isDocked) {

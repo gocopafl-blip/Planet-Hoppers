@@ -102,18 +102,29 @@ class MissionManager {
                     isCompleted = true;
                 }
                 break;
-            // You can add more 'case' statements here for future mission types!
-            /*
+            //
             case 'PICK_UP_CARGO':
-                // This requires orbiting a planet (to "pick up cargo"), then returning to dock.
-                if (scene.name === 'space' && scene.ship && scene.ship.isOrbitLocked && scene.ship.orbitingPlanet) {
-                    // Player is orbiting a planet - we could set a flag here if needed.
-                    hasPickedUpCargo = true; // You'd need to define this variable somewhere.
-            
+                // Get the current state of this mission
+                const missionState = playerDataManager.getActiveMissionState();
+
+                // STEP 1: Check if we need to pick up the cargo.
+                // We check this in the lander scene.
+                if (scene.name === 'lander' && scene.gameState === 'landed' && !missionState.hasPickedUpCargo) {
+                    // Update the mission state to remember the cargo is collected.
+                    playerDataManager.updateActiveMissionState({ hasPickedUpCargo: true });
+
+                    // Show a confirmation to the player, but the mission is NOT complete yet.
+                    alert("Survey Sample Taken: You have retrieved the survey sample. Now, return to the station to collect your contract payout.");
+                }
+
+                // STEP 2: Check if we have the cargo and are at the dock to deliver it.
+                // We check this in the space scene.
+                if (scene.name === 'space' && missionState.hasPickedUpCargo && scene.ship.isDocked) {
+                    // If both conditions are true, the mission is fully completed.
                     isCompleted = true;
                 }
                 break;
-            */
+
         }
 
         // If any of the conditions above were met, finalize the mission.
