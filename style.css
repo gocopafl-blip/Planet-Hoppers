@@ -497,7 +497,9 @@ button:hover {
 #closeNavScreenBtn {
     position: absolute;
     top: 5px;
-    left: 5px;
+    right: 5px;
+    left: auto;
+    bottom: auto;
     width: 30px;
     height: 30px;
     color: #92f2a2;

@@ -10,7 +10,7 @@ class SpaceScene {
         this.difficulty = 'easy';
         this.isPaused = false;
         this.camera = null;
-        this.navScreen = new NavScreen();
+        this.navScreen = new NavScreen(this);
         //this.orbitData = null;
         this.dockingRadius = 1000;
 
@@ -631,8 +631,8 @@ class SpaceScene {
             ctx.beginPath();
             // Draw a star shape for the dock
             const spikes = 5;
-            const outerRadius = 4;
-            const innerRadius = 2;
+            const outerRadius = 6;
+            const innerRadius = 3;
             for (let i = 0; i < spikes * 2; i++) {
                 const radius = i % 2 === 0 ? outerRadius : innerRadius;
                 const angle = (i * Math.PI) / spikes;
