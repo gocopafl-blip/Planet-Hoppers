@@ -6,6 +6,7 @@ const landerScene = {
     lander: null, terrain: null, particles: [], stars: [], camera: null,
     baseGravity: 0, difficultySettings: null, selectedShip: null,
     gameState: 'playing', zoomLevel: 1.5,
+    defaultZoom: 0.5,
     ZOOM_IN: 1.5,
     ZOOM_OUT: 0.75,
     minZoom: 0.5,
@@ -241,6 +242,7 @@ const landerScene = {
             p.update();
             return p.lifespan > 0;
         });
+        missionManager.completeMission(this);
     },
     draw() {
         if (!this.isReady) {
@@ -311,7 +313,7 @@ const landerScene = {
             followSmoothing: 0.08, // A slightly slower, smoother follow for the lander
             zoomSmoothing: 0.04    // A custom zoom speed for the lander scene
         });
-        this.camera.targetZoom = this.ZOOM_IN;
+        this.camera.targetZoom = this.defaultZoom;
         this.particles = [];
         this.gameState = 'playing';
         shipSelectionMenu.style.display = 'none';

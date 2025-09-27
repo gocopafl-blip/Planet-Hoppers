@@ -9,7 +9,7 @@ class MissionManager {
     // This is the main function to generate a new list of missions.
     // In the future, this could get very complex (e.g., based on player level or location).
     // For now, it will just pick a few random missions from our catalogue.
-    generateAvailableMissions(count = 2) {
+    generateAvailableMissions(count = 5) {
         // Clear the old list
         this.availableMissions = [];
 
@@ -55,16 +55,16 @@ class MissionManager {
         const missionExists = this.availableMissions.some(m => m.id === missionId);
         if (missionExists) {
             playerDataManager.setActiveMissionId(missionId);
+            playerDataManager.updateActiveMissionState({});
         } else {
             console.error(`Attempted to accept a mission that is not available: ${missionId}`);
         }
     }
     // Checks for and completes the player's active mission.
-    completeMission(spaceScene) {
+    completeMission(scene) {
         // --- Diagnostic Safeguard ---
-        if (!spaceScene || !spaceScene.ship) {
-            // This will now print a warning to the console if a "ghost call" happens.
-            console.warn("completeMission was called without a valid spaceScene. Ignoring.");
+        if (!scene) {
+            console.warn("completeMission was called without a valid scene. Ignoring.");
             return;
         }
 
@@ -82,21 +82,49 @@ class MissionManager {
         // Check the mission's type to decide how to complete it.
         switch (missionData.type) {
             case 'DELIVER_TO_DOCK':
-                // For this type, completion happens when the ship is docked.
-                if (spaceScene.ship.isDocked) {
+                // This check is specific to the space scene and is complete when the ship is docked.
+                if (scene.name === 'space' && scene.ship && scene.ship.isDocked) {
                     isCompleted = true;
                 }
                 break;
 
             case 'ORBIT_PLANET':
                 // For this type, completion happens when orbiting the correct planet.
-                const targetPlanet = celestialBodies[missionData.destinationPlanetIndex];
-                if (spaceScene.ship.isOrbitLocked && spaceScene.ship.orbitingPlanet === targetPlanet) {
+                //const targetPlanet = celestialBodies[missionData.destinationPlanetIndex];
+                if (scene.name === 'space' && scene.ship && scene.ship.isOrbitLocked && scene.ship.orbitingPlanet) {
                     isCompleted = true;
                 }
                 break;
 
-            // You can add more 'case' statements here for future mission types!
+            case 'LAND_ON_PLANET':
+                // This check is specific to the lander scene
+                if (scene.name === 'lander' && scene.gameState === 'landed') {
+                    isCompleted = true;
+                }
+                break;
+            //
+            case 'PICK_UP_CARGO':
+                // Get the current state of this mission
+                const missionState = playerDataManager.getActiveMissionState();
+
+                // STEP 1: Check if we need to pick up the cargo.
+                // We check this in the lander scene.
+                if (scene.name === 'lander' && scene.gameState === 'landed' && !missionState.hasPickedUpCargo) {
+                    // Update the mission state to remember the cargo is collected.
+                    playerDataManager.updateActiveMissionState({ hasPickedUpCargo: true });
+
+                    // Show a confirmation to the player, but the mission is NOT complete yet.
+                    alert("Survey Sample Taken: You have retrieved the survey sample. Now, return to the station to collect your contract payout.");
+                }
+
+                // STEP 2: Check if we have the cargo and are at the dock to deliver it.
+                // We check this in the space scene.
+                if (scene.name === 'space' && missionState.hasPickedUpCargo && scene.ship.isDocked) {
+                    // If both conditions are true, the mission is fully completed.
+                    isCompleted = true;
+                }
+                break;
+
         }
 
         // If any of the conditions above were met, finalize the mission.

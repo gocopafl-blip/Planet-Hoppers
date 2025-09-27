@@ -9,6 +9,7 @@ function getNewPlayerData() {
         playerBankBalance: 2500,
         activeShipId: 1,
         activeMissionId: null,
+        activeMissionState: null,
 
         // Player's Fleet
         fleet: [

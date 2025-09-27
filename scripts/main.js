@@ -24,6 +24,7 @@ const missionBoardBackgroundImage = new Image();
 let celestialBodies = [];
 let settings = {};
 const playerDataManager = new PlayerDataManager();
+const planetManager = new PlanetManager();
 const missionManager = new MissionManager();
 
 // --- INITIALIZATION ---
@@ -148,6 +149,73 @@ function init() {
     });
 
     const spaceScene = new SpaceScene();
+    const navScreenElement = document.getElementById('nav-screen');
+    canvas.addEventListener('click', (event) => {
+        if (gameManager.activeScene === spaceScene) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            // Define the radar's position and size (from space_scene.js)
+            const radarRadius = 100;
+            const radarX = canvas.width - radarRadius - 20;
+            const radarY = radarRadius + 20;
+
+            // Check if the click was inside the radar circle
+            if (Math.hypot(x - radarX, y - radarY) <= radarRadius) {
+                spaceScene.navScreen.toggle();
+            }
+        }
+    });
+
+    document.getElementById('closeNavScreenBtn').addEventListener('click', () => {
+        if (gameManager.activeScene === spaceScene) {
+            spaceScene.navScreen.hide();
+        }
+    });
+    navScreenElement.addEventListener('wheel', (event) => {
+        event.preventDefault(); // Prevents the whole page from scrolling
+        if (spaceScene.navScreen.isOpen) {
+            spaceScene.navScreen.handleZoom(event);
+        }
+    });
+
+
+    // This event listener handles left, middle, and right clicks
+    navScreenElement.addEventListener('mousedown', (event) => {
+        if (spaceScene.navScreen.isOpen) {
+            event.preventDefault(); // Prevent default browser actions for all buttons
+
+            if (event.button === 0) { // 0 is the left mouse button
+                spaceScene.navScreen.handleSetWaypoint(event);
+            } else if (event.button === 1) { // 1 is the middle mouse button
+                spaceScene.navScreen.handlePanStart(event);
+            } else if (event.button === 2) { // 2 is the right mouse button
+                spaceScene.navScreen.handleSetWaypoint(event);
+            }
+        }
+    });
+
+    // We also need to prevent the right-click context menu from appearing
+    navScreenElement.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+    });
+
+    // Listen for mouse move to pan the map
+    navScreenElement.addEventListener('mousemove', (event) => {
+        if (spaceScene.navScreen.isOpen) {
+            spaceScene.navScreen.handlePanMove(event);
+            spaceScene.navScreen.handleMouseMove(event);
+        }
+    });
+
+    // Listen for mouse up to stop panning
+    navScreenElement.addEventListener('mouseup', (event) => {
+        if (spaceScene.navScreen.isOpen) {
+            spaceScene.navScreen.handlePanEnd(event);
+        }
+    });
+    /*
     document.getElementById('zoomInBtn').addEventListener('click', () => {
         if (gameManager.activeScene === spaceScene) {
             // Calculate the new zoom level, adding 0.2 for a noticeable change
@@ -165,6 +233,7 @@ function init() {
             spaceScene.camera.targetZoom = Math.max(newZoom, spaceScene.minZoom);
         }
     });
+    */
     document.getElementById('descentBtn').addEventListener('click', () => {
         // We only want this to work if we are in the space scene and orbit is locked
         if (gameManager.activeScene === spaceScene && spaceScene.ship.isOrbitLocked) {

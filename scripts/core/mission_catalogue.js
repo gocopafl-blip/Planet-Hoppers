@@ -42,7 +42,21 @@ const missionCatalogue = {
         type: 'ORBIT_PLANET', // Our new mission type!
         destinationPlanetIndex: 0, // The target is the first planet created (index 0).
     },
-    // --- ADD YOUR NEXT MISSION HERE ---
+
+    "LAND_ON_PLANET_01": {
+        title: "Deliver Geological Survey Equipment",
+        description: "Launch a drop ship and land safely at the designated outpost on any planet to deliver the survey gear.",
+        reward: 1500,
+        type: 'LAND_ON_PLANET', // Our brand new mission type!
+    },
+
+    "PICK_UP_CARGO_01": {
+        title: "Pick Up Geological Survey Sample",
+        description: "The Government has begun the task of sampling geological materials of the planets in our system. Launch a drop ship and land safely at the outpost on any planet to pick up a survey sample. Return to the ship and then return and dock with the spacedock.",
+        reward: 2700,
+        type: 'PICK_UP_CARGO', // First multi-stage mission type!
+        hasPickedUpCargo: false, // A flag to track if the cargo has been picked up.
+    },
     // "DELIVERY_BETA_01": { ... },
 
 };

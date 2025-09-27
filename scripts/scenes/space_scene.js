@@ -10,6 +10,7 @@ class SpaceScene {
         this.difficulty = 'easy';
         this.isPaused = false;
         this.camera = null;
+        this.navScreen = new NavScreen(this);
         //this.orbitData = null;
         this.dockingRadius = 1000;
 
@@ -19,6 +20,7 @@ class SpaceScene {
         // --- World Settings ---
         this.WORLD_WIDTH = canvas.width * 200;
         this.WORLD_HEIGHT = canvas.height * 200;
+        this.numPlanets = 18;
 
         // --- Core Movement Settings ---
         this.ROTATION_SPEED = 0.005;  // Halved for more precise rotation control
@@ -122,72 +124,6 @@ class SpaceScene {
         }
     }
 
-    calculatePlanetParameters(minRadius, maxRadius) {
-        const radius = Math.random() * (maxRadius - minRadius) + minRadius;
-        const mass = Math.pow(radius, 3) * this.PLANET_MASS_SCALAR; // Mass scales with volume
-        return {
-            radius,
-            mass
-        };
-    }
-
-    createPlanets() {
-        celestialBodies = [];
-        const numPlanets = 1;
-        const minDistance = 4000;
-        let attempts = 0;
-        const minRadius = 1200;  // Allows for smaller planets
-        const maxRadius = 2000; // Allows for larger planets
-
-        const planetBackgrounds = [
-            ['images/BluePlanet_1a.jpg', 'images/BluePlanet_1b.jpg'], // Backgrounds for planet 1
-            ['images/EarthPlanet_2a.jpg', 'images/EarthPlanet_2b.jpg'], // Backgrounds for planet 2
-            ['images/SwirlingPlanet_3a.jpg', 'images/SwirlingPlanet_3b.jpg']  // Backgrounds for planet 3
-        ];
-
-        while (celestialBodies.length < numPlanets && attempts < 1000) {
-            const params = this.calculatePlanetParameters(minRadius, maxRadius);
-            const planetIndex = celestialBodies.length % planetImages.length;
-            let newPlanet = {
-                x: Math.random() * this.WORLD_WIDTH * 0.8 + this.WORLD_WIDTH * 0.1,
-                y: Math.random() * this.WORLD_HEIGHT * 0.8 + this.WORLD_HEIGHT * 0.1,
-                radius: params.radius,
-                mass: params.mass,
-                image: planetImages[celestialBodies.length % planetImages.length],
-                backgroundOptions: planetBackgrounds[planetIndex] // Assign the backgrounds (renamed to match lander scene expectation)
-            };
-
-            let overlapping = false;
-            for (const existingPlanet of celestialBodies) {
-                const dist = Math.hypot(newPlanet.x - existingPlanet.x, newPlanet.y - existingPlanet.y);
-                const existingWell = existingPlanet.radius * this.GRAVITY_BOUNDARY_MULTIPLIER;
-                const newWell = newPlanet.radius * this.GRAVITY_BOUNDARY_MULTIPLIER;
-                if (dist < existingWell + newWell + minDistance) {
-                    overlapping = true;
-                    break;
-                }
-            }
-            // Check distance from space dock
-            for (const dock of this.spaceDocks) {
-                const distFromDock = Math.hypot(newPlanet.x - dock.x, newPlanet.y - dock.y);
-                const safeDockDistance = 6000;  // Safe distance from any dock
-                if (distFromDock < safeDockDistance + newPlanet.radius) {
-                    overlapping = true;
-                    break;
-                }
-            }
-
-            if (!overlapping) {
-                celestialBodies.push(newPlanet);
-
-            }
-
-            attempts++;
-        }
-        if (attempts >= 1000) {
-            console.warn("Could not place all planets without overlapping. The world might be too crowded.");
-        }
-    }
     createSpaceDock(type, image, x, y, width, height) {
         const dock = new SpaceDock(x, y, width, height, image, type);
         this.spaceDocks.push(dock);
@@ -208,7 +144,7 @@ class SpaceScene {
             // Create the main space dock BEFORE creating planets
             this.createSpaceDock('alpha', dockTypes.alpha.img, this.WORLD_WIDTH / 2 - 1000, this.WORLD_HEIGHT / 2, 2400, 2000);
             // Now create planets - they will avoid the dock
-            this.createPlanets();
+            planetManager.generatePlanets(this.numPlanets, this.WORLD_WIDTH, this.WORLD_HEIGHT, this.spaceDocks);
         }
 
         // Try to restore saved state first, otherwise create new ship and camera
@@ -234,12 +170,12 @@ class SpaceScene {
         }
 
         canvas.style.display = 'block';
-        zoomControls.style.display = 'flex';
+        //zoomControls.style.display = 'flex';
     }
 
     stop() {
         if (thrusterSound.isLoaded) thrusterSound.pause();
-        zoomControls.style.display = 'none';
+        //zoomControls.style.display = 'none';
         document.getElementById('access-dock-ui').style.display = 'none';
         document.getElementById('launch-ui').style.display = 'none';
         document.getElementById('player-hud').style.display = 'none';
@@ -302,8 +238,6 @@ class SpaceScene {
                 }
 
                 this.camera.update();
-                // Check for mission completion every frame
-
 
                 return;
             }
@@ -347,6 +281,7 @@ class SpaceScene {
             return p.lifespan > 0;
         });
         this.camera.update();
+        this.navScreen.update();
 
         /*    if (this.ship.isDocked) {
                  this.orbitData = null;
@@ -425,7 +360,16 @@ class SpaceScene {
                 //shipSelectionMenu.style.display = 'block';
             }
         }
+        // --- Waypoint Arrival Logic ---
+        const nextWaypoint = this.navScreen.waypoints[0] || this.navScreen.finalWaypoint;
+        if (nextWaypoint) {
+            const arrivalRadius = (nextWaypoint.radius || 0) + 500; // Define how close we need to be
+            const distanceToWaypoint = Math.hypot(this.ship.x - nextWaypoint.x, this.ship.y - nextWaypoint.y);
 
+            if (distanceToWaypoint < arrivalRadius) {
+                this.navScreen.arriveAtNextWaypoint();
+            }
+        }
         // --- Dynamic Zoom Logic ---
         //const speed = Math.hypot(this.ship.velX, this.ship.velY);
         //const speedRatio = Math.min(speed / this.maxSpeedForZoom, 1); 
@@ -468,7 +412,8 @@ class SpaceScene {
         this.drawCompass.call(this);
         this.drawRadar.call(this);
         this.drawHud.call(this);
-        this.drawDebugInfo.call(this);
+        //this.drawDebugInfo.call(this);
+        this.navScreen.draw(ctx);
         this.updateHUD();
 
         // Show or hide the "Access Dock" UI based on docking status
@@ -568,50 +513,59 @@ class SpaceScene {
         ctx.restore();
     }
     drawCompass() {
-        if (!this.ship || celestialBodies.length === 0) return;
+        if (!this.ship) return;
 
-        // Find the closest planet
-        let closestPlanet = null;
+        let target = null; // The object we want the compass to point at.
         let minDistance = Infinity;
 
-        // --- REPLACE THE LOOP WITH THIS ---
-        for (const planet of celestialBodies) {
-            const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
-            if (dist < minDistance) {
-                minDistance = dist;
-                closestPlanet = planet;
+        // First, determine what our target is.
+        const nextWaypoint = this.navScreen.waypoints[0] || this.navScreen.finalWaypoint;
+
+        if (nextWaypoint) {
+            // If we have a waypoint, that is our target.
+            target = nextWaypoint;
+            /* Function for finding the closest planet
+        } else {
+            // Otherwise, find the closest planet as a default target.
+            for (const planet of celestialBodies) {
+                const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    target = planet;
+                }
             }
+                */
         }
 
-        // Only proceed if we found a closest planet
-        if (closestPlanet) {
-            // Only draw the compass if the planet is far away, based on its size
-            const compassMaxViewDistance = closestPlanet.radius * 1.5;
-            if (minDistance > compassMaxViewDistance) {
-                const angleToPlanet = Math.atan2(closestPlanet.y - this.ship.y, closestPlanet.x - this.ship.x);
+        // If we have a target, draw the compass.
+        if (target) {
+            const distance = Math.hypot(this.ship.x - target.x, this.ship.y - target.y);
+
+            // Only draw the compass if the target is far away.
+            if (distance > (target.radius || 0) * 1.15) {
+                const angleToTarget = Math.atan2(target.y - this.ship.y, target.x - this.ship.x);
 
                 const hudX = canvas.width / 2;
                 const hudY = canvas.height / 2;
                 const compassRadius = 120;
 
                 ctx.save();
-                ctx.translate(hudX + Math.cos(angleToPlanet) * compassRadius, hudY + Math.sin(angleToPlanet) * compassRadius);
-                ctx.rotate(angleToPlanet + Math.PI / 2);
+                ctx.translate(hudX + Math.cos(angleToTarget) * compassRadius, hudY + Math.sin(angleToTarget) * compassRadius);
+                ctx.rotate(angleToTarget + Math.PI / 2);
 
-                ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.7)'; // Red arrow
                 ctx.beginPath();
                 ctx.moveTo(0, -7.5);
                 ctx.lineTo(-5, 5);
                 ctx.lineTo(5, 5);
                 ctx.closePath();
                 ctx.fill();
-
                 ctx.restore();
 
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                 ctx.font = '22px "Consolas", "Courier New", "Monaco", monospace';
                 ctx.textAlign = 'center';
-                ctx.fillText(`${Math.floor(minDistance)}m`, hudX, hudY + compassRadius + 30);
+                ctx.fillText(`${Math.floor(distance).toLocaleString()}m`, hudX, hudY + compassRadius + 30);
             }
         }
     }
@@ -643,12 +597,6 @@ class SpaceScene {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Draw the player's blip in the center
-        ctx.beginPath();
-        ctx.arc(radarX, radarY, 3, 0, Math.PI * 2);
-        ctx.fillStyle = 'lime';
-        ctx.fill();
-
         // Draw each planet as a blip on the radar
         for (const planet of celestialBodies) {
             const dx = planet.x - this.ship.x;
@@ -674,6 +622,108 @@ class SpaceScene {
             ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
             ctx.fill();
         }
+        // Draw each dock as a blip on the radar
+        for (const dock of this.spaceDocks) {
+            const dx = dock.x - this.ship.x;
+            const dy = dock.y - this.ship.y;
+            const distance = Math.hypot(dx, dy);
+
+            let blipX, blipY;
+
+            if (distance < radarRange) {
+                // Dock is inside radar range, position it proportionally
+                blipX = radarX + dx * radarScale;
+                blipY = radarY + dy * radarScale;
+            } else {
+                // Dock is outside range, pin it to the edge of the radar
+                const angle = Math.atan2(dy, dx);
+                blipX = radarX + Math.cos(angle) * radarRadius;
+                blipY = radarY + Math.sin(angle) * radarRadius;
+            }
+
+            // Draw the dock's blip
+            ctx.beginPath();
+            // Draw a star shape for the dock
+            const spikes = 5;
+            const outerRadius = 6;
+            const innerRadius = 3;
+            for (let i = 0; i < spikes * 2; i++) {
+                const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                const angle = (i * Math.PI) / spikes;
+                const x = blipX + Math.cos(angle) * radius;
+                const y = blipY + Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(40, 219, 239, 0.9)';
+            ctx.fill();
+        }
+
+        // Draw the player's blip in the center (using radarX, radarY - the center of the radar)
+        ctx.beginPath();
+        ctx.moveTo(radarX, radarY - 3);     // Top point
+        ctx.lineTo(radarX - 3, radarY + 3); // Bottom left
+        ctx.lineTo(radarX + 3, radarY + 3); // Bottom right
+        ctx.closePath();
+        ctx.fillStyle = 'red';
+        ctx.fill();
+        ctx.restore();
+
+        // --- NEW RADAR WAYPOINT LOGIC ---
+        // Get the full route from the Nav Screen
+        const routePoints = [this.ship, ...this.navScreen.waypoints];
+        if (this.navScreen.finalWaypoint) {
+            routePoints.push(this.navScreen.finalWaypoint);
+        }
+
+        // This helper function converts a world point to a radar point
+        const toRadarCoords = (point) => {
+            const dx = point.x - this.ship.x;
+            const dy = point.y - this.ship.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < radarRange) {
+                return { x: radarX + dx * radarScale, y: radarY + dy * radarScale };
+            } else {
+                const angle = Math.atan2(dy, dx);
+                return { x: radarX + Math.cos(angle) * radarRadius, y: radarY + Math.sin(angle) * radarRadius };
+            }
+        };
+        // Draw the connecting lines
+        if (routePoints.length > 1) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(radarX, radarY); // Start from player in center
+            for (let i = 1; i < routePoints.length; i++) {
+                const radarPoint = toRadarCoords(routePoints[i]);
+                ctx.lineTo(radarPoint.x, radarPoint.y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Draw rings for the waypoints
+        ctx.lineWidth = 2;
+
+        // Intermediate Waypoints (White Rings)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        this.navScreen.waypoints.forEach(wp => {
+            const radarPoint = toRadarCoords(wp);
+            ctx.beginPath();
+            ctx.arc(radarPoint.x, radarPoint.y, 8, 0, Math.PI * 2); // 8-pixel ring
+            ctx.stroke();
+        });
+
+        // Final Waypoint (Yellow Ring)
+        if (this.navScreen.finalWaypoint) {
+            const radarPoint = toRadarCoords(this.navScreen.finalWaypoint);
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.9)';
+            ctx.beginPath();
+            ctx.arc(radarPoint.x, radarPoint.y, 10, 0, Math.PI * 2); // 10-pixel ring
+            ctx.stroke();
+        }
 
         ctx.restore();
     }
@@ -690,36 +740,38 @@ class SpaceScene {
             ctx.restore();
             return;
         }
-        //if (!this.orbitData) return; // Don't draw if there's no data
-
     }
-    drawDebugInfo() {
-        if (!this.ship || !celestialBodies.length) return;
-
-        // Find the closest planet to the ship
-        const closestPlanet = celestialBodies.reduce((closest, planet) => {
-            const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
-            if (dist < closest.dist) {
-                return { dist, planet };
-            }
-            return closest;
-        }, { dist: Infinity, planet: null }).planet;
-
-        if (!closestPlanet) return;
-
-        // Calculate the distance (radius) from the ship to the center of the planet
-        const radius = Math.hypot(this.ship.x - closestPlanet.x, this.ship.y - closestPlanet.y);
-        const zoom = this.camera.zoomLevel;
-
-        // --- Draw the text on the screen ---
-        ctx.save();
-        ctx.font = '16px "Orbitron"';
-        ctx.fillStyle = 'yellow';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Radius: ${radius.toFixed(0)}`, 10, canvas.height - 30);
-        ctx.fillText(`Zoom: ${zoom.toFixed(2)}`, 10, canvas.height - 10);
-        ctx.restore();
-    }
+    //if (!this.orbitData) return; // Don't draw if there's no data
+    /*
+        }
+        drawDebugInfo() {
+            if (!this.ship || !celestialBodies.length) return;
+    
+            // Find the closest planet to the ship
+            const closestPlanet = celestialBodies.reduce((closest, planet) => {
+                const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
+                if (dist < closest.dist) {
+                    return { dist, planet };
+                }
+                return closest;
+            }, { dist: Infinity, planet: null }).planet;
+    
+            if (!closestPlanet) return;
+    
+            // Calculate the distance (radius) from the ship to the center of the planet
+            const radius = Math.hypot(this.ship.x - closestPlanet.x, this.ship.y - closestPlanet.y);
+            const zoom = this.camera.zoomLevel;
+    
+            // --- Draw the text on the screen ---
+            ctx.save();
+            ctx.font = '16px "Orbitron"';
+            ctx.fillStyle = 'yellow';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Radius: ${radius.toFixed(0)}`, 10, canvas.height - 30);
+            ctx.fillText(`Zoom: ${zoom.toFixed(2)}`, 10, canvas.height - 10);
+            ctx.restore();
+        }
+            */
     updateHUD() {
         const hud = document.getElementById('player-hud');
         if (hud && playerDataManager.data) {
