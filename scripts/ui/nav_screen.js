@@ -149,6 +149,85 @@ class NavScreen {
         ctx.restore(); // This restores the context, removing the pan and zoom for any UI drawing
     }
 
+    handleZoom(event) {
+        const zoomAmount = 0.1;
+        // event.deltaY is negative when scrolling up (zoom in), positive when scrolling down (zoom out)
+        if (event.deltaY < 0) {
+            this.zoom *= (1 + zoomAmount);
+        } else {
+            this.zoom *= (1 - zoomAmount);
+        }
+
+        // Calculate minimum zoom to ensure the world always fits in the canvas
+        const minZoomX = this.navCanvas.width / this.spaceScene.WORLD_WIDTH;
+        const minZoomY = this.navCanvas.height / this.spaceScene.WORLD_HEIGHT;
+        const minZoom = Math.min(minZoomX, minZoomY); // Use the smaller value to ensure both dimensions fit
+
+        // Calculate maximum zoom - let's say 10x the minimum zoom for reasonable detail viewing
+        const maxZoom = minZoom * 10;
+
+        // Clamp the zoom to reasonable limits
+        this.zoom = Math.max(minZoom, Math.min(this.zoom, maxZoom));
+
+        // After changing zoom, re-clamp the pan to prevent showing empty space
+        this.clampPan();
+    }
+
+    handlePanStart(event) {
+        this.isPanning = true;
+        this.lastPanX = event.clientX;
+        this.lastPanY = event.clientY;
+        this.navScreenElement.style.cursor = 'grabbing'; // Change cursor to show panning is active
+    }
+
+    handlePanMove(event) {
+        if (this.isPanning) {
+            const dx = event.clientX - this.lastPanX;
+            const dy = event.clientY - this.lastPanY;
+
+            this.panX += dx;
+            this.panY += dy;
+
+            this.lastPanX = event.clientX;
+            this.lastPanY = event.clientY;
+
+            // Clamp the pan to prevent showing empty space
+            this.clampPan();
+        }
+    }
+
+    handlePanEnd(event) {
+        this.isPanning = false;
+        this.navScreenElement.style.cursor = 'default'; // Change cursor back to normal
+    }
+
+    clampPan() {
+        // Calculate the position of the world's center point on the map
+        const worldCenterX = this.spaceScene.WORLD_WIDTH / 2;
+        const worldCenterY = this.spaceScene.WORLD_HEIGHT / 2;
+
+        // Calculate the maximum distance the pan can be from the center
+        const maxPanX = worldCenterX * this.zoom;
+        const maxPanY = worldCenterY * this.zoom;
+
+        // Calculate the minimum distance needed to keep the map on screen
+        const minPanX = this.navCanvas.width - maxPanX;
+        const minPanY = this.navCanvas.height - maxPanY;
+
+        // Clamp the pan values. The logic is slightly different if the map is smaller than the canvas.
+        if (maxPanX > this.navCanvas.width / 2) {
+            this.panX = Math.max(minPanX, Math.min(this.panX, maxPanX));
+        } else {
+            this.panX = this.navCanvas.width / 2;
+        }
+
+        if (maxPanY > this.navCanvas.height / 2) {
+            this.panY = Math.max(minPanY, Math.min(this.panY, maxPanY));
+        } else {
+            this.panY = this.navCanvas.height / 2;
+        }
+    }
+
     update() {
         if (!this.isOpen) return;
         // Logic for handling pan, zoom, and hover will go here in the next steps

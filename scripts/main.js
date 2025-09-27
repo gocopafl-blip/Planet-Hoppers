@@ -149,6 +149,7 @@ function init() {
     });
 
     const spaceScene = new SpaceScene();
+    const navScreenElement = document.getElementById('nav-screen');
     canvas.addEventListener('click', (event) => {
         if (gameManager.activeScene === spaceScene) {
             const rect = canvas.getBoundingClientRect();
@@ -170,6 +171,34 @@ function init() {
     document.getElementById('closeNavScreenBtn').addEventListener('click', () => {
         if (gameManager.activeScene === spaceScene) {
             spaceScene.navScreen.hide();
+        }
+    });
+    navScreenElement.addEventListener('wheel', (event) => {
+        event.preventDefault(); // Prevents the whole page from scrolling
+        if (spaceScene.navScreen.isOpen) {
+            spaceScene.navScreen.handleZoom(event);
+        }
+    });
+
+    // Listen for mouse down to start panning
+    navScreenElement.addEventListener('mousedown', (event) => {
+        if (spaceScene.navScreen.isOpen && event.button === 1) { // 1 is the middle mouse button
+            event.preventDefault();
+            spaceScene.navScreen.handlePanStart(event);
+        }
+    });
+
+    // Listen for mouse move to pan the map
+    navScreenElement.addEventListener('mousemove', (event) => {
+        if (spaceScene.navScreen.isOpen) {
+            spaceScene.navScreen.handlePanMove(event);
+        }
+    });
+
+    // Listen for mouse up to stop panning
+    navScreenElement.addEventListener('mouseup', (event) => {
+        if (spaceScene.navScreen.isOpen) {
+            spaceScene.navScreen.handlePanEnd(event);
         }
     });
     /*
