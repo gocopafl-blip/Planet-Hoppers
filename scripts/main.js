@@ -26,84 +26,142 @@ let settings = {};
 const playerDataManager = new PlayerDataManager();
 const planetManager = new PlanetManager();
 const missionManager = new MissionManager();
+const assetManager = new AssetManager(); // New Asset Manager
+// Expose globally so other scripts can access assets if needed
+window.assetManager = assetManager;
+
+// Link AssetManager assets to existing game objects
+function linkAssetsToGameObjects() {
+    // Link ship images
+    shipTypes.scout.img = assetManager.getImage('lander_scout') || shipTypes.scout.img;
+    shipTypes.classic.img = assetManager.getImage('lander_classic') || shipTypes.classic.img;
+    shipTypes.heavy.img = assetManager.getImage('lander_heavy') || shipTypes.heavy.img;
+    
+    // Link dock images
+    dockTypes.alpha.img = assetManager.getImage('space_dock_alpha') || dockTypes.alpha.img;
+    
+    // Link space ship image
+    const spaceShip = assetManager.getImage('ship');
+    if (spaceShip) {
+        spaceShipImage.src = spaceShip.src;
+        spaceShipImage.onload = null; // Remove any existing handlers
+        Object.assign(spaceShipImage, spaceShip);
+    }
+    
+    // Link planet images
+    const planet1 = assetManager.getImage('planet1');
+    const planet2 = assetManager.getImage('planet2');
+    const planet3 = assetManager.getImage('planet3');
+    
+    if (planet1) Object.assign(planetImages[0], planet1);
+    if (planet2) Object.assign(planetImages[1], planet2);
+    if (planet3) Object.assign(planetImages[2], planet3);
+    
+    // Link other images
+    const missionBg = assetManager.getImage('mission_board_bg');
+    const spaceDockTerminal = assetManager.getImage('space_dock_terminal');
+    
+    if (missionBg) {
+        missionBoardBackgroundImage.src = missionBg.src;
+        Object.assign(missionBoardBackgroundImage, missionBg);
+    }
+    
+    if (spaceDockTerminal) {
+        spaceDockTerminalImage.src = spaceDockTerminal.src;
+        Object.assign(spaceDockTerminalImage, spaceDockTerminal);
+    }
+    
+    console.log("🔗 Assets linked to game objects successfully!");
+}
 
 // --- INITIALIZATION ---
 function init() {
     playerDataManager.loadData();
-    let imagesLoaded = 0;
+    
+    // Phase 2: Clean AssetManager-based loading
+    console.log("🚀 Loading all game assets...");
+    
     let fontsLoaded = false;
-    const allImages = [
-        ...Object.values(shipTypes).map(s => s.img),
-        ...Object.values(dockTypes).map(d => d.img),
-        spaceShipImage,
-        ...planetImages,
-    ];
-    const totalImages = allImages.length;
-
-    function checkAllAssetsLoaded() {
-        if (imagesLoaded === totalImages && fontsLoaded) {
-            console.log("All game assets loaded!");
-            loadingScreen.style.display = 'none';
-            startScreen.style.display = 'block';
-        }
-    }
-
-    function onAssetLoad() {
-        imagesLoaded++;
-        console.log(`Asset loaded (${imagesLoaded}/${totalImages})`);
-        checkAllAssetsLoaded();
-    }
-
+    
     // Font loading check
     function waitForFonts() {
         if (document.fonts && document.fonts.ready) {
-            // Modern browsers with Font Loading API
             document.fonts.ready.then(() => {
-                console.log("Fonts loaded!");
+                console.log("✅ Fonts loaded!");
                 fontsLoaded = true;
                 checkAllAssetsLoaded();
             });
         } else {
-            // Fallback for older browsers
             setTimeout(() => {
-                console.log("Font loading fallback completed");
+                console.log("✅ Font loading fallback completed");
                 fontsLoaded = true;
                 checkAllAssetsLoaded();
             }, 1000);
         }
     }
-
-    waitForFonts();
-
-    // Attach event handlers *before* setting src
-    allImages.forEach(img => {
-        img.onload = onAssetLoad;
-        img.onerror = (e) => {
-            console.error("An image failed to load:", e.target.src);
-            onAssetLoad(); // Still count it as "loaded" to not block the game
+    
+    function checkAllAssetsLoaded() {
+        if (fontsLoaded && assetManager.getProgress() === 1) {
+            console.log("🎉 All game assets loaded!");
+            
+            // Link assets to existing objects
+            linkAssetsToGameObjects();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Initialize the game
+            landerScene.createStars();
+            loadingScreen.style.display = 'none';
+            startScreen.style.display = 'block';
+            
+            // Start the game loop
+            startGame();
         }
-    });
+    }
+    
+    // Load all assets through AssetManager
+    assetManager.loadAllAssets(
+        () => {
+            console.log("✅ AssetManager: All assets loaded!");
+            checkAllAssetsLoaded();
+        },
+        (loaded, total) => {
+            const percent = Math.round(loaded/total*100);
+            console.log(`📦 Asset loading progress: ${loaded}/${total} (${percent}%)`);
+            
+            // Update loading screen
+            const loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.innerHTML = `
+                <div style="text-align: center; color: white; font-family: 'Orbitron', Arial, sans-serif;">
+                    <h2>LOADING PLANET HOPPERS</h2>
+                    <div style="width: 300px; height: 20px; border: 2px solid #00ff00; margin: 20px auto; background: rgba(0,0,0,0.5);">
+                        <div style="width: ${percent}%; height: 100%; background: linear-gradient(90deg, #00ff00, #00aa00); transition: width 0.3s;"></div>
+                    </div>
+                    <p>${loaded}/${total} assets loaded (${percent}%)</p>
+                </div>
+            `;
+            // Properly center the loading screen
+            loadingScreen.style.cssText = `
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.8);
+                z-index: 9999;
+            `;
+        }
+    );
+    
+    waitForFonts();
+}
 
-    // Now set the src to trigger loading
-    spaceShipImage.src = ASSET_BASE_URL + 'images/ship.png';
-    missionBoardBackgroundImage.src = ASSET_BASE_URL + 'images/OrbitalCargoSystems.jpg';
-    spaceDockTerminalImage.src = ASSET_BASE_URL + 'images/spaceDockTerminal.png';
-    planetImages.forEach((img, index) => {
-        img.src = ASSET_BASE_URL + `images/planet${index + 1}.png`;
-        img.onerror = () => {
-            console.error(`Failed to load planet image ${index + 1}`);
-            // Load a backup image or show a placeholder
-            img.src = ASSET_BASE_URL + 'images/planet1.png';
-        };
-    });
-    Object.values(shipTypes).forEach(ship => {
-        ship.img.src = ASSET_BASE_URL + ship.src;
-    });
-    Object.values(dockTypes).forEach(dock => {
-        dock.img.src = ASSET_BASE_URL + dock.src;
-    });
-    landerScene.createStars();
-
+// --- EVENT LISTENERS SETUP ---
+function setupEventListeners() {
     const missionBoard = document.getElementById('mission-board');
     const missionList = document.getElementById('mission-list');
 
@@ -361,7 +419,10 @@ function init() {
             scene.camera.targetZoom = Math.max(scene.minZoom, Math.min(newZoom, scene.maxZoom));
         }
     }, { passive: false }); // passive: false is needed to allow preventDefault
+}
 
+// --- GAME INITIALIZATION ---
+function startGame() {
     // Start the main game loop
     gameManager.loop();
 }
