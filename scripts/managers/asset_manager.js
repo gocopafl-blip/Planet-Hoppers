@@ -21,21 +21,33 @@ class AssetManager {
         this.onComplete = onComplete;
         this.onProgress = onProgress;
         
-        // Count total assets
-        this.loadingStatus.total = Object.keys(assetCatalogue.images).length + 
-                                   Object.keys(assetCatalogue.sounds).length;
+        // Determine which assets still need loading (idempotent behavior)
+        const pendingImages = Object.entries(assetCatalogue.images)
+            .filter(([key]) => !this.isImageLoaded(key));
+        const pendingSounds = Object.entries(assetCatalogue.sounds)
+            .filter(([key]) => !this.isSoundLoaded(key));
+
+        // Count only pending assets
+        this.loadingStatus.total = pendingImages.length + pendingSounds.length;
         this.loadingStatus.loaded = 0;
         this.loadingStatus.failed = 0;
 
+        if (this.loadingStatus.total === 0) {
+            // Nothing to load
+            console.log("AssetManager: No pending assets to load.");
+            if (this.onComplete) this.onComplete();
+            return;
+        }
+
         console.log(`AssetManager: Starting to load ${this.loadingStatus.total} assets...`);
 
-        // Load images
-        Object.entries(assetCatalogue.images).forEach(([key, path]) => {
+        // Load only pending images
+        pendingImages.forEach(([key, path]) => {
             this.loadImage(key, path);
         });
 
-        // Load sounds
-        Object.entries(assetCatalogue.sounds).forEach(([key, path]) => {
+        // Load only pending sounds
+        pendingSounds.forEach(([key, path]) => {
             this.loadSound(key, path);
         });
     }
@@ -58,19 +70,27 @@ class AssetManager {
 
     loadSound(key, path) {
         const audio = new Audio();
-        
-        audio.oncanplaythrough = () => {
+
+        let counted = false;
+        const markLoaded = () => {
+            if (counted) return;
+            counted = true;
             this.loadedAssets.sounds[key] = audio;
             this.onAssetLoaded(`Sound: ${key}`);
         };
-        
-        audio.onerror = () => {
+
+        audio.addEventListener('canplaythrough', markLoaded, { once: true });
+        // Fallback in case canplaythrough behaves inconsistently
+        audio.addEventListener('loadeddata', markLoaded, { once: true });
+
+        audio.addEventListener('error', () => {
             console.warn(`Failed to load sound: ${key} from ${path}`);
             this.onAssetFailed(`Sound: ${key}`);
-        };
-        
+        }, { once: true });
+
+        audio.preload = 'auto';
         audio.src = path;
-        audio.load(); // Explicitly load the audio
+        audio.load();
     }
 
     onAssetLoaded(assetName) {
@@ -124,3 +144,8 @@ class AssetManager {
         return this.loadingStatus.loaded / this.loadingStatus.total;
     }
 }
+
+// Create global assetManager instance
+const assetManager = new AssetManager();
+// Expose globally so other scripts can access assets
+window.assetManager = assetManager;

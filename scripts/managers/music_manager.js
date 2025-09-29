@@ -1,14 +1,24 @@
 // scripts/managers/music_manager.js
 
-function createSound(src, loop = false, volume = 1.0) {
-    const sound = new Audio(ASSET_BASE_URL + src);
-    sound.isLoaded = false;
-    sound.addEventListener('canplaythrough', () => {
-        sound.isLoaded = true;
-        console.log(`Sound loaded: ${src}`);
-    });
+function createSound(assetKey, loop = false, volume = 1.0) {
+    const sound = assetManager.getSound(assetKey);
+    if (!sound) {
+        console.error(`AssetManager: Sound asset not found for key: ${assetKey}`);
+        return null;
+    }
+    // Consider already-ready audio as loaded immediately
+    sound.isLoaded = sound.readyState >= 3; // HAVE_FUTURE_DATA (3) or HAVE_ENOUGH_DATA (4)
+    // If it wasn't ready yet, mark loaded on first readiness event
+    const markLoaded = () => {
+        if (!sound.isLoaded) {
+            sound.isLoaded = true;
+            console.log(`Sound loaded: ${assetKey}`);
+        }
+    };
+    sound.addEventListener('canplaythrough', markLoaded, { once: true });
+    sound.addEventListener('loadeddata', markLoaded, { once: true });
     sound.addEventListener('error', (e) => {
-        console.error(`Failed to load sound: ${src}`, e);
+        console.error(`Failed to load sound: ${assetKey}`, e);
         sound.isLoaded = false;
     });
     sound.loop = loop;
@@ -22,17 +32,17 @@ class MusicManager {
         // Define all music tracks, organized by scene
         this.playlists = {
             menu: [
-                { src: 'sounds/music_menu.mp3', volume: 0.3 }
+                { src: 'music_menu', volume: 0.3 }
             ],
             space: [
-                { src: 'sounds/music_bold_brave.mp3', volume: 0.3 }, // Placeholder for your new music
-                { src: 'sounds/music_prospect_determined.mp3', volume: 0.3 },
-                { src: 'sounds/music_dark_mystery.mp3', volume: 0.3 },
-                { src: 'sounds/music_trek.mp3', volume: 0.3 },  // Add as many as you like
+                { src: 'music_bold', volume: 0.3 },
+                { src: 'music_prospect', volume: 0.3 },
+                { src: 'music_mystery', volume: 0.3 },
+                { src: 'music_trek', volume: 0.3 },
             ],
             lander: [
-                { src: 'sounds/music_battle_tense.mp3', volume: 0.5 }, // Tense lander music
-                // { src: 'sounds/music_lander_calm.mp3', volume: 0.5 }
+                { src: 'music_battle', volume: 0.5 },
+                // { src: 'music_lander_calm', volume: 0.5 }
             ]
         };
 
@@ -41,9 +51,7 @@ class MusicManager {
         this.currentPlaylist = [];
         this.currentTrackIndex = 0;
         this.isMuted = false; // Track mute state
-
-        // Preload all music files
-        this.preloadAll();
+        // Do not preload immediately; assets may not be loaded yet.
     }
 
     preloadAll() {
@@ -51,12 +59,31 @@ class MusicManager {
             this.playlists[scene].forEach(trackData => {
                 if (!this.audioTracks[trackData.src]) {
                     const audio = createSound(trackData.src, false, trackData.volume); // Music never loops individually
+                    if (!audio) return; // Asset not ready yet
                     // Add listener to play the next track when one ends
                     audio.addEventListener('ended', () => this.playNextTrack());
                     this.audioTracks[trackData.src] = audio;
                 }
             });
         }
+    }
+
+    // Ensure an audio track for the key exists by pulling from AssetManager when ready
+    ensureTrackLoaded(assetKey) {
+        if (this.audioTracks[assetKey]) return true;
+        const audio = createSound(assetKey, false, this.getConfiguredVolume(assetKey));
+        if (!audio) return false;
+        audio.addEventListener('ended', () => this.playNextTrack());
+        this.audioTracks[assetKey] = audio;
+        return true;
+    }
+
+    getConfiguredVolume(assetKey) {
+        for (const scene in this.playlists) {
+            const track = this.playlists[scene].find(t => t.src === assetKey);
+            if (track) return track.volume;
+        }
+        return 0.3;
     }
 
     playPlaylistForScene(sceneName) {
@@ -82,19 +109,26 @@ class MusicManager {
     playCurrentTrack() {
         if (this.currentPlaylist.length > 0) {
             const trackSrc = this.currentPlaylist[this.currentTrackIndex];
+            if (!this.ensureTrackLoaded(trackSrc)) {
+                console.warn(`MusicManager: Track '${trackSrc}' not ready yet.`);
+                return;
+            }
             this.currentTrack = this.audioTracks[trackSrc];
-            if (this.currentTrack && this.currentTrack.isLoaded) {
+            const isReady = this.currentTrack && (this.currentTrack.isLoaded || this.currentTrack.readyState >= 3);
+            if (isReady) {
                 this.currentTrack.currentTime = 0;
                 // Set volume based on mute state before playing
                 this.currentTrack.volume = this.isMuted ? 0 : this.getCurrentTrackVolume();
                 this.currentTrack.play().catch(e => console.error("Music play failed:", e));
             } else if (this.currentTrack) {
                 // If not loaded, wait for it to load
-                this.currentTrack.addEventListener('canplaythrough', () => {
+                const tryPlay = () => {
                     // Set volume based on mute state before playing
                     this.currentTrack.volume = this.isMuted ? 0 : this.getCurrentTrackVolume();
                     this.currentTrack.play().catch(e => console.error("Music play failed:", e));
-                }, { once: true });
+                };
+                this.currentTrack.addEventListener('canplaythrough', tryPlay, { once: true });
+                this.currentTrack.addEventListener('loadeddata', tryPlay, { once: true });
             }
         }
     }
@@ -140,11 +174,20 @@ class MusicManager {
 }
 
 
-// Create a single instance of the MusicManager
+// Create a single instance of the MusicManager and expose it globally
 const musicManager = new MusicManager();
+window.musicManager = musicManager;
 
 // --- Sound Effects ---
-const thrusterSound = createSound('sounds/thruster.mp3', true, 0.5);
-const explosionSound = createSound('sounds/explosion.mp3', false, 0.7);
-const airlockSound = createSound('sounds/airlock.mp3', false, 0.7);
+// Initialize SFX after assets are loaded to avoid null references
+let thrusterSound; 
+let explosionSound; 
+let airlockSound; 
 let airlockSoundPlayed = false;
+
+function initializeSfx() {
+    thrusterSound = createSound('thruster', true, 0.5);
+    explosionSound = createSound('explosion', false, 0.7);
+    airlockSound = createSound('airlock', false, 0.7);
+}
+window.initializeSfx = initializeSfx;

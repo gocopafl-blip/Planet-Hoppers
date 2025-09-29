@@ -9,11 +9,10 @@ const planetCatalogue = {
         planetTypeId: "gas_giant",
         namePrefixes: ["Jovin", "Aerlon", "Strato", "Helios"], // For random name generation
         baseRadius: { min: 2600, max: 3000 },
-        planetImages: ["images/planet1.png", "images/planet3.png"], // Can use these images
-        landerBackgrounds: [
-            "images/EarthPlanet_2a.jpg"
-            // Gas giants don't have surfaces to land on, so this is empty.
-        ],
+        // Use asset keys from asset_catalogue.js
+        planetImages: ["planet1", "planet3"],
+        // Gas giants don't have surfaces; keep a placeholder background image key if needed
+        landerBackgrounds: ["earth_planet_a"],
         // --- Lander Scene Parameters ---
         baseGravity: 0, // No landing
         wind: { min: 0, max: 0 },
@@ -28,11 +27,8 @@ const planetCatalogue = {
         planetTypeId: "terran_world",
         namePrefixes: ["Terra", "Gaea", "Veridia", "Eden"],
         baseRadius: { min: 1800, max: 2200 },
-        planetImages: ["images/planet2.png"],
-        landerBackgrounds: [
-            "images/EarthPlanet_2a.jpg",
-            "images/EarthPlanet_2b.jpg"
-        ],
+        planetImages: ["planet2"],
+        landerBackgrounds: ["earth_planet_a", "earth_planet_b"],
         // --- Lander Scene Parameters ---
         baseGravity: 0.01,
         wind: { min: 0, max: 5 }, // Gentle breezes
@@ -45,11 +41,8 @@ const planetCatalogue = {
         planetTypeId: "volcanic_world",
         namePrefixes: ["Hades", "Crematoria", "Infernus", "Pyra"],
         baseRadius: { min: 1400, max: 1800 },
-        planetImages: ["images/planet3.png"], // Could use a reddish planet image here
-        landerBackgrounds: [
-            "images/SwirlingPlanet_3a.jpg",
-            "images/SwirlingPlanet_3b.jpg"
-        ],
+        planetImages: ["planet3"],
+        landerBackgrounds: ["swirling_planet_a", "swirling_planet_b"],
         // --- Lander Scene Parameters ---
         baseGravity: 0.012,
         wind: { min: 2, max: 10 }, // Gusty, unpredictable winds

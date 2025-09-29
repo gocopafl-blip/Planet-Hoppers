@@ -285,22 +285,36 @@ const landerScene = {
             console.log('Background options found:', settings.planet.backgroundOptions);
             const backgrounds = settings.planet.backgroundOptions;
             const randomIndex = Math.floor(Math.random() * backgrounds.length);
-            const randomBackgroundSrc = ASSET_BASE_URL + backgrounds[randomIndex];
-            console.log('Loading background:', randomBackgroundSrc);
+            const randomBackgroundKey = backgrounds[randomIndex];
+            console.log('Selecting background key:', randomBackgroundKey);
 
-            this.backgroundImage = new Image();
-            this.backgroundImage.src = randomBackgroundSrc;
-
-            // The 'onload' handler will now "open the gate"
-            this.backgroundImage.onload = () => {
-                console.log(`Lander background loaded successfully.`);
-                this.isReady = true; // Open the gate!
-            };
-            this.backgroundImage.onerror = () => {
-                console.error(`Failed to load lander background: ${randomBackgroundSrc}`);
-                this.backgroundImage = null; // Set to null if it fails to load
-                this.isReady = true; // Still open the gate, but with no background.
-            };
+            // Try to get a preloaded image from the AssetManager
+            const preloadedBg = assetManager.getImage(randomBackgroundKey);
+            if (preloadedBg) {
+                this.backgroundImage = preloadedBg;
+                console.log('Using preloaded background image.');
+                this.isReady = true;
+            } else {
+                console.warn(`Background image for key '${randomBackgroundKey}' was not preloaded. Falling back to lazy load.`);
+                const randomBackgroundSrc = assetCatalogue.images[randomBackgroundKey];
+                if (randomBackgroundSrc) {
+                    this.backgroundImage = new Image();
+                    this.backgroundImage.src = randomBackgroundSrc;
+                    this.backgroundImage.onload = () => {
+                        console.log(`Lander background (lazy) loaded successfully.`);
+                        this.isReady = true;
+                    };
+                    this.backgroundImage.onerror = () => {
+                        console.error(`Failed to load lander background (lazy): ${randomBackgroundSrc}`);
+                        this.backgroundImage = null;
+                        this.isReady = true;
+                    };
+                } else {
+                    console.error(`No asset path found for background key: ${randomBackgroundKey}`);
+                    this.backgroundImage = null;
+                    this.isReady = true;
+                }
+            }
         } else {
             console.log('No background options found, using starry background');
             this.backgroundImage = null; // No background if no planet data is provided

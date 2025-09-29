@@ -36,11 +36,12 @@ class PlanetManager {
                 y: Math.random() * worldHeight * 0.8 + worldHeight * 0.1,
                 radius: radius,
                 mass: mass,
-                image: this.getRandomElement(planetDNA.planetImages.map(src => {
-                    const img = new Image();
-                    img.src = ASSET_BASE_URL + src;
-                    return img;
-                })),
+                // Retrieve a preloaded planet image from the AssetManager by key
+                image: this.getRandomElement(
+                    planetDNA.planetImages
+                        .map(key => assetManager.getImage(key))
+                        .filter(img => !!img)
+                ),
                 backgroundOptions: planetDNA.landerBackgrounds,
                 // Pass all the other DNA properties directly to the planet object
                 ...planetDNA

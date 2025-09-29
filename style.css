@@ -111,7 +111,7 @@ button:hover {
     border-radius: 10px;
     /* Optional: adds rounded corners */
 
-    background-image: url('https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/start_screen_background.png');
+    background-image: url('https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/images/dock_backgrounds/start_screen_background.png');
     background-size: cover;
     /* Stretches the image to cover the div */
     background-position: center;

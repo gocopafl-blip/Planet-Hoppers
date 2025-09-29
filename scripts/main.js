@@ -26,9 +26,7 @@ let settings = {};
 const playerDataManager = new PlayerDataManager();
 const planetManager = new PlanetManager();
 const missionManager = new MissionManager();
-const assetManager = new AssetManager(); // New Asset Manager
-// Expose globally so other scripts can access assets if needed
-window.assetManager = assetManager;
+// AssetManager instance is now created in asset_manager.js
 
 // Link AssetManager assets to existing game objects
 function linkAssetsToGameObjects() {
@@ -106,6 +104,14 @@ function init() {
             
             // Link assets to existing objects
             linkAssetsToGameObjects();
+
+            // Initialize audio now that assets are loaded
+            if (window.musicManager && typeof musicManager.preloadAll === 'function') {
+                musicManager.preloadAll();
+            }
+            if (typeof window.initializeSfx === 'function') {
+                window.initializeSfx();
+            }
             
             // Setup event listeners
             setupEventListeners();
