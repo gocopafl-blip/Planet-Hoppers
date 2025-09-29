@@ -4,24 +4,33 @@
 const assetCatalogue = {
     // Images
     images: {
-        "ship": "assets/images/ship.png",
-        "lander_scout": "assets/images/lander-scout.png",
-        "lander_classic": "assets/images/lander-classic.png",
-        "lander_heavy": "assets/images/lander-heavy.png",
-        "space_dock_alpha": "assets/images/spacedockalpha.png",
-        "space_dock_terminal": "assets/images/spaceDockTerminal.png",
-        "planet1": "assets/images/planet1.png",
-        "planet2": "assets/images/planet2.png",
-        "planet3": "assets/images/planet3.png",
-        "pea_drop_ship": "assets/images/peaDropShip.png",
-        "mission_board_bg": "assets/images/OrbitalCargoSystems.png",
-        "start_screen_bg": "assets/images/start_screen_background.png",
-        "earth_planet_a": "assets/images/EarthPlanet_2a.jpg",
-        "earth_planet_b": "assets/images/EarthPlanet_2b.jpg",
-        "blue_planet_a": "assets/images/BluePlanet_1a.jpg",
-        "blue_planet_b": "assets/images/BluePlanet_1b.jpg",
-        "swirling_planet_a": "assets/images/SwirlingPlanet_3a.jpg",
-        "swirling_planet_b": "assets/images/SwirlingPlanet_3b.jpg"
+        "ship": "assets/images/ships/ship.png",
+        "default_ship": "assets/images/ships/defaultShip.png",
+        /*
+        "apex_dart": 'assets/images/ships/small_ships/apex_dart.png',
+        "ad_glam_shot": 'assets/images/ships/small_ships/ad_glam_shot.png',
+        "echo_pacer": 'assets/images/ships/small_ships/echo_pacer.png',
+        "ep_glam_shot": 'assets/images/ships/small_ships/ep_glam_shot.png',
+        "zenith_runner": 'assets/images/ships/small_ships/zenith_runner.png',
+        "zr_glam_shot": 'assets/images/ships/small_ships/zr_glam_shot.png',
+        */
+        "lander_scout": "assets/images/ships/lander-scout.png",
+        "lander_classic": "assets/images/ships/lander-classic.png",
+        "lander_heavy": "assets/images/ships/lander-heavy.png",
+        "space_dock_alpha": "assets/images/spacedocks/spacedockalpha.png",
+        "space_dock_terminal": "assets/images/dock_backgrounds/spaceDockTerminal.png",
+        "planet1": "assets/images/planets/planet1.png",
+        "planet2": "assets/images/planets/planet2.png",
+        "planet3": "assets/images/planets/planet3.png",
+        "pea_drop_ship": "assets/images/ships/drop_ships/peaDropShip.png",
+        "mission_board_bg": "assets/images/dock_backgrounds/OrbitalCargoSystems.jpg",
+        "start_screen_bg": "assets/images/dock_backgrounds/start_screen_background.png",
+        "earth_planet_a": "assets/images/planets/lander_backgrounds/EarthPlanet_2a.jpg",
+        "earth_planet_b": "assets/images/planets/lander_backgrounds/EarthPlanet_2b.jpg",
+        "blue_planet_a": "assets/images/planets/lander_backgrounds/BluePlanet_1a.jpg",
+        "blue_planet_b": "assets/images/planets/lander_backgrounds/BluePlanet_1b.jpg",
+        "swirling_planet_a": "assets/images/planets/lander_backgrounds/SwirlingPlanet_3a.jpg",
+        "swirling_planet_b": "assets/images/planets/lander_backgrounds/SwirlingPlanet_3b.jpg"
     },
 
     // Sounds
@@ -29,11 +38,11 @@ const assetCatalogue = {
         "thruster": "assets/sounds/thruster.mp3",
         "explosion": "assets/sounds/explosion.mp3",
         "airlock": "assets/sounds/airlock.mp3",
-        "music_menu": "assets/sounds/music_menu.mp3",
-        "music_battle": "assets/sounds/music_battle_tense.mp3",
-        "music_bold": "assets/sounds/music_bold_brave.mp3",
-        "music_prospect": "assets/sounds/music_prospect_determined.mp3",
-        "music_mystery": "assets/sounds/music_dark_mystery.mp3",
-        "music_trek": "assets/sounds/music_trek.mp3"
+        "music_menu": "assets/sounds/music/music_menu.mp3",
+        "music_battle": "assets/sounds/music/music_battle_tense.mp3",
+        "music_bold": "assets/sounds/music/music_bold_brave.mp3",
+        "music_prospect": "assets/sounds/music/music_prospect_determined.mp3",
+        "music_mystery": "assets/sounds/music/music_dark_mystery.mp3",
+        "music_trek": "assets/sounds/music/music_trek.mp3"
     }
 };

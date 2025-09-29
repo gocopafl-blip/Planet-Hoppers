@@ -41,7 +41,7 @@ function linkAssetsToGameObjects() {
     dockTypes.alpha.img = assetManager.getImage('space_dock_alpha') || dockTypes.alpha.img;
     
     // Link space ship image
-    const spaceShip = assetManager.getImage('ship');
+    const spaceShip = assetManager.getImage('default_ship');
     if (spaceShip) {
         spaceShipImage.src = spaceShip.src;
         spaceShipImage.onload = null; // Remove any existing handlers
