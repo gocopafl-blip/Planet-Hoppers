@@ -2,7 +2,8 @@ class Ship {
     constructor(x, y, game) {
         this.x = x; this.y = y; this.velX = 0; this.velY = 0;
         this.angle = -Math.PI / 2;
-        this.rotation = 0; this.thrusting = false;
+        this.rotation = 0; 
+        this.thrusting = false;
         this.reversing = false;
         this.rotatingLeft = false;
         this.rotatingRight = false;

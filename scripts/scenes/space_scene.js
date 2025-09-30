@@ -23,7 +23,7 @@ class SpaceScene {
         this.numPlanets = 18;
 
         // --- Core Movement Settings ---
-        this.ROTATION_SPEED = 0.005;  // Halved for more precise rotation control
+        this.ROTATION_SPEED = 0.003;  // Halved for more precise rotation control
         this.THRUST_POWER = 0.03;    // Reduced for smoother acceleration
 
         // --- Orbital Mechanics Settings ---
