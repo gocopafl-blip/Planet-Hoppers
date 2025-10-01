@@ -13,3 +13,7 @@ canvas.width = 1000;
 canvas.height = 700;
 
 const ASSET_BASE_URL = 'https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/';
+
+function degreesToRadians(degrees) {
+    return degrees * (Math.PI / 180);
+}

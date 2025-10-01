@@ -16,7 +16,7 @@ const shipTypes = {
     classic: { src: 'images/lander-classic.png', width: 80, height: 80, img: new Image(), thrusterOffset: 40 },
     heavy: { src: 'images/lander-heavy.png', width: 160, height: 160, img: new Image(), thrusterOffset: 65 }
 };
-const spaceShipImage = new Image();
+//const spaceShipImage = new Image();
 const planetImages = [new Image(), new Image(), new Image()];
 const spaceDockImages = [new Image()];
 const spaceDockTerminalImage = new Image();
@@ -38,14 +38,15 @@ function linkAssetsToGameObjects() {
     // Link dock images
     dockTypes.alpha.img = assetManager.getImage('space_dock_alpha') || dockTypes.alpha.img;
     
-    // Link space ship image
+    // Link space ship image 
+    /*
     const spaceShip = assetManager.getImage('default_ship');
     if (spaceShip) {
         spaceShipImage.src = spaceShip.src;
         spaceShipImage.onload = null; // Remove any existing handlers
         Object.assign(spaceShipImage, spaceShip);
     }
-    
+    */
     // Link planet images
     const planet1 = assetManager.getImage('planet1');
     const planet2 = assetManager.getImage('planet2');

@@ -42,10 +42,10 @@ const shipCatalogue = {
 
             //Thruster Configuration using Ratios
             shipThrusters: {
-                front_left:  { x_ratio: -0.167, y_ratio: -0.213, angle: -0.785 },
-                front_right: { x_ratio:  0.167, y_ratio: -0.213, angle:  0.785 },
-                rear_left:   { x_ratio: -0.167, y_ratio:  0.370, angle:  0.785 },
-                rear_right:  { x_ratio:  0.192, y_ratio:  0.370, angle: -0.785 }
+                front_left:  { x_ratio: -0.45, y_ratio: -0.070, angle_deg:  360 },
+                front_right: { x_ratio:  0.45, y_ratio: -0.070, angle_deg:  360 },
+                rear_left:   { x_ratio: -0.45, y_ratio:  0.040, angle_deg:  0 },
+                rear_right:  { x_ratio:  0.45, y_ratio:  0.040, angle_deg:  0 }
             },
         },
     }

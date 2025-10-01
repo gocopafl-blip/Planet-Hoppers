@@ -22,10 +22,6 @@ class SpaceScene {
         this.WORLD_HEIGHT = canvas.height * 200;
         this.numPlanets = 18;
 
-        // --- Core Movement Settings ---
-        this.ROTATION_SPEED = 0.003;  // Halved for more precise rotation control
-        this.THRUST_POWER = 0.03;    // Reduced for smoother acceleration
-
         // --- Orbital Mechanics Settings ---
         this.GRAVITY_BOUNDARY_MULTIPLIER = 1.35;  // Gravity well extends to 1.5x planet radius
         this.ORBITAL_CONSTANT = 0.00035;         // Reduced for more manageable orbital velocities
@@ -50,72 +46,6 @@ class SpaceScene {
         this.GRAVITY_ASSIST_MAX_SPEED = 10.0;
         this.MAX_SAFE_STRUCTURAL_SPEED = 25.0;
     }
-
-    getRotatedPosition(offsetX, offsetY) {
-        const ship = this.ship;
-        const correctedAngle = ship.angle + Math.PI / 2;
-        const cos = Math.cos(correctedAngle);
-        const sin = Math.sin(correctedAngle);
-        return {
-            x: ship.x + (offsetX * cos) - (offsetY * sin),
-            y: ship.y + (offsetX * sin) + (offsetY * cos)
-        };
-    }
-
-    emitThrusterParticles() {
-        if (!this.ship) return;
-        const ship = this.ship;
-
-        // Helper function to emit a particle from a thruster
-        const emitFromThruster = (thruster, baseAngle, speed, isRotation = false) => {
-            const pos = this.getRotatedPosition(thruster.x, thruster.y);
-            // Calculate final angle based on ship's orientation and thruster's outward angle
-            const particleAngle = ship.angle + baseAngle + thruster.outwardAngle;
-            this.particles.push(new SpaceParticle(
-                pos.x, pos.y,
-                particleAngle,
-                speed,
-                isRotation,
-                ship.velX,    // Pass ship's current X velocity
-                ship.velY     // Pass ship's current Y velocity
-            ));
-        };
-
-        if (ship.thrusting) { // Main engines (rear thrusters) firing backward
-            emitFromThruster(ship.thrusters.rear_left, Math.PI, 3);   // Rear left fires backward
-            emitFromThruster(ship.thrusters.rear_right, Math.PI, 3);  // Rear right fires backward
-        }
-
-        if (ship.reversing) { // Front RCS thrusters firing forward
-            emitFromThruster(ship.thrusters.front_left, 0, 2);    // Front left fires forward
-            emitFromThruster(ship.thrusters.front_right, 0, 2);   // Front right fires forward
-        }
-
-        if (ship.rotatingRight) { // Clockwise rotation
-            // Right side thrusters fire outward
-            emitFromThruster(ship.thrusters.front_left, 0, 1, true);       // Front right fires outward
-            emitFromThruster(ship.thrusters.rear_right, Math.PI, 1, true);  // Rear right fires outward
-        }
-
-        if (ship.rotatingLeft) { // Counter-clockwise rotation
-            // Left side thrusters fire outward
-            emitFromThruster(ship.thrusters.front_right, 0, 1, true);       // Front left fires outward
-            emitFromThruster(ship.thrusters.rear_left, Math.PI, 1, true);  // Rear left fires outward
-        }
-
-        if (ship.strafingRight) { // Strafe right (left thrusters fire right)
-            // Left thrusters fire to the right
-            emitFromThruster(ship.thrusters.front_left, -Math.PI / 4, 1.5, true);  // Front left fires right
-            emitFromThruster(ship.thrusters.rear_left, -Math.PI / 1.4, 1.5, true);   // Rear left fires right
-        }
-
-        if (ship.strafingLeft) { // Strafe left (right thrusters fire left)
-            // Right thrusters fire to the left
-            emitFromThruster(ship.thrusters.front_right, Math.PI / 4, 1.5, true); // Front right fires left
-            emitFromThruster(ship.thrusters.rear_right, Math.PI / 1.4, 1.5, true);  // Rear right fires left
-        }
-    }
-
 
     createStars() {
         this.stars = [];
@@ -152,8 +82,9 @@ class SpaceScene {
             // No saved state, create new ship and camera at starting position
             const alphaDock = this.spaceDocks[0];
             if (alphaDock) {
-                // Position the ship 1000 units to the right of the dock, and 300 units below
-                this.ship = new Ship(alphaDock.x + 980, alphaDock.y + 270, this);
+                // Position the ship 980 units to the right of the dock, and 270 units below
+                const startingShipData = shipCatalogue['default_ship']; 
+                this.ship = new Ship(alphaDock.x + 980, alphaDock.y + 270, this, startingShipData);
             } else {
                 // Fallback position if no dock exists
                 this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this);
@@ -275,7 +206,7 @@ class SpaceScene {
         }
 
         // --- 4. FINALLY, HANDLE VISUALS AND OTHER PHYSICS ---
-        this.emitThrusterParticles();
+        this.ship.emitThrusterParticles();
         this.particles = this.particles.filter(p => {
             p.update();
             return p.lifespan > 0;
