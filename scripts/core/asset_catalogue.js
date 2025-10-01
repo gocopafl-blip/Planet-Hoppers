@@ -2,6 +2,7 @@
 // Central catalogue of all game assets
 
 const assetCatalogue = {
+    
     // Images
     images: {
         "ship": "assets/images/ships/ship.png",

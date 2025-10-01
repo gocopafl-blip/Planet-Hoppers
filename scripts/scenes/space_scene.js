@@ -54,6 +54,7 @@ class SpaceScene {
         }
     }
 
+    
     createSpaceDock(type, image, x, y, width, height) {
         const dock = new SpaceDock(x, y, width, height, image, type);
         this.spaceDocks.push(dock);
