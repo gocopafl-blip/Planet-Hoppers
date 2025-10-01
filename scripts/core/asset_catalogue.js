@@ -6,14 +6,14 @@ const assetCatalogue = {
     images: {
         "ship": "assets/images/ships/ship.png",
         "default_ship": "assets/images/ships/defaultShip.png",
-        /*
-        "apex_dart": 'assets/images/ships/small_ships/apex_dart.png',
-        "ad_glam_shot": 'assets/images/ships/small_ships/ad_glam_shot.png',
-        "echo_pacer": 'assets/images/ships/small_ships/echo_pacer.png',
-        "ep_glam_shot": 'assets/images/ships/small_ships/ep_glam_shot.png',
-        "zenith_runner": 'assets/images/ships/small_ships/zenith_runner.png',
-        "zr_glam_shot": 'assets/images/ships/small_ships/zr_glam_shot.png',
-        */
+        
+        "apex_dart": 'assets/images/ships/small_ships/apex_dart/apex_dart.png',
+        "ad_glam_shot": 'assets/images/ships/small_ships/apex_dart/ad_glam_shot.png',
+        "echo_pacer": 'assets/images/ships/small_ships/echo_pacer/echo_pacer.png',
+        "ep_glam_shot": 'assets/images/ships/small_ships/echo_pacer/ep_glam_shot.png',
+        "zenith_runner": 'assets/images/ships/small_ships/zenith_runner/zenith_runner.png',
+        "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.png',
+
         "lander_scout": "assets/images/ships/lander-scout.png",
         "lander_classic": "assets/images/ships/lander-classic.png",
         "lander_heavy": "assets/images/ships/lander-heavy.png",
