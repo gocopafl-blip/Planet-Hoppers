@@ -26,6 +26,13 @@ let settings = {};
 const playerDataManager = new PlayerDataManager();
 const planetManager = new PlanetManager();
 const missionManager = new MissionManager();
+const fleetManager = new FleetManager();
+
+
+    
+ 
+    
+
 // AssetManager instance is now created in asset_manager.js
 
 // Link AssetManager assets to existing game objects

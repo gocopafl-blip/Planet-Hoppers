@@ -7,8 +7,11 @@ class Camera {
 
         this.x = target ? target.x : 0;
         this.y = target ? target.y : 0;
-        this.zoomLevel = 1.0;
-        this.targetZoom = 1.0; // The zoom level we are smoothly moving towards
+        
+        // Use ship's default zoom or fallback to 1.0
+        const defaultZoom = settings.defaultZoom ?? 1.0;
+        this.zoomLevel = defaultZoom;
+        this.targetZoom = defaultZoom; // The zoom level we are smoothly moving towards
         this.isManualZooming = false;
         this.manualZoomTimer = 0;
 

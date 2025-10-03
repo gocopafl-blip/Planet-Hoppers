@@ -29,7 +29,7 @@ class SpaceScene {
 
         // --- Camera Settings ---
         this.minZoom = 0.1; // minZoom is now used to configure the camera
-        this.maxZoom = 2.0;
+        this.maxZoom = 2.5;
         //this.maxSpeedForZoom = 15; Used for dynamic zoom - currently disabled
         this.zoomSmoothing = 0.03;
 
@@ -84,17 +84,22 @@ class SpaceScene {
             const alphaDock = this.spaceDocks[0];
             if (alphaDock) {
                 // Position the ship 980 units to the right of the dock, and 270 units below
-                const startingShipData = shipCatalogue['default_ship']; 
-                this.ship = new Ship(alphaDock.x + 980, alphaDock.y + 270, this, startingShipData);
+                const startingShipData = fleetManager.getActiveShipData(); // Default ship if none selected
+                this.ship = new Ship(alphaDock.x + 980, alphaDock.y + -50, this, startingShipData);
             } else {
-                // Fallback position if no dock exists
-                this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this);
+                // Fallback position if no dock exists               
+                const startingShipData = fleetManager.getActiveShipData(); // Add missing shipData               
+                this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
             }
 
             // Set up the camera to follow the ship
+            const shipData = fleetManager.getActiveShipData();
+            const defaultZoom = shipData.shipDefaultZoom || 1.0;
+            
             this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
                 zoomSmoothing: this.zoomSmoothing,
-                followSmoothing: 0.5  // Instant camera following for tight ship centering
+                followSmoothing: 0.5,  // Instant camera following for tight ship centering
+                defaultZoom: defaultZoom  // Pass ship's default zoom
             });
         } else {
             // State was restored, but make sure camera target is set correctly
@@ -344,7 +349,7 @@ class SpaceScene {
         this.drawCompass.call(this);
         this.drawRadar.call(this);
         this.drawHud.call(this);
-        //this.drawDebugInfo.call(this);
+        this.drawDebugInfo.call(this);
         this.navScreen.draw(ctx);
         this.updateHUD();
 
@@ -674,8 +679,8 @@ class SpaceScene {
         }
     }
     //if (!this.orbitData) return; // Don't draw if there's no data
-    /*
-        }
+    
+        
         drawDebugInfo() {
             if (!this.ship || !celestialBodies.length) return;
     
@@ -703,7 +708,8 @@ class SpaceScene {
             ctx.fillText(`Zoom: ${zoom.toFixed(2)}`, 10, canvas.height - 10);
             ctx.restore();
         }
-            */
+    
+            
     updateHUD() {
         const hud = document.getElementById('player-hud');
         if (hud && playerDataManager.data) {

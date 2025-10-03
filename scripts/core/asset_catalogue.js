@@ -15,6 +15,8 @@ const assetCatalogue = {
         "zenith_runner": 'assets/images/ships/small_ships/zenith_runner/zenith_runner.png',
         "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.png',
 
+        "black_falcon": 'assets/images/ships/large_ships/BlackFalcon.png',
+
         "lander_scout": "assets/images/ships/lander-scout.png",
         "lander_classic": "assets/images/ships/lander-classic.png",
         "lander_heavy": "assets/images/ships/lander-heavy.png",

@@ -1,4 +1,30 @@
-const fleetManager = {
+class FleetManager {
+
+    constructor() {
+        // --- THIS IS THE LINE YOU WILL CHANGE FOR TESTING ---
+        // To test a different ship, just change the text below.
+        // For example: 'apex_dart' or 'echo_pacer'
+        //this.activeShipId = 'default_ship';
+        //this.activeShipId = 'apex_dart';
+        //this.activeShipId = 'echo_pacer';
+        //this.activeShipId = 'zenith_runner';
+        this.activeShipId = 'black_falcon'; // Default active ship
+    }
+
+    // A method to get the full data object for the active ship
+    getActiveShipData() {
+        // Look in the shipCatalogue and return the data for the active ship
+        return shipCatalogue[this.activeShipId];
+    }
+/*
+    // A placeholder for the future UI-driven method
+    setActiveShip(shipId) {
+        // In the future, a button click in the UI will call this function.
+        // For now, we just change the activeShipId variable manually.
+        console.log(`New active ship set to: ${shipId}`);
+        this.activeShipId = shipId;
+    }
+
     buyShip(shipID) {
         const shipData = shipCatalogue[shipID];
         if (!shipData) {
@@ -19,7 +45,7 @@ const fleetManager = {
         player.fleet.push(shipData);
 
         console.log(`Bought ship: ${shipData.name}`);
-    },
+    }
 
     sellShip(shipID) {
         const shipIndex = player.fleet.findIndex(ship => ship.shipID === shipID);
@@ -38,3 +64,5 @@ const fleetManager = {
         console.log(`Sold ship: ${shipData.name}`);
     }
 };
+*/
+}

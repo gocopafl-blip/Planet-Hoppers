@@ -12,12 +12,17 @@ class Ship {
         this.game = game; // Keep a reference to the scene for world boundaries
 
         // --- NEW: Properties from the catalogue ---
-        this.width = shipData.shipWidth;
-        this.height = shipData.shipHeight;
-        this.thrustPower = shipData.shipThrustPower;
-        this.rotationSpeed = shipData.shipRotationSpeed;
-        this.thrusters = shipData.shipThrusters; // Get thruster layout from data
-        this.image = assetManager.getImage(shipData.shipImage); // Get the image
+        this.width = (shipData.shipWidth || 200) * (shipData.shipSize || 1);
+        this.height = (shipData.shipHeight || 240) * (shipData.shipSize || 1);
+        this.thrustPower = shipData.shipThrustPower || 0.15;
+        this.rotationSpeed = shipData.shipRotationSpeed || 0.012;
+        this.thrusters = shipData.shipThrusters || {}; // Get thruster layout from data
+        
+        // Get the image with fallback protection
+        this.image = assetManager ? assetManager.getImage(shipData.shipImage) : null;
+        if (!this.image) {
+            console.warn(`Ship image not found for key: ${shipData.shipImage}. Ship will render as invisible.`);
+        }
 
         // State properties
         this.thrusting = false;
