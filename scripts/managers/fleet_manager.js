@@ -4,11 +4,11 @@ class FleetManager {
         // --- THIS IS THE LINE YOU WILL CHANGE FOR TESTING ---
         // To test a different ship, just change the text below.
         // For example: 'apex_dart' or 'echo_pacer'
-        //this.activeShipId = 'default_ship';
+        this.activeShipId = 'default_ship';
         //this.activeShipId = 'apex_dart';
         //this.activeShipId = 'echo_pacer';
         //this.activeShipId = 'zenith_runner';
-        this.activeShipId = 'black_falcon'; // Default active ship
+        //this.activeShipId = 'black_falcon'; // Default active ship
     }
 
     // A method to get the full data object for the active ship
@@ -41,14 +41,26 @@ class FleetManager {
         // Deduct the price from the player's currency
         playerDataManager.addMoney(-shipData.shipBuyValue);
 
-        // Add the ship to the player's fleet (implement this as needed)
+        // Add the ship to the player's fleet (store full ship object)
         if (!playerDataManager.data.fleet) {
             playerDataManager.data.fleet = [];
         }
-        playerDataManager.data.fleet.push(shipID);
+        // Create a new ship object for the fleet
+        const newShip = {
+            id: Date.now(), // Unique ID for the ship instance
+            shipTypeId: shipData.shipID,
+            name: shipData.shipName || shipData.shipID,
+            currentHealth: shipData.shipMaxHealth || 100,
+            maxHealth: shipData.shipMaxHealth || 100,
+            cargoCapacity: shipData.cargoCapacity || 0,
+            // Add other relevant properties as needed
+        };
+        playerDataManager.data.fleet.push(newShip);
 
-        // Optionally set as active ship
+        // Set as active ship
         this.activeShipId = shipID;
+        // Save to local storage
+        playerDataManager.saveData();
 
         alert(`Bought ship: ${shipData.shipID}`);
     }
