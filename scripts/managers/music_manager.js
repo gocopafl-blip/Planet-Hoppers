@@ -180,9 +180,9 @@ window.musicManager = musicManager;
 
 // --- Sound Effects ---
 // Initialize SFX after assets are loaded to avoid null references
-let thrusterSound; 
-let explosionSound; 
-let airlockSound; 
+let thrusterSound;
+let explosionSound;
+let airlockSound;
 let airlockSoundPlayed = false;
 
 function initializeSfx() {

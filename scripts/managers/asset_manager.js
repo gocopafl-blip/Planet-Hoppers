@@ -20,7 +20,7 @@ class AssetManager {
     loadAllAssets(onComplete = null, onProgress = null) {
         this.onComplete = onComplete;
         this.onProgress = onProgress;
-        
+
         // Determine which assets still need loading (idempotent behavior)
         const pendingImages = Object.entries(assetCatalogue.images)
             .filter(([key]) => !this.isImageLoaded(key));
@@ -54,17 +54,17 @@ class AssetManager {
 
     loadImage(key, path) {
         const img = new Image();
-        
+
         img.onload = () => {
             this.loadedAssets.images[key] = img;
             this.onAssetLoaded(`Image: ${key}`);
         };
-        
+
         img.onerror = () => {
             console.warn(`Failed to load image: ${key} from ${path}`);
             this.onAssetFailed(`Image: ${key}`);
         };
-        
+
         img.src = path;
     }
 
@@ -96,11 +96,11 @@ class AssetManager {
     onAssetLoaded(assetName) {
         this.loadingStatus.loaded++;
         console.log(`Loaded: ${assetName} (${this.loadingStatus.loaded}/${this.loadingStatus.total})`);
-        
+
         if (this.onProgress) {
             this.onProgress(this.loadingStatus.loaded, this.loadingStatus.total);
         }
-        
+
         this.checkComplete();
     }
 

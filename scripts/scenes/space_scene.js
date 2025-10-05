@@ -54,7 +54,7 @@ class SpaceScene {
         }
     }
 
-    
+
     createSpaceDock(type, image, x, y, width, height) {
         const dock = new SpaceDock(x, y, width, height, image, type);
         this.spaceDocks.push(dock);
@@ -95,7 +95,7 @@ class SpaceScene {
             // Set up the camera to follow the ship
             const shipData = fleetManager.getActiveShipData();
             const defaultZoom = shipData.shipDefaultZoom || 1.0;
-            
+
             this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
                 zoomSmoothing: this.zoomSmoothing,
                 followSmoothing: 0.5,  // Instant camera following for tight ship centering
@@ -337,14 +337,6 @@ class SpaceScene {
         this.ship.draw();
         this.particles.forEach(p => p.draw(ctx));
         this.camera.end(ctx);
-        /*
-                if (this.ship.isOrbitLocked) {
-                    descentUI.style.display = 'block';
-                } else {
-                    descentUI.style.display = 'none';
-        
-                    }
-        */
         this.drawSpeedometer.call(this);
         this.drawCompass.call(this);
         this.drawRadar.call(this);
@@ -679,37 +671,37 @@ class SpaceScene {
         }
     }
     //if (!this.orbitData) return; // Don't draw if there's no data
-    
-        
-        drawDebugInfo() {
-            if (!this.ship || !celestialBodies.length) return;
-    
-            // Find the closest planet to the ship
-            const closestPlanet = celestialBodies.reduce((closest, planet) => {
-                const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
-                if (dist < closest.dist) {
-                    return { dist, planet };
-                }
-                return closest;
-            }, { dist: Infinity, planet: null }).planet;
-    
-            if (!closestPlanet) return;
-    
-            // Calculate the distance (radius) from the ship to the center of the planet
-            const radius = Math.hypot(this.ship.x - closestPlanet.x, this.ship.y - closestPlanet.y);
-            const zoom = this.camera.zoomLevel;
-    
-            // --- Draw the text on the screen ---
-            ctx.save();
-            ctx.font = '16px "Orbitron"';
-            ctx.fillStyle = 'yellow';
-            ctx.textAlign = 'left';
-            ctx.fillText(`Radius: ${radius.toFixed(0)}`, 10, canvas.height - 30);
-            ctx.fillText(`Zoom: ${zoom.toFixed(2)}`, 10, canvas.height - 10);
-            ctx.restore();
-        }
-    
-            
+
+
+    drawDebugInfo() {
+        if (!this.ship || !celestialBodies.length) return;
+
+        // Find the closest planet to the ship
+        const closestPlanet = celestialBodies.reduce((closest, planet) => {
+            const dist = Math.hypot(this.ship.x - planet.x, this.ship.y - planet.y);
+            if (dist < closest.dist) {
+                return { dist, planet };
+            }
+            return closest;
+        }, { dist: Infinity, planet: null }).planet;
+
+        if (!closestPlanet) return;
+
+        // Calculate the distance (radius) from the ship to the center of the planet
+        const radius = Math.hypot(this.ship.x - closestPlanet.x, this.ship.y - closestPlanet.y);
+        const zoom = this.camera.zoomLevel;
+
+        // --- Draw the text on the screen ---
+        ctx.save();
+        ctx.font = '16px "Orbitron"';
+        ctx.fillStyle = 'yellow';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Radius: ${radius.toFixed(0)}`, 10, canvas.height - 30);
+        ctx.fillText(`Zoom: ${zoom.toFixed(2)}`, 10, canvas.height - 10);
+        ctx.restore();
+    }
+
+
     updateHUD() {
         const hud = document.getElementById('player-hud');
         if (hud && playerDataManager.data) {

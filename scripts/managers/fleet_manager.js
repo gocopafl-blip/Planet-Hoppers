@@ -16,7 +16,7 @@ class FleetManager {
         // Look in the shipCatalogue and return the data for the active ship
         return shipCatalogue[this.activeShipId];
     }
-/*
+
     // A placeholder for the future UI-driven method
     setActiveShip(shipId) {
         // In the future, a button click in the UI will call this function.
@@ -33,18 +33,24 @@ class FleetManager {
         }
 
         // Check if the player has enough currency to buy the ship
-        if (player.currency < shipData.price) {
-            console.error(`Not enough currency to buy ${shipData.name}.`);
+        if (playerDataManager.getBalance() < shipData.shipBuyValue) {
+            alert(`Not enough credits to buy ${shipData.shipID}.`);
             return;
         }
 
         // Deduct the price from the player's currency
-        player.currency -= shipData.price;
+        playerDataManager.addMoney(-shipData.shipBuyValue);
 
-        // Add the ship to the player's fleet
-        player.fleet.push(shipData);
+        // Add the ship to the player's fleet (implement this as needed)
+        if (!playerDataManager.data.fleet) {
+            playerDataManager.data.fleet = [];
+        }
+        playerDataManager.data.fleet.push(shipID);
 
-        console.log(`Bought ship: ${shipData.name}`);
+        // Optionally set as active ship
+        this.activeShipId = shipID;
+
+        alert(`Bought ship: ${shipData.shipID}`);
     }
 
     sellShip(shipID) {
@@ -64,5 +70,4 @@ class FleetManager {
         console.log(`Sold ship: ${shipData.name}`);
     }
 };
-*/
-}
+

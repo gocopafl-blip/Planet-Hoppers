@@ -20,19 +20,68 @@ const missionBoardScene = {
             this.showMissionBoard();
             missionBoard.classList.add('slide-in');
         }, 500); // A 0.5 second delay
+
+        // Add Accept Mission and Close listeners
+        this._missionList = document.getElementById('mission-list');
+        this._closeBtn = document.getElementById('closeMissionBoardBtn');
+        if (this._missionList) {
+            this._missionList.addEventListener('click', this.handleAcceptMission);
+        }
+        if (this._closeBtn) {
+            this._closeBtn.addEventListener('click', this.handleCloseMissionBoard);
+        }
     },
 
     stop() {
         // We will no longer hide the board here directly.
         // The animation will handle it.
         console.log("Stopping Mission Board Scene...");
+
+        // Remove Accept Mission and Close listeners
+        if (this._missionList) {
+            this._missionList.removeEventListener('click', this.handleAcceptMission);
+        }
+        if (this._closeBtn) {
+            this._closeBtn.removeEventListener('click', this.handleCloseMissionBoard);
+        }
     },
+
+    handleAcceptMission(event) {
+        if (event.target.classList.contains('accept-btn')) {
+            const missionBoard = document.getElementById('mission-board');
+            const missionId = event.target.dataset.missionId;
+
+            missionManager.acceptMission(missionId);
+
+            missionBoard.classList.remove('slide-in');
+            missionBoard.classList.add('slide-out');
+
+            setTimeout(() => {
+                if (gameManager.activeScene === missionBoardScene) {
+                    gameManager.switchScene(spaceDockScene);
+                }
+            }, 500);
+        }
+    },
+
+    handleCloseMissionBoard() {
+        if (gameManager.activeScene === missionBoardScene) {
+            const missionBoard = document.getElementById('mission-board');
+            missionBoard.classList.remove('slide-in');
+            missionBoard.classList.add('slide-out');
+
+            setTimeout(() => {
+                gameManager.switchScene(spaceDockScene);
+            }, 500);
+        }
+    },
+
 
     showMissionBoard() {
         const missionBoard = document.getElementById('mission-board');
         const missionList = document.getElementById('mission-list');
 
-        const missions = missionManager.generateAvailableMissions(3);
+        const missions = missionManager.generateAvailableMissions(5);
         missionList.innerHTML = '';
 
         missions.forEach(mission => {
@@ -59,8 +108,9 @@ const missionBoardScene = {
     draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         // Draw the background image for the mission board.
-        if (missionBoardBackgroundImage.complete) {
-            ctx.drawImage(missionBoardBackgroundImage, 0, 0, canvas.width, canvas.height);
+        const missionBoardBg = assetManager.getImage('mission_board_bg');
+        if (missionBoardBg && missionBoardBg.complete) {
+            ctx.drawImage(missionBoardBg, 0, 0, canvas.width, canvas.height);
         }
-    }
+    },
 };

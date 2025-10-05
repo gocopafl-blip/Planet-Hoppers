@@ -505,3 +505,100 @@ button:hover {
     color: #92f2a2;
     border: 1px solid #96f38a;
 }
+
+#trade-hub {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 600px;
+    height: 80vh;
+    z-index: 10;
+    background: rgba(20, 20, 40, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 60px;
+    overflow: hidden;
+}
+
+/* Keyframes for slide-in and slide-out */
+@keyframes slideInFromBottom {
+    from {
+        transform: translate(-50%, 100vh);
+        opacity: 0;
+    }
+
+    to {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutToBottom {
+    from {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+
+    to {
+        transform: translate(-50%, 100vh);
+        opacity: 0;
+    }
+}
+
+#trade-list {
+    width: 90vw;
+    max-width: 600px;
+    max-height: 70vh;
+    overflow-y: auto;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.trade-item {
+    background: #222a;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #0008;
+    padding: 20px;
+    color: #fff;
+    font-family: 'Orbitron', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.trade-footer {
+    margin-top: 10px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.accept-btn {
+    background: #2e8bff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 18px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.accept-btn:hover {
+    background: #1a5bb8;
+}
+
+#trade-hub.slide-in {
+    animation: slideInFromBottom 0.5s ease-out forwards;
+}
+
+/* We will add this class with JavaScript to trigger the fly-out */
+#trade-hub.slide-out {
+    animation: slideOutToBottom 0.5s ease-in forwards;
+}

@@ -2,38 +2,56 @@
 // Central catalogue of all game assets
 
 const assetCatalogue = {
-    
+
     // Images
     images: {
+        //Ships
         "ship": "assets/images/ships/ship.png",
-        "default_ship": "assets/images/ships/defaultShip.png",
-        
-        "apex_dart": 'assets/images/ships/small_ships/apex_dart/apex_dart.png',
-        "ad_glam_shot": 'assets/images/ships/small_ships/apex_dart/ad_glam_shot.png',
-        "echo_pacer": 'assets/images/ships/small_ships/echo_pacer/echo_pacer.png',
-        "ep_glam_shot": 'assets/images/ships/small_ships/echo_pacer/ep_glam_shot.png',
-        "zenith_runner": 'assets/images/ships/small_ships/zenith_runner/zenith_runner.png',
-        "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.png',
 
+        //Small Ships
+        "default_ship": "assets/images/ships/defaultShip.png",
+        "apex_dart": 'assets/images/ships/small_ships/apex_dart/apex_dart.png',
+        "echo_pacer": 'assets/images/ships/small_ships/echo_pacer/echo_pacer.png',
+        "zenith_runner": 'assets/images/ships/small_ships/zenith_runner/zenith_runner.png',
+
+        //Medium Ships
+
+        //Large Ships
         "black_falcon": 'assets/images/ships/large_ships/BlackFalcon.png',
+
+        //Drop Ships
+        "pea_drop_ship": "assets/images/ships/drop_ships/peaDropShip.png",
 
         "lander_scout": "assets/images/ships/lander-scout.png",
         "lander_classic": "assets/images/ships/lander-classic.png",
         "lander_heavy": "assets/images/ships/lander-heavy.png",
+
+        // Glam Shots
+        "ad_glam_shot": 'assets/images/ships/small_ships/apex_dart/ad_glam_shot.png',
+        "ep_glam_shot": 'assets/images/ships/small_ships/echo_pacer/ep_glam_shot.png',
+        "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.png',
+
+        // Docks and Planets
         "space_dock_alpha": "assets/images/spacedocks/spacedockalpha.png",
-        "space_dock_terminal": "assets/images/dock_backgrounds/spaceDockTerminal.png",
+
         "planet1": "assets/images/planets/planet1.png",
         "planet2": "assets/images/planets/planet2.png",
         "planet3": "assets/images/planets/planet3.png",
-        "pea_drop_ship": "assets/images/ships/drop_ships/peaDropShip.png",
-        "mission_board_bg": "assets/images/dock_backgrounds/OrbitalCargoSystems.jpg",
-        "start_screen_bg": "assets/images/dock_backgrounds/start_screen_background.png",
+
+        // Planet Backgrounds for Lander Scene
         "earth_planet_a": "assets/images/planets/lander_backgrounds/EarthPlanet_2a.jpg",
         "earth_planet_b": "assets/images/planets/lander_backgrounds/EarthPlanet_2b.jpg",
         "blue_planet_a": "assets/images/planets/lander_backgrounds/BluePlanet_1a.jpg",
         "blue_planet_b": "assets/images/planets/lander_backgrounds/BluePlanet_1b.jpg",
         "swirling_planet_a": "assets/images/planets/lander_backgrounds/SwirlingPlanet_3a.jpg",
-        "swirling_planet_b": "assets/images/planets/lander_backgrounds/SwirlingPlanet_3b.jpg"
+        "swirling_planet_b": "assets/images/planets/lander_backgrounds/SwirlingPlanet_3b.jpg",
+
+        //Scenes
+        "start_screen_bg": "assets/images/dock_backgrounds/start_screen_background.png",
+        "space_dock_terminal": "assets/images/dock_backgrounds/spaceDockTerminal.png",
+        "mission_board_bg": "assets/images/dock_backgrounds/OrbitalCargoSystems.jpg",
+        "galactic_trade_hub": "assets/images/dock_backgrounds/galactic_trade_hub.jpg"
+
     },
 
     // Sounds

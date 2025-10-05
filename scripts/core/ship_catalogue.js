@@ -36,7 +36,7 @@ const baseShipTemplate = {
 const shipCatalogue = {
     'default_ship': {
         ...baseShipTemplate, // Start with a copy of all the base stats
-        
+
         // Now, only list what's DIFFERENT
         shipID: 'Stardust Drifter',
         shipImage: 'default_ship',
@@ -44,10 +44,10 @@ const shipCatalogue = {
         shipSize: 0.75,
         shipDefaultZoom: 1.5,
         shipThrusters: {
-            front_left:  { x_ratio: -0.45, y_ratio: -0.070, angle_deg:  360 },
-            front_right: { x_ratio:  0.45, y_ratio: -0.070, angle_deg:  360 },
-            rear_left:   { x_ratio: -0.45, y_ratio:  0.040, angle_deg:  0 },
-            rear_right:  { x_ratio:  0.45, y_ratio:  0.040, angle_deg:  0 }
+            front_left: { x_ratio: -0.45, y_ratio: -0.070, angle_deg: 360 },
+            front_right: { x_ratio: 0.45, y_ratio: -0.070, angle_deg: 360 },
+            rear_left: { x_ratio: -0.45, y_ratio: 0.040, angle_deg: 0 },
+            rear_right: { x_ratio: 0.45, y_ratio: 0.040, angle_deg: 0 }
         },
     },
 
@@ -65,10 +65,10 @@ const shipCatalogue = {
         shipBuyValue: 5000,
         shipSellValue: 4000,
         shipThrusters: { // A completely different thruster layout
-            front_left:  { x_ratio: -0.05, y_ratio: -0.4, angle_deg:  360 },
-            front_right: { x_ratio:  0.04, y_ratio: -0.4, angle_deg:  360 },
-            rear_left:   { x_ratio: -0.15, y_ratio:  0.42, angle_deg:  0 },
-            rear_right:  { x_ratio:  0.14, y_ratio:  0.42, angle_deg:  0 }
+            front_left: { x_ratio: -0.05, y_ratio: -0.4, angle_deg: 360 },
+            front_right: { x_ratio: 0.04, y_ratio: -0.4, angle_deg: 360 },
+            rear_left: { x_ratio: -0.15, y_ratio: 0.42, angle_deg: 0 },
+            rear_right: { x_ratio: 0.14, y_ratio: 0.42, angle_deg: 0 }
         },
     },
     'echo_pacer': {
@@ -85,10 +85,10 @@ const shipCatalogue = {
         shipBuyValue: 5500,
         shipSellValue: 4500,
         shipThrusters: { // A completely different thruster layout
-            front_left:  { x_ratio: -0.04, y_ratio: -0.42, angle_deg:  360 },
-            front_right: { x_ratio:  0.055, y_ratio: -0.42, angle_deg:  360 },
-            rear_left:   { x_ratio: -0.050, y_ratio:  0.40, angle_deg:  0 },
-            rear_right:  { x_ratio:  0.06, y_ratio:  0.40, angle_deg:  0 }
+            front_left: { x_ratio: -0.04, y_ratio: -0.42, angle_deg: 360 },
+            front_right: { x_ratio: 0.055, y_ratio: -0.42, angle_deg: 360 },
+            rear_left: { x_ratio: -0.050, y_ratio: 0.40, angle_deg: 0 },
+            rear_right: { x_ratio: 0.06, y_ratio: 0.40, angle_deg: 0 }
         },
     },
     'zenith_runner': {
@@ -105,10 +105,10 @@ const shipCatalogue = {
         shipBuyValue: 5500,
         shipSellValue: 4500,
         shipThrusters: { // A completely different thruster layout
-            front_left:  { x_ratio: -0.04, y_ratio: -0.42, angle_deg:  360 },
-            front_right: { x_ratio:  0.055, y_ratio: -0.42, angle_deg:  360 },
-            rear_left:   { x_ratio: -0.050, y_ratio:  0.40, angle_deg:  0 },
-            rear_right:  { x_ratio:  0.06, y_ratio:  0.40, angle_deg:  0 }
+            front_left: { x_ratio: -0.04, y_ratio: -0.42, angle_deg: 360 },
+            front_right: { x_ratio: 0.055, y_ratio: -0.42, angle_deg: 360 },
+            rear_left: { x_ratio: -0.050, y_ratio: 0.40, angle_deg: 0 },
+            rear_right: { x_ratio: 0.06, y_ratio: 0.40, angle_deg: 0 }
         },
     },
     'black_falcon': {
@@ -127,22 +127,22 @@ const shipCatalogue = {
         shipBuyValue: 5500,
         shipSellValue: 4500,
         shipThrusters: { // A completely different thruster layout
-            front_left:  { x_ratio: -0.04, y_ratio: -0.42, angle_deg:  360 },
-            front_right: { x_ratio:  0.055, y_ratio: -0.42, angle_deg:  360 },
-            rear_left:   { x_ratio: -0.050, y_ratio:  0.40, angle_deg:  0 },
-            rear_right:  { x_ratio:  0.06, y_ratio:  0.40, angle_deg:  0 }
+            front_left: { x_ratio: -0.04, y_ratio: -0.42, angle_deg: 360 },
+            front_right: { x_ratio: 0.055, y_ratio: -0.42, angle_deg: 360 },
+            rear_left: { x_ratio: -0.050, y_ratio: 0.40, angle_deg: 0 },
+            rear_right: { x_ratio: 0.06, y_ratio: 0.40, angle_deg: 0 }
         },
     },
 };
 
 
-            /* The main ship will also have equipped drop ships
-            equipped: [
-                {
-                    dropShipType: 'pea_drop_ship',
-                    name: 'Pea Pod 1',
-                    imageSrc: 'images/peaDropShip.png',
-                    value: 5000,
-                    state: 'operational',
-                    upgrades: []
-                    */
+/* The main ship will also have equipped drop ships
+equipped: [
+    {
+        dropShipType: 'pea_drop_ship',
+        name: 'Pea Pod 1',
+        imageSrc: 'images/peaDropShip.png',
+        value: 5000,
+        state: 'operational',
+        upgrades: []
+        */

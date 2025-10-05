@@ -18,20 +18,18 @@ const shipTypes = {
 };
 //const spaceShipImage = new Image();
 const planetImages = [new Image(), new Image(), new Image()];
-const spaceDockImages = [new Image()];
-const spaceDockTerminalImage = new Image();
-const missionBoardBackgroundImage = new Image();
 let celestialBodies = [];
 let settings = {};
 const playerDataManager = new PlayerDataManager();
 const planetManager = new PlanetManager();
 const missionManager = new MissionManager();
+const tradeManager = new TradeManager();
 const fleetManager = new FleetManager();
 
 
-    
- 
-    
+
+
+
 
 // AssetManager instance is now created in asset_manager.js
 
@@ -41,54 +39,31 @@ function linkAssetsToGameObjects() {
     shipTypes.scout.img = assetManager.getImage('lander_scout') || shipTypes.scout.img;
     shipTypes.classic.img = assetManager.getImage('lander_classic') || shipTypes.classic.img;
     shipTypes.heavy.img = assetManager.getImage('lander_heavy') || shipTypes.heavy.img;
-    
+
     // Link dock images
     dockTypes.alpha.img = assetManager.getImage('space_dock_alpha') || dockTypes.alpha.img;
-    
-    // Link space ship image 
-    /*
-    const spaceShip = assetManager.getImage('default_ship');
-    if (spaceShip) {
-        spaceShipImage.src = spaceShip.src;
-        spaceShipImage.onload = null; // Remove any existing handlers
-        Object.assign(spaceShipImage, spaceShip);
-    }
-    */
-    // Link planet images
+
+    // Link planet images (keeping these for legacy compatibility)
     const planet1 = assetManager.getImage('planet1');
     const planet2 = assetManager.getImage('planet2');
     const planet3 = assetManager.getImage('planet3');
-    
+
     if (planet1) Object.assign(planetImages[0], planet1);
     if (planet2) Object.assign(planetImages[1], planet2);
     if (planet3) Object.assign(planetImages[2], planet3);
-    
-    // Link other images
-    const missionBg = assetManager.getImage('mission_board_bg');
-    const spaceDockTerminal = assetManager.getImage('space_dock_terminal');
-    
-    if (missionBg) {
-        missionBoardBackgroundImage.src = missionBg.src;
-        Object.assign(missionBoardBackgroundImage, missionBg);
-    }
-    
-    if (spaceDockTerminal) {
-        spaceDockTerminalImage.src = spaceDockTerminal.src;
-        Object.assign(spaceDockTerminalImage, spaceDockTerminal);
-    }
-    
+
     console.log("🔗 Assets linked to game objects successfully!");
 }
 
 // --- INITIALIZATION ---
 function init() {
     playerDataManager.loadData();
-    
+
     // Phase 2: Clean AssetManager-based loading
     console.log("🚀 Loading all game assets...");
-    
+
     let fontsLoaded = false;
-    
+
     // Font loading check
     function waitForFonts() {
         if (document.fonts && document.fonts.ready) {
@@ -105,11 +80,11 @@ function init() {
             }, 1000);
         }
     }
-    
+
     function checkAllAssetsLoaded() {
         if (fontsLoaded && assetManager.getProgress() === 1) {
             console.log("🎉 All game assets loaded!");
-            
+
             // Link assets to existing objects
             linkAssetsToGameObjects();
 
@@ -120,20 +95,20 @@ function init() {
             if (typeof window.initializeSfx === 'function') {
                 window.initializeSfx();
             }
-            
+
             // Setup event listeners
             setupEventListeners();
-            
+
             // Initialize the game
             landerScene.createStars();
             loadingScreen.style.display = 'none';
             startScreen.style.display = 'block';
-            
+
             // Start the game loop
             startGame();
         }
     }
-    
+
     // Load all assets through AssetManager
     assetManager.loadAllAssets(
         () => {
@@ -141,9 +116,9 @@ function init() {
             checkAllAssetsLoaded();
         },
         (loaded, total) => {
-            const percent = Math.round(loaded/total*100);
+            const percent = Math.round(loaded / total * 100);
             console.log(`📦 Asset loading progress: ${loaded}/${total} (${percent}%)`);
-            
+
             // Update loading screen
             const loadingScreen = document.getElementById('loading-screen');
             loadingScreen.innerHTML = `
@@ -170,7 +145,7 @@ function init() {
             `;
         }
     );
-    
+
     waitForFonts();
 }
 
@@ -179,46 +154,7 @@ function setupEventListeners() {
     const missionBoard = document.getElementById('mission-board');
     const missionList = document.getElementById('mission-list');
 
-    // Listener for the "Orbital Cargo Solutions" button in the dock menu
-    document.querySelector('#dock-menu li:nth-child(2)').addEventListener('click', () => {
-        if (gameManager.activeScene === spaceDockScene) {
-            gameManager.switchScene(missionBoardScene);
-        }
-    });
-
-    // Listener for the "Close" button on the mission board
-    document.getElementById('closeMissionBoardBtn').addEventListener('click', () => {
-        if (gameManager.activeScene === missionBoardScene) {
-            const missionBoard = document.getElementById('mission-board');
-            missionBoard.classList.remove('slide-in');
-            missionBoard.classList.add('slide-out');
-
-            // Wait for the animation to finish before switching scenes
-            setTimeout(() => {
-                gameManager.switchScene(spaceDockScene);
-            }, 500); // This MUST match the animation duration in the CSS
-        }
-    });
-
-    // Modify the "Accept" mission listener
-    missionList.addEventListener('click', (event) => {
-        if (event.target.classList.contains('accept-btn')) {
-            const missionBoard = document.getElementById('mission-board');
-            const missionId = event.target.dataset.missionId;
-
-            missionManager.acceptMission(missionId);
-
-            missionBoard.classList.remove('slide-in');
-            missionBoard.classList.add('slide-out');
-
-            // Wait for animation to finish
-            setTimeout(() => {
-                if (gameManager.activeScene === missionBoardScene) {
-                    gameManager.switchScene(spaceDockScene);
-                }
-            }, 500);
-        }
-    });
+    // --- Removed: Dock menu, mission board, and trade hub listeners now handled in their respective scene files ---
 
     const spaceScene = new SpaceScene();
     const navScreenElement = document.getElementById('nav-screen');
@@ -306,39 +242,23 @@ function setupEventListeners() {
         }
     });
     */
-    document.getElementById('descentBtn').addEventListener('click', () => {
-        // We only want this to work if we are in the space scene and orbit is locked
-        if (gameManager.activeScene === spaceScene && spaceScene.ship.isOrbitLocked) {
-            console.log("Descent button clicked, changing scene.");
-
-            // This is the same logic from the old collision check
-            spaceScene.isPaused = true;
-            if (thrusterSound.isLoaded) thrusterSound.pause();
-            canvas.style.display = 'none';
-            shipSelectionMenu.style.display = 'block';
-
-            // Also hide the descent button itself
-            descentUI.style.display = 'none';
-        }
-    });
     // ADD THIS NEW EVENT LISTENER
     document.getElementById('startBtn').addEventListener('click', () => {
         startScreen.style.display = 'none'; // Hide the start screen
-        //menu.style.display = 'block';      // Show the main menu
-        // DISABLED DURING REFACTOR FOR SPACE DOCK SCENE
-        //musicManager.playPlaylistForScene('menu');
         gameManager.switchScene(spaceDockScene); // Start with the Space Dock scene
     });
+
     document.getElementById('departBtn').addEventListener('click', () => {
         gameManager.switchScene(spaceScene, { difficulty: 'easy' }); // For now, it will always be 'easy'
     });
     // Event listener for our new test button
-    /*document.getElementById('getPaidBtn').addEventListener('click', () => {
-        playerDataManager.addMoney(500); // Give the player 500 credits
+    document.getElementById('getPaidBtn').addEventListener('click', () => {
+        playerDataManager.addMoney(5000); // Give the player 500 credits
     });
-    document.getElementById('completeMissionBtn').addEventListener('click', () => {
+    /*document.getElementById('completeMissionBtn').addEventListener('click', () => {
         missionManager.completeMission();
-    })*/
+    });*/
+
     document.getElementById('accessDockBtn').addEventListener('click', () => {
         // Check if the current scene is the spaceScene before switching
         if (gameManager.activeScene === spaceScene) {
