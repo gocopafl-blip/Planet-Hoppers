@@ -51,12 +51,34 @@ const shipCatalogue = {
         },
     },
 
+    'stardust_drifter': {
+        ...baseShipTemplate, // Start with the same base stats
+
+        // Now, only list the unique stats for the Stardust Drifter
+        shipID: 'Stardust Drifter',
+        shipImage: 'stardust_drifter',
+        shipGlamShot: 'sd_glam_shot',
+        shipDescription: "A nimble interceptor, prized by scouts and couriers.",
+        shipSize: 0.75,
+        shipDefaultZoom: 1.5,
+        shipCargoCapacity: 1, // Slightly More cargo
+        shipMaxSpeed: 20.0, // Slightly Slower
+        shipBuyValue: 4000,
+        shipSellValue: 3500,
+        shipThrusters: {
+            front_left: { x_ratio: -0.45, y_ratio: -0.070, angle_deg: 360 },
+            front_right: { x_ratio: 0.45, y_ratio: -0.070, angle_deg: 360 },
+            rear_left: { x_ratio: -0.45, y_ratio: 0.040, angle_deg: 0 },
+            rear_right: { x_ratio: 0.45, y_ratio: 0.040, angle_deg: 0 }
+        },
+    },
     'apex_dart': {
         ...baseShipTemplate, // Start with the same base stats
 
         // Now, only list the unique stats for the Apex Dart
         shipID: 'Apex Dart',
         shipImage: 'apex_dart',
+        shipGlamShot: 'ad_glam_shot',
         shipDescription: "A nimble interceptor, prized by scouts and couriers.",
         shipSize: 1.5,
         shipDefaultZoom: 1.45,
@@ -77,6 +99,7 @@ const shipCatalogue = {
         // Now, only list the unique stats for the Echo Pacer
         shipID: 'Echo Pacer',
         shipImage: 'echo_pacer',
+        shipGlamShot: 'ep_glam_shot',
         shipDescription: "A versatile ship favored by explorers and traders alike.",
         shipSize: 1.5,
         shipDefaultZoom: 1.45,
@@ -97,6 +120,7 @@ const shipCatalogue = {
         // Now, only list the unique stats for the Zenith Runner
         shipID: 'Zenith Runner',
         shipImage: 'zenith_runner',
+        shipGlamShot: 'zr_glam_shot',
         shipDescription: "Packing more cargo than its competitors.",
         shipSize: 2.5,
         shipDefaultZoom: 0.9,

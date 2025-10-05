@@ -49,8 +49,8 @@ class SpaceScene {
 
     createStars() {
         this.stars = [];
-        for (let i = 0; i < 10000; i++) {
-            this.stars.push({ x: Math.random() * this.WORLD_WIDTH, y: Math.random() * this.WORLD_HEIGHT, radius: Math.random() * 1.5 });
+        for (let i = 0; i < 30000; i++) {
+            this.stars.push({ x: Math.random() * this.WORLD_WIDTH, y: Math.random() * this.WORLD_HEIGHT, radius: Math.random() * 2.5 });
         }
     }
 

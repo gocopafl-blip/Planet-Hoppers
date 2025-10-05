@@ -10,6 +10,7 @@ const assetCatalogue = {
 
         //Small Ships
         "default_ship": "assets/images/ships/defaultShip.png",
+        "stardust_drifter": 'assets/images/ships/small_ships/stardust_drifter/stardust_drifter.png',
         "apex_dart": 'assets/images/ships/small_ships/apex_dart/apex_dart.png',
         "echo_pacer": 'assets/images/ships/small_ships/echo_pacer/echo_pacer.png',
         "zenith_runner": 'assets/images/ships/small_ships/zenith_runner/zenith_runner.png',
@@ -27,6 +28,7 @@ const assetCatalogue = {
         "lander_heavy": "assets/images/ships/lander-heavy.png",
 
         // Glam Shots
+        "sd_glam_shot": 'assets/images/ships/small_ships/stardust_drifter/sd_glam_shot.jpg',
         "ad_glam_shot": 'assets/images/ships/small_ships/apex_dart/ad_glam_shot.png',
         "ep_glam_shot": 'assets/images/ships/small_ships/echo_pacer/ep_glam_shot.png',
         "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.png',

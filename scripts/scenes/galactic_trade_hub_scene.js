@@ -92,15 +92,22 @@ const galacticTradeHubScene = {
         ships.forEach(([shipKey, ship]) => {
             const tradeElement = document.createElement('div');
             tradeElement.className = 'trade-item';
+            const glamShotImage = assetManager.getImage(ship.shipGlamShot);
+            const imageSrc = glamShotImage ? glamShotImage.src : '';
+
             tradeElement.innerHTML = `
-                <h3>${ship.shipID}</h3>
-                <p>${ship.shipDescription || ''}</p>
-                <div class="trade-footer">
-                    <span class="trade-reward">BUY: ¢ ${ship.shipBuyValue ? ship.shipBuyValue.toLocaleString() : 'N/A'}</span>
-                    <span class="trade-reward">SELL: ¢ ${ship.shipSellValue ? ship.shipSellValue.toLocaleString() : 'N/A'}</span>
-                    <span class="trade-cargo">Cargo: ${ship.shipCargoCapacity || 0}</span>
-                    <span class="trade-thrust">Thrust: ${ship.shipThrustPower || 0}</span>
-                    <button class="accept-btn" data-ship-id="${shipKey}">Buy</button>
+                <img class="trade-item-image" src="${imageSrc}" alt="${ship.shipID}">
+                
+                <div class="trade-item-info">
+                    <h3>${ship.shipID}</h3>
+                    <p>${ship.shipDescription || ''}</p>
+                    <div class="trade-footer">
+                        <span class="trade-reward">Max Speed: ${ship.shipMaxSpeed ? ship.shipMaxSpeed.toLocaleString() : 'N/A'} %LightSpeed</span>
+                        <span class="trade-cargo">Cargo Capacity: ${ship.shipCargoCapacity || 0} m<sup>3</sup></span>
+                        <span class="trade-thrust">Acceleration: ${ship.shipThrustPower || 0} %LightSpeed</span>
+                        <span class="trade-reward">BUY: ¢ ${ship.shipBuyValue ? ship.shipBuyValue.toLocaleString() : 'N/A'}</span>
+                        <button class="accept-btn" data-ship-id="${shipKey}">Buy</button>
+                    </div>
                 </div>
             `;
             tradeList.appendChild(tradeElement);
