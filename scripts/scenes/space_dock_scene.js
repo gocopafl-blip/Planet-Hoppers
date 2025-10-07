@@ -14,11 +14,15 @@ const spaceDockScene = {
         // Add dock menu listeners
         this._orbitalCargoLi = document.querySelector('#dock-menu li:nth-child(2)');
         this._galacticTradeHubLi = document.querySelector('#dock-menu li:nth-child(4)');
+        this._fleetManagerLi = document.querySelector('#dock-menu li:nth-child(7)');
         if (this._orbitalCargoLi) {
             this._orbitalCargoLi.addEventListener('click', this.handleOrbitalCargoClick);
         }
         if (this._galacticTradeHubLi) {
             this._galacticTradeHubLi.addEventListener('click', this.handleGalacticTradeHubClick);
+        }
+        if (this._fleetManagerLi) {
+            this._fleetManagerLi.addEventListener('click', this.handleFleetManagerClick);
         }
     },
 
@@ -34,6 +38,9 @@ const spaceDockScene = {
         }
         if (this._galacticTradeHubLi) {
             this._galacticTradeHubLi.removeEventListener('click', this.handleGalacticTradeHubClick);
+        }
+        if (this._fleetManagerLi) {
+            this._fleetManagerLi.removeEventListener('click', this.handleFleetManagerClick);
         }
     },
 
@@ -61,6 +68,9 @@ const spaceDockScene = {
     },
     handleGalacticTradeHubClick(event) {
         gameManager.switchScene(galacticTradeHubScene);
+    },
+    handleFleetManagerClick(event) {
+        gameManager.switchScene(fleetManagerScene);
     }
 };
 

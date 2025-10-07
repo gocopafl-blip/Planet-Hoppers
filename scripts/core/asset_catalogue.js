@@ -52,7 +52,11 @@ const assetCatalogue = {
         "start_screen_bg": "assets/images/dock_backgrounds/start_screen_background.png",
         "space_dock_terminal": "assets/images/dock_backgrounds/spaceDockTerminal.png",
         "mission_board_bg": "assets/images/dock_backgrounds/OrbitalCargoSystems.jpg",
-        "galactic_trade_hub": "assets/images/dock_backgrounds/galactic_trade_hub.jpg"
+        "galactic_trade_hub": "assets/images/dock_backgrounds/galactic_trade_hub.jpg",
+        "fleet_manager": "assets/images/dock_backgrounds/Fleet_Management_Services.jpg",
+
+        //Scene Overlays
+        "holodesk_overlay": "assets/images/dock_backgrounds/overlays/holodesk.png"
 
     },
 

@@ -1,3 +1,11 @@
+/* --- TABLE OF CONTENTS ---
+1. General Styles (body, fonts, etc.)
+2. Layout (header, footer, grid)
+3. Components (buttons, cards, forms)
+4. Utility Classes (helpers like .text-center)
+--------------------------- */
+
+/* === 1. GENERAL STYLES === */
 body {
     margin: 0;
     display: flex;
@@ -612,4 +620,151 @@ h2 {
 /* We will add this class with JavaScript to trigger the fly-out */
 #trade-hub.slide-out {
     animation: slideOutToBottom 0.5s ease-in forwards;
+}
+
+.chamfered-box {
+  background-color: #007bff;
+  width: 200px;
+  height: 150px;
+
+  /* This defines an 8-point polygon to clip the shape */
+  /* The 20px value determines the size of the chamfer */
+  clip-path: polygon(
+    20px 0%,      /* Top-left chamfer start */
+    calc(100% - 20px) 0%,  /* Top-right chamfer start */
+    100% 20px,     /* Top-right chamfer end */
+    100% calc(100% - 20px), /* Bottom-right chamfer end */
+    calc(100% - 20px) 100%, /* Bottom-right chamfer start */
+    20px 100%,     /* Bottom-left chamfer start */
+    0% calc(100% - 20px), /* Bottom-left chamfer end */
+    0% 20px       /* Top-left chamfer end */
+  );
+}
+/* === OLD VERSION (commented out) === */
+/*
+#fleet-manager {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: #2ef8ff 4px ridge;
+    border-radius: 40px;
+    width: 90vw;
+    max-width: 800px;
+    height: 60vh;
+    clip-path: polygon(
+        20px 0%,      
+        calc(100% - 20px) 0%,  
+        100% 20px,     
+        100% calc(100% - 20px), 
+        calc(100% - 20px) 100%, 
+        20px 100%,     
+        0% calc(100% - 20px), 
+        0% 20px       
+    );
+    z-index: 10;
+    background: rgba(20, 20, 40, 0.39);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 1px;
+    overflow: hidden;
+}
+*/
+
+/* === NESTED CONTAINER METHOD === */
+/* Outer container: Handles glow effect, positioning, and layout */
+#fleet-manager {
+    /* 1. Sizing and Positioning (keeping your settings) */
+    position: fixed;
+    left: 55%;
+    top: 45%;
+    transform: translate(-50%, -50%);
+    width: 720px;
+    height: 540px;
+    z-index: 10;
+    
+    /* 2. Glow Effect (keeping your intensities) */
+    filter: 
+        drop-shadow(0 0 10px rgba(46, 248, 255, 0.2))
+        drop-shadow(0 0 20px rgba(46, 248, 255, 0.3))
+        drop-shadow(0 0 30px rgba(46, 248, 255, 0.4));
+    
+    /* 3. Content Layout (keeping your settings) */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px;
+    overflow: hidden;
+}
+
+/* Inner container: Handles border, background, and clip-path animations */
+#fleet-manager::before {
+    content: '';
+    position: absolute;
+    top: 3px;    /* Account for border width */
+    left: 3px;   /* Account for border width */
+    width: calc(100% - 12px);   /* Subtract border width from both sides */
+    height: calc(100% - 12px);  /* Subtract border width from both sides */
+
+    /* 3. Border (keeping your settings) */
+    border: 3px ridge #2ef8ff;
+    
+    /* 4. Rounded Corners (keeping your settings) */
+    border-radius: 15px;
+    
+    /* 5. Semi-transparent Background (keeping your settings) */
+    background-color: rgba(20, 98, 255, 0.13);
+    
+    /* 6. Clip-path for animations */
+    clip-path: inset(0px round 15px);
+}
+
+/* Content positioning relative to pseudo-element */
+#fleet-manager > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Animation classes for fleet manager */
+#fleet-manager.slide-in {
+    animation: slideInFromBottom 0.5s ease-out forwards;
+}
+
+#fleet-manager.slide-out {
+    animation: slideOutToBottom 0.5s ease-in forwards;
+}
+
+/* Nested container animations - target the ::before pseudo-element */
+#fleet-manager.clip-reveal::before {
+    animation: insetReveal 0.8s ease-out forwards;
+}
+
+#fleet-manager.clip-close::before {
+    animation: insetClose 0.8s ease-in forwards;
+}
+
+/* Keyframes for nested container animations */
+@keyframes insetReveal {
+    from { 
+        clip-path: inset(50% round 15px);
+        opacity: 0;
+    }
+    to { 
+        clip-path: inset(0px round 15px);
+        opacity: 1;
+    }
+}
+
+@keyframes insetClose {
+    from { 
+        clip-path: inset(0px round 15px);
+        opacity: 1;
+    }
+    to { 
+        clip-path: inset(50% round 15px);
+        opacity: 0;
+    }
 }
