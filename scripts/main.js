@@ -247,11 +247,12 @@ function setupEventListeners() {
         startScreen.style.display = 'none'; // Hide the start screen
         gameManager.switchScene(spaceDockScene); // Start with the Space Dock scene
     });
-
+/*
     document.getElementById('departBtn').addEventListener('click', () => {
         gameManager.switchScene(spaceScene, { difficulty: 'easy' }); // For now, it will always be 'easy'
     });
-    // Event listener for our new test button
+    
+// Event listener for our new test button
     document.getElementById('getPaidBtn').addEventListener('click', () => {
         playerDataManager.addMoney(5000); // Give the player 500 credits
     });
@@ -263,6 +264,15 @@ function setupEventListeners() {
         // Check if the current scene is the spaceScene before switching
         if (gameManager.activeScene === spaceScene) {
             gameManager.switchScene(spaceDockScene);
+        }
+    });
+    
+    document.getElementById('terminateRemoteCommandBtn').addEventListener('click', () => {
+        // Check if the current scene is the spaceScene before switching
+        if (gameManager.activeScene === spaceScene) {
+            // Save space scene state before switching to fleet manager
+            spaceScene.saveState();
+            gameManager.switchScene(fleetManagerScene);
         }
     });
     document.getElementById('launchBtn').addEventListener('click', () => {
