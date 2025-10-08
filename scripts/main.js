@@ -251,7 +251,7 @@ function setupEventListeners() {
     document.getElementById('departBtn').addEventListener('click', () => {
         gameManager.switchScene(spaceScene, { difficulty: 'easy' }); // For now, it will always be 'easy'
     });
-    
+    */
 // Event listener for our new test button
     document.getElementById('getPaidBtn').addEventListener('click', () => {
         playerDataManager.addMoney(5000); // Give the player 500 credits

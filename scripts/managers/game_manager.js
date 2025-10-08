@@ -3,6 +3,8 @@
 const gameManager = {
     activeScene: null,
     savedState: null, // Add this to store the saved scene state
+    spaceScene: null, // Store reference to space scene
+    fleetDispatchMode: null, // Store fleet dispatch mode
 
     loop() {
         if (this.activeScene) {
@@ -20,6 +22,14 @@ const gameManager = {
         this.activeScene = scene;
         musicManager.playPlaylistForScene(scene.name || 'menu');
         scene.start(settings);
+    },
+    
+    // Method to get space scene instance
+    getSpaceScene() {
+        if (!this.spaceScene) {
+            this.spaceScene = new SpaceScene();
+        }
+        return this.spaceScene;
     },
 
     // NEW: Function to save the state of the current scene

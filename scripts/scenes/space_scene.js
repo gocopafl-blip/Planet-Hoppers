@@ -80,16 +80,21 @@ class SpaceScene {
 
         // Try to restore saved state first, otherwise create new ship and camera
         if (!this.restoreState()) {
-            // No saved state, create new ship and camera at starting position
-            const alphaDock = this.spaceDocks[0];
-            if (alphaDock) {
-                // Position the ship 980 units to the right of the dock, and 270 units below
-                const startingShipData = fleetManager.getActiveShipData(); // Default ship if none selected
-                this.ship = new Ship(alphaDock.x + 980, alphaDock.y + -50, this, startingShipData);
+            // Check if coming from fleet manager with specific dispatch mode
+            if (settings.fromFleetManager && settings.dispatchMode) {
+                this.handleFleetDispatch(settings.dispatchMode);
             } else {
-                // Fallback position if no dock exists               
-                const startingShipData = fleetManager.getActiveShipData(); // Add missing shipData               
-                this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
+                // No saved state, create new ship and camera at starting position
+                const alphaDock = this.spaceDocks[0];
+                if (alphaDock) {
+                    // Position the ship 980 units to the right of the dock, and 270 units below
+                    const startingShipData = fleetManager.getActiveShipData(); // Default ship if none selected
+                    this.ship = new Ship(alphaDock.x + 980, alphaDock.y + -50, this, startingShipData);
+                } else {
+                    // Fallback position if no dock exists               
+                    const startingShipData = fleetManager.getActiveShipData(); // Add missing shipData               
+                    this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
+                }
             }
 
             // Set up the camera to follow the ship
@@ -116,6 +121,97 @@ class SpaceScene {
         document.getElementById('access-dock-ui').style.display = 'none';
         document.getElementById('launch-ui').style.display = 'none';
         document.getElementById('player-hud').style.display = 'none';
+    }
+
+    handleFleetDispatch(dispatchMode) {
+        const activeShip = playerDataManager.getActiveShip();
+        if (!activeShip) {
+            console.error('No active ship found for fleet dispatch');
+            return;
+        }
+
+        const startingShipData = fleetManager.getActiveShipData();
+        
+        if (dispatchMode === 'dispatch') {
+            // Ship is being dispatched from dock - place outside dock
+            const alphaDock = this.spaceDocks[0];
+            if (alphaDock) {
+                this.ship = new Ship(alphaDock.x + 980, alphaDock.y + -50, this, startingShipData);
+            } else {
+                this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
+            }
+            console.log('Ship dispatched from dock');
+            
+        } else if (dispatchMode === 'jump_to') {
+            // Jump to ship at its stored location
+            const location = activeShip.location;
+            
+            if (location && location.type === 'space') {
+                // Ship is in deep space
+                this.ship = new Ship(location.x, location.y, this, startingShipData);
+                this.ship.velX = location.velX || 0;
+                this.ship.velY = location.velY || 0;
+                this.ship.angle = location.angle || 0;
+                console.log(`Jumped to ship in deep space at (${location.x}, ${location.y})`);
+                
+            } else if (location && location.type === 'orbit') {
+                // Ship is in orbit around a planet
+                const planets = planetManager.celestialBodies;
+                const planet = planets.find(p => p.name === location.planetName);
+                
+                if (planet && location.orbitData) {
+                    // Calculate position from orbit data
+                    const orbitRadius = location.orbitData.orbitRadius || 300;
+                    const orbitAngle = location.orbitData.orbitAngle || 0;
+                    const x = planet.x + orbitRadius * Math.cos(orbitAngle);
+                    const y = planet.y + orbitRadius * Math.sin(orbitAngle);
+                    
+                    this.ship = new Ship(x, y, this, startingShipData);
+                    this.ship.isOrbitLocked = true;
+                    this.ship.orbitingPlanet = planet;
+                    this.ship.orbitRadius = orbitRadius;
+                    this.ship.orbitAngle = orbitAngle;
+                    
+                    console.log(`Jumped to ship orbiting ${planet.name}`);
+                } else {
+                    // Fallback to space if planet not found
+                    this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
+                    console.warn('Planet not found for orbit, defaulted to center');
+                }
+                
+            } else {
+                // Ship is docked or no location data - place at dock
+                const alphaDock = this.spaceDocks[0];
+                if (alphaDock) {
+                    this.ship = new Ship(alphaDock.x + 980, alphaDock.y + -50, this, startingShipData);
+                    if (location && location.type === 'docked') {
+                        this.ship.isDocked = true;
+                    }
+                } else {
+                    this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
+                }
+                console.log('Jumped to docked ship or fallback position');
+            }
+        }
+        
+        // Apply ship health and consumables from fleet data
+        if (activeShip.currentHealth !== undefined) {
+            this.ship.health = activeShip.currentHealth;
+        }
+        if (activeShip.consumables?.fuel?.current !== undefined) {
+            this.ship.fuel = activeShip.consumables.fuel.current;
+        }
+        
+        // Set up camera
+        const shipData = fleetManager.getActiveShipData();
+        const defaultZoom = shipData.shipDefaultZoom || 1.0;
+        this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
+            zoomSmoothing: this.zoomSmoothing,
+            targetZoom: defaultZoom
+        });
+        
+        // Clear the dispatch mode
+        gameManager.fleetDispatchMode = null;
     }
 
     update() {

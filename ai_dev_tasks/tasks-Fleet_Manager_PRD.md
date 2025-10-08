@@ -28,14 +28,14 @@
   - [x] 1.4 Add "Terminate Remote Command" button to space scene HUD near speedometer
   - [x] 1.5 Update event listeners in main.js for renamed buttons
   - [x] 1.6 Update space_dock_scene.js event handler references for renamed fleet button
-- [ ] 2.0 Implement Core Fleet Manager Scene Functionality
-  - [ ] 2.1 Create fleet list display showing all player ships with containers for each ship
-  - [ ] 2.2 Add ship container layout with glam-shot image, ship info (name, ID, status, location), and action button
-  - [ ] 2.3 Implement visual highlighting for currently active ship in fleet list
-  - [ ] 2.4 Add ship status determination logic (Ready for Dispatch, Orbiting Planet, Deep Space, etc.)
-  - [ ] 2.5 Add ship location display logic (Docked, planet names, coordinates for deep space)
-  - [ ] 2.6 Implement ship container click handler to show detailed ship parameters in expanded view
-  - [ ] 2.7 Add "Jump To" and "Dispatch" button functionality with proper ship state checking
+- [x] 2.0 Implement Core Fleet Manager Scene Functionality
+  - [x] 2.1 Create fleet list display showing all player ships with containers for each ship
+  - [x] 2.2 Add ship container layout with glam-shot image, ship info (name, ID, status, location), and action button
+  - [x] 2.3 Implement visual highlighting for currently active ship in fleet list
+  - [x] 2.4 Add ship status determination logic (Ready for Dispatch, Orbiting Planet, Deep Space, etc.)
+  - [x] 2.5 Add ship location display logic (Docked, planet names, coordinates for deep space)
+  - [x] 2.6 Implement ship container click handler to show detailed ship parameters in expanded view
+  - [x] 2.7 Add "Jump To" and "Dispatch" button functionality with proper ship state checking
 - [ ] 3.0 Add Ship State Management and Persistence
   - [ ] 3.1 Update player_data.js fleet structure to include ship location, velocity, fuel, and mission assignment
   - [ ] 3.2 Add fleet management methods to player_data_manager.js for ship state operations
