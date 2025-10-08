@@ -159,7 +159,7 @@ function setupEventListeners() {
     const spaceScene = new SpaceScene();
     const navScreenElement = document.getElementById('nav-screen');
     canvas.addEventListener('click', (event) => {
-        if (gameManager.activeScene === spaceScene) {
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
@@ -171,35 +171,35 @@ function setupEventListeners() {
 
             // Check if the click was inside the radar circle
             if (Math.hypot(x - radarX, y - radarY) <= radarRadius) {
-                spaceScene.navScreen.toggle();
+                gameManager.activeScene.navScreen.toggle();
             }
         }
     });
 
     document.getElementById('closeNavScreenBtn').addEventListener('click', () => {
-        if (gameManager.activeScene === spaceScene) {
-            spaceScene.navScreen.hide();
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
+            gameManager.activeScene.navScreen.hide();
         }
     });
     navScreenElement.addEventListener('wheel', (event) => {
         event.preventDefault(); // Prevents the whole page from scrolling
-        if (spaceScene.navScreen.isOpen) {
-            spaceScene.navScreen.handleZoom(event);
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.navScreen && gameManager.activeScene.navScreen.isOpen) {
+            gameManager.activeScene.navScreen.handleZoom(event);
         }
     });
 
 
     // This event listener handles left, middle, and right clicks
     navScreenElement.addEventListener('mousedown', (event) => {
-        if (spaceScene.navScreen.isOpen) {
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.navScreen && gameManager.activeScene.navScreen.isOpen) {
             event.preventDefault(); // Prevent default browser actions for all buttons
 
             if (event.button === 0) { // 0 is the left mouse button
-                spaceScene.navScreen.handleSetWaypoint(event);
+                gameManager.activeScene.navScreen.handleSetWaypoint(event);
             } else if (event.button === 1) { // 1 is the middle mouse button
-                spaceScene.navScreen.handlePanStart(event);
+                gameManager.activeScene.navScreen.handlePanStart(event);
             } else if (event.button === 2) { // 2 is the right mouse button
-                spaceScene.navScreen.handleSetWaypoint(event);
+                gameManager.activeScene.navScreen.handleSetWaypoint(event);
             }
         }
     });
@@ -211,16 +211,16 @@ function setupEventListeners() {
 
     // Listen for mouse move to pan the map
     navScreenElement.addEventListener('mousemove', (event) => {
-        if (spaceScene.navScreen.isOpen) {
-            spaceScene.navScreen.handlePanMove(event);
-            spaceScene.navScreen.handleMouseMove(event);
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.navScreen && gameManager.activeScene.navScreen.isOpen) {
+            gameManager.activeScene.navScreen.handlePanMove(event);
+            gameManager.activeScene.navScreen.handleMouseMove(event);
         }
     });
 
     // Listen for mouse up to stop panning
     navScreenElement.addEventListener('mouseup', (event) => {
-        if (spaceScene.navScreen.isOpen) {
-            spaceScene.navScreen.handlePanEnd(event);
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.navScreen && gameManager.activeScene.navScreen.isOpen) {
+            gameManager.activeScene.navScreen.handlePanEnd(event);
         }
     });
     /*
@@ -262,25 +262,25 @@ function setupEventListeners() {
 
     document.getElementById('accessDockBtn').addEventListener('click', () => {
         // Check if the current scene is the spaceScene before switching
-        if (gameManager.activeScene === spaceScene) {
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
             gameManager.switchScene(spaceDockScene);
         }
     });
     
     document.getElementById('terminateRemoteCommandBtn').addEventListener('click', () => {
         // Check if the current scene is the spaceScene before switching
-        if (gameManager.activeScene === spaceScene) {
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
             // Save space scene state before switching to fleet manager
-            spaceScene.saveState();
+            gameManager.activeScene.saveState();
             gameManager.switchScene(fleetManagerScene);
         }
     });
     document.getElementById('launchBtn').addEventListener('click', () => {
-        if (gameManager.activeScene === spaceScene && spaceScene.ship.isOrbitLocked) {
-            spaceScene.saveState(); // Save space scene state before switching
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.ship && gameManager.activeScene.ship.isOrbitLocked) {
+            gameManager.activeScene.saveState(); // Save space scene state before switching
 
             // Get the planet the ship is orbiting
-            const orbitingPlanet = spaceScene.ship.orbitingPlanet;
+            const orbitingPlanet = gameManager.activeScene.ship.orbitingPlanet;
 
             settings.selectedShip = shipTypes.classic;
             settings.planet = orbitingPlanet; // Pass the planet data to lander scene

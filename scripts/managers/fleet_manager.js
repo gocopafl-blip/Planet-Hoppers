@@ -48,7 +48,7 @@ class FleetManager {
         // Create a new ship object for the fleet
         const newShip = {
             id: Date.now(), // Unique ID for the ship instance
-            shipTypeId: shipData.shipID,
+            shipTypeId: shipID, // Use the catalogue key, not the display name
             name: shipData.shipName || shipData.shipID,
             currentHealth: shipData.shipMaxHealth || 100,
             maxHealth: shipData.shipMaxHealth || 100,

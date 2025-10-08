@@ -73,8 +73,8 @@ const fleetManagerScene = {
                 
                 if (ship.id === activeShipId) {
                     status = 'Currently Under Remote Command';
-                    actionText = 'Current Ship';
-                    actionType = 'current';
+                    actionText = 'Jump To';
+                    actionType = 'jump_to';
                     
                     // Check if we have saved state for current ship in space scene
                     // Use gameManager.activeScene to access the space scene properly
@@ -85,14 +85,20 @@ const fleetManagerScene = {
                     } else if (currentSpaceScene && currentSpaceScene.name === 'space') {
                         if (currentSpaceScene.ship && currentSpaceScene.ship.isDocked) {
                             location = 'Docked at Station';
-                            status = 'Docked';
+                            status = 'Ready for Dispatch';
+                            actionText = 'Dispatch';
+                            actionType = 'dispatch';
                         } else if (currentSpaceScene.ship && currentSpaceScene.ship.isOrbitLocked) {
                             const planetName = currentSpaceScene.ship.orbitingPlanet ? currentSpaceScene.ship.orbitingPlanet.name : 'Unknown Planet';
                             location = `Orbiting ${planetName}`;
                             status = 'In Stable Orbit';
+                            actionText = 'Jump To';
+                            actionType = 'jump_to';
                         } else {
                             location = 'Deep Space';
                             status = 'Active in Deep Space';
+                            actionText = 'Jump To';
+                            actionType = 'jump_to';
                         }
                     }
                 } else {
@@ -102,6 +108,7 @@ const fleetManagerScene = {
                             location = 'Docked at Station';
                             status = 'Ready for Dispatch';
                             actionText = 'Dispatch';
+                            actionType = 'dispatch';
                         } else if (ship.location.type === 'orbit') {
                             location = `Orbiting ${ship.location.planetName || 'Unknown Planet'}`;
                             status = 'In Stable Orbit';
@@ -269,10 +276,6 @@ const fleetManagerScene = {
                 break;
             case 'jump_to':
                 this.jumpToShip(ship);
-                break;
-            case 'current':
-                // Already current ship, no action needed
-                console.log('This is already the current ship');
                 break;
             case 'disabled':
                 // Ship is disabled, show repair message

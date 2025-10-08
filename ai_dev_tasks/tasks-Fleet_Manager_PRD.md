@@ -43,6 +43,8 @@
   - [ ] 3.4 Add active ship switching functionality that saves current ship state and loads target ship state
   - [ ] 3.5 Update space scene to restore ship state from fleet data when entering via Jump To or Dispatch
   - [ ] 3.6 Add ship positioning logic for Dispatch (placing ship outside dock) vs Jump To (current location)
+  - [ ] 3.7 Implement auto-return to fleet manager when ship docks (clears activeShipId and switches to fleet manager scene)
+  - [ ] 3.8 Add proper ship location initialization for new ships (set to docked state when added to fleet)
 - [ ] 4.0 Implement Mission Assignment Flow with Ship Selection
   - [ ] 4.1 Create ship assignment modal HTML structure in index.html
   - [ ] 4.2 Add modal styling in style.css with ship selection interface
