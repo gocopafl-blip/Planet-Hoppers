@@ -78,25 +78,33 @@ class SpaceScene {
             planetManager.generatePlanets(this.numPlanets, this.WORLD_WIDTH, this.WORLD_HEIGHT, this.spaceDocks);
         }
 
-        // Try to restore saved state first, otherwise create new ship and camera
-        if (!this.restoreState()) {
-            // Check if coming from fleet manager with specific dispatch mode
-            if (settings.fromFleetManager && settings.dispatchMode) {
-                this.handleFleetDispatch(settings.dispatchMode);
+        // FIXED BUG: Fleet dispatch must take priority over saved state restoration
+        // When coming from fleet manager, always load the newly selected ship
+        if (settings.fromFleetManager && settings.dispatchMode) {
+            // Clear any existing saved state to prevent wrong ship restoration
+            this.savedState = null;
+            this.handleFleetDispatch(settings.dispatchMode);
+        } else if (!this.restoreState()) {
+            // No saved state, create new ship and camera at starting position
+            const alphaDock = this.spaceDocks[0];
+            if (alphaDock) {
+                // Use docked position constants for consistent starting position
+                const startingShipData = fleetManager.getActiveShipData(); // Default ship if none selected
+                this.ship = new Ship(
+                    alphaDock.x + SHIP_DOCKED_OFFSET.x, 
+                    alphaDock.y + SHIP_DOCKED_OFFSET.y, 
+                    this, 
+                    startingShipData
+                );
             } else {
-                // No saved state, create new ship and camera at starting position
-                const alphaDock = this.spaceDocks[0];
-                if (alphaDock) {
-                    // Position the ship 980 units to the right of the dock, and 270 units below
-                    const startingShipData = fleetManager.getActiveShipData(); // Default ship if none selected
-                    this.ship = new Ship(alphaDock.x + 980, alphaDock.y + -50, this, startingShipData);
-                } else {
-                    // Fallback position if no dock exists               
-                    const startingShipData = fleetManager.getActiveShipData(); // Add missing shipData               
-                    this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
-                }
+                // Fallback position if no dock exists               
+                const startingShipData = fleetManager.getActiveShipData(); // Add missing shipData               
+                this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
             }
+        }
 
+        // Set up the camera - only if we have a ship and camera hasn't been set by fleet dispatch
+        if (this.ship && !this.camera) {
             // Set up the camera to follow the ship
             const shipData = fleetManager.getActiveShipData();
             const defaultZoom = shipData.shipDefaultZoom || 1.0;
@@ -106,7 +114,7 @@ class SpaceScene {
                 followSmoothing: 0.5,  // Instant camera following for tight ship centering
                 defaultZoom: defaultZoom  // Pass ship's default zoom
             });
-        } else {
+        } else if (this.camera && this.ship) {
             // State was restored, but make sure camera target is set correctly
             this.camera.target = this.ship;
         }
@@ -124,85 +132,182 @@ class SpaceScene {
     }
 
     handleFleetDispatch(dispatchMode) {
+        // ENHANCED: Full ship state restoration from fleet data with proper error handling (Task 3.7)
         const activeShip = playerDataManager.getActiveShip();
         if (!activeShip) {
             console.error('No active ship found for fleet dispatch');
+            alert('Error: No active ship selected. Returning to fleet manager.');
+            gameManager.switchScene(fleetManagerScene);
             return;
         }
 
         const startingShipData = fleetManager.getActiveShipData();
+        if (!startingShipData) {
+            console.error('No ship data found for active ship:', activeShip.shipTypeId);
+            alert('Error: Ship configuration not found. Please check your ship setup.');
+            gameManager.switchScene(fleetManagerScene);
+            return;
+        }
         
         if (dispatchMode === 'dispatch') {
-            // Ship is being dispatched from dock - place outside dock
+            // ENHANCED: Ship is being dispatched from dock - place well outside dock like a proper launch (Task 3.6)
+            // Dispatch positioning should simulate a ship launching from the dock, placed at a safe distance
             const alphaDock = this.spaceDocks[0];
             if (alphaDock) {
-                this.ship = new Ship(alphaDock.x + 980, alphaDock.y + -50, this, startingShipData);
+                // Use launch position constants for consistent and maintainable positioning
+                this.ship = new Ship(
+                    alphaDock.x + SHIP_LAUNCH_OFFSET.x, 
+                    alphaDock.y + SHIP_LAUNCH_OFFSET.y, 
+                    this, 
+                    startingShipData
+                );
             } else {
+                // Fallback to center if no dock found
                 this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
             }
-            console.log('Ship dispatched from dock');
+            
+            // Mark ship as freshly launched - not docked, no orbital locks
+            this.ship.isDocked = false;
+            this.ship.isOrbitLocked = false;
+            // Reset velocity for fresh launch (no momentum from previous movement)
+            this.ship.velX = 0;
+            this.ship.velY = 0;
+            
+            console.log('Ship dispatched from dock at launch position');
             
         } else if (dispatchMode === 'jump_to') {
-            // Jump to ship at its stored location
+            // ENHANCED: Jump to ship at its exact stored location - maintain complete state (Task 3.6)
+            // Jump To positioning should restore the ship to its exact saved location with all state preserved
             const location = activeShip.location;
             
             if (location && location.type === 'space') {
-                // Ship is in deep space
+                // Ship is in deep space - restore exact position, velocity, and orientation
                 this.ship = new Ship(location.x, location.y, this, startingShipData);
                 this.ship.velX = location.velX || 0;
                 this.ship.velY = location.velY || 0;
                 this.ship.angle = location.angle || 0;
-                console.log(`Jumped to ship in deep space at (${location.x}, ${location.y})`);
+                this.ship.isDocked = location.isDocked || false;
+                this.ship.isOrbitLocked = location.isOrbitLocked || false;
+                
+                console.log(`Jumped to ship in deep space at (${location.x}, ${location.y}) with velocity (${this.ship.velX}, ${this.ship.velY})`);
                 
             } else if (location && location.type === 'orbit') {
-                // Ship is in orbit around a planet
+                // Ship is in orbit around a planet - restore complete orbital mechanics with error handling (Task 3.7)
                 const planets = planetManager.celestialBodies;
-                const planet = planets.find(p => p.name === location.planetName);
                 
-                if (planet && location.orbitData) {
-                    // Calculate position from orbit data
-                    const orbitRadius = location.orbitData.orbitRadius || 300;
-                    const orbitAngle = location.orbitData.orbitAngle || 0;
-                    const x = planet.x + orbitRadius * Math.cos(orbitAngle);
-                    const y = planet.y + orbitRadius * Math.sin(orbitAngle);
-                    
-                    this.ship = new Ship(x, y, this, startingShipData);
-                    this.ship.isOrbitLocked = true;
-                    this.ship.orbitingPlanet = planet;
-                    this.ship.orbitRadius = orbitRadius;
-                    this.ship.orbitAngle = orbitAngle;
-                    
-                    console.log(`Jumped to ship orbiting ${planet.name}`);
-                } else {
-                    // Fallback to space if planet not found
+                if (!planets || planets.length === 0) {
+                    console.error('No celestial bodies found for orbital restoration');
+                    // Fallback to safe space position
                     this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
-                    console.warn('Planet not found for orbit, defaulted to center');
+                    console.warn('Planet system unavailable - placed ship in center space');
+                } else {
+                    const planet = planets.find(p => p.name === location.planetName);
+                    
+                    if (planet && location.orbitData) {
+                        // Validate orbit data before using it
+                        let orbitRadius = location.orbitData.orbitRadius || (planet.radius * ORBIT_RADIUS_MULTIPLIERS.DEFAULT);
+                        const orbitAngle = location.orbitData.orbitAngle || 0;
+                        
+                        // Validate that orbit radius is reasonable relative to planet size
+                        const minRadius = Math.max(planet.radius * ORBIT_RADIUS_MULTIPLIERS.MIN, ORBIT_RADIUS_BOUNDS.ABSOLUTE_MIN);
+                        const maxRadius = Math.min(planet.radius * ORBIT_RADIUS_MULTIPLIERS.MAX, ORBIT_RADIUS_BOUNDS.ABSOLUTE_MAX);
+                        
+                        if (orbitRadius < minRadius || orbitRadius > maxRadius) {
+                            console.warn(`Invalid orbit radius ${orbitRadius} for planet ${planet.name} (radius ${planet.radius}), using default ${planet.radius * ORBIT_RADIUS_MULTIPLIERS.DEFAULT}`);
+                            orbitRadius = planet.radius * ORBIT_RADIUS_MULTIPLIERS.DEFAULT;
+                        }
+                        
+                        const x = planet.x + orbitRadius * Math.cos(orbitAngle);
+                        const y = planet.y + orbitRadius * Math.sin(orbitAngle);
+                        
+                        this.ship = new Ship(x, y, this, startingShipData);
+                        
+                        // Restore complete orbital state exactly as it was saved
+                        this.ship.isOrbitLocked = true;
+                        this.ship.orbitingPlanet = planet;
+                        this.ship.orbitRadius = orbitRadius;
+                        this.ship.orbitAngle = orbitAngle;
+                        this.ship.isDocked = false;
+                        
+                        // FIXED: Simply restore the exact saved orbital speed
+                        this.ship.lockedOrbitSpeed = location.orbitData.lockedOrbitSpeed || 0;
+                        
+                        // Set orbit transition as complete (ship is already in stable orbit)
+                        this.ship.orbitTransitionProgress = 1; // 100% - no transition needed
+                        
+                        // Restore exact velocity and orientation from saved state
+                        this.ship.velX = location.velX || 0;
+                        this.ship.velY = location.velY || 0;
+                        this.ship.angle = location.angle || 0;
+                        
+                        console.log(`Jumped to ship orbiting ${planet.name} at radius ${orbitRadius}, angle ${orbitAngle}, speed ${this.ship.lockedOrbitSpeed.toFixed(2)}`);
+                    } else if (!planet) {
+                        // Planet not found - this could happen if planet system changed
+                        console.error(`Planet "${location.planetName}" not found for orbital restoration`);
+                        // Fallback to safe space position
+                        this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
+                        console.warn('Planet not found - placed ship in center space');
+                    } else {
+                        // Missing orbit data
+                        console.error('Missing orbit data for ship orbital restoration');
+                        // Place near the planet if possible using default orbital distance
+                        if (planet) {
+                            const defaultOrbitRadius = planet.radius * ORBIT_RADIUS_MULTIPLIERS.DEFAULT;
+                            this.ship = new Ship(planet.x + defaultOrbitRadius, planet.y, this, startingShipData);
+                            console.warn(`Missing orbit data - placed ship at default orbital distance (${defaultOrbitRadius}) from planet`);
+                        } else {
+                            this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
+                        }
+                    }
                 }
                 
-            } else {
-                // Ship is docked or no location data - place at dock
+            } else if (location && location.type === 'docked') {
+                // Ship is docked at station - place at dock position with proper docked state
+                // For docked ships, use standard dock position (not launch position)
                 const alphaDock = this.spaceDocks[0];
                 if (alphaDock) {
-                    this.ship = new Ship(alphaDock.x + 980, alphaDock.y + -50, this, startingShipData);
-                    if (location && location.type === 'docked') {
-                        this.ship.isDocked = true;
-                    }
+                    // Use docked position constants for consistent positioning
+                    this.ship = new Ship(
+                        alphaDock.x + SHIP_DOCKED_OFFSET.x, 
+                        alphaDock.y + SHIP_DOCKED_OFFSET.y, 
+                        this, 
+                        startingShipData
+                    );
                 } else {
                     this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
                 }
-                console.log('Jumped to docked ship or fallback position');
+                
+                // Set proper docked state - no movement when docked
+                this.ship.isDocked = true;
+                this.ship.isOrbitLocked = false;
+                this.ship.velX = 0;  // No velocity when docked to station
+                this.ship.velY = 0;  // No velocity when docked to station
+                
+                console.log('Jumped to docked ship at station');
+                
+            } else {
+                // No valid location data - safe fallback positioning
+                // Use dock proximity as safe default (not launch distance)
+                const alphaDock = this.spaceDocks[0];
+                if (alphaDock) {
+                    // Use docked position constants for safe fallback
+                    this.ship = new Ship(
+                        alphaDock.x + SHIP_DOCKED_OFFSET.x, 
+                        alphaDock.y + SHIP_DOCKED_OFFSET.y, 
+                        this, 
+                        startingShipData
+                    );
+                } else {
+                    this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
+                }
+                console.log('No valid location data - placed ship at default dock proximity');
             }
         }
         
-        // Apply ship health and consumables from fleet data
-        if (activeShip.currentHealth !== undefined) {
-            this.ship.health = activeShip.currentHealth;
-        }
-        if (activeShip.consumables?.fuel?.current !== undefined) {
-            this.ship.fuel = activeShip.consumables.fuel.current;
-        }
+        // ENHANCED: Restore complete ship state from fleet data
+        this.restoreShipConsumablesAndHealth(activeShip);
         
-        // Set up camera
+        // Set up camera with ship-specific zoom level
         const shipData = fleetManager.getActiveShipData();
         const defaultZoom = shipData.shipDefaultZoom || 1.0;
         this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
@@ -212,6 +317,45 @@ class SpaceScene {
         
         // Clear the dispatch mode
         gameManager.fleetDispatchMode = null;
+        
+        console.log('Fleet dispatch complete - ship positioned and state fully restored via', dispatchMode, 'mode');
+    }
+
+    // NEW METHOD: Restore ship consumables and health from fleet data (Task 3.5)
+    restoreShipConsumablesAndHealth(activeShip) {
+        // This method restores the ship's consumables and health from the saved fleet data
+        // It ensures the ship in the space scene matches the saved fleet state exactly
+        
+        if (!this.ship || !activeShip) {
+            console.warn('Cannot restore ship state - missing ship or active ship data');
+            return;
+        }
+        
+        // Restore health from fleet data
+        if (activeShip.currentHealth !== undefined) {
+            this.ship.health = activeShip.currentHealth;
+            console.log(`Restored ship health: ${activeShip.currentHealth}/${activeShip.maxHealth}`);
+        }
+        
+        // Restore fuel from fleet data
+        if (activeShip.consumables?.fuel?.current !== undefined) {
+            this.ship.fuel = activeShip.consumables.fuel.current;
+            console.log(`Restored ship fuel: ${activeShip.consumables.fuel.current}/${activeShip.consumables.fuel.max}`);
+        }
+        
+        // Restore oxygen if space scene tracks it
+        if (activeShip.consumables?.oxygen?.current !== undefined && this.ship.oxygen !== undefined) {
+            this.ship.oxygen = activeShip.consumables.oxygen.current;
+            console.log(`Restored ship oxygen: ${activeShip.consumables.oxygen.current}/${activeShip.consumables.oxygen.max}`);
+        }
+        
+        // Restore electricity if space scene tracks it
+        if (activeShip.consumables?.electricity?.current !== undefined && this.ship.electricity !== undefined) {
+            this.ship.electricity = activeShip.consumables.electricity.current;
+            console.log(`Restored ship electricity: ${activeShip.consumables.electricity.current}/${activeShip.consumables.electricity.max}`);
+        }
+        
+        console.log('Ship consumables and health restoration complete');
     }
 
     update() {
@@ -288,12 +432,38 @@ class SpaceScene {
             const distance = Math.hypot(this.ship.x - dock.x, this.ship.y - dock.y);
             const speed = Math.hypot(this.ship.velX, this.ship.velY);
 
+            // Check if ship should dock
             if (!wantsToMove && distance < this.dockingRadius && speed < this.MAX_DOCKING_SPEED && speed > this.MIN_DOCKING_SPEED) {
+                const wasDockedBefore = this.ship.isDocked;
                 this.ship.isDocked = true;
 
                 this.ship.velX = 0; // Reduce residual velocity
                 this.ship.velY = 0; // Reduce residual velocity
-                if (this.ship.isDocked) {
+                
+                // ENHANCED: Auto-return to fleet manager on docking (Task 4.7)
+                if (!wasDockedBefore && this.ship.isDocked) {
+                    // Ship just docked (wasn't docked before, now is docked)
+                    console.log('Ship docked - initiating auto-return to fleet manager');
+                    
+                    // Play airlock sound
+                    if (!airlockSoundPlayed) {
+                        airlockSound.play();
+                        airlockSoundPlayed = true;
+                    }
+                    
+                    // Save current ship state before switching scenes (Task 4.7)
+                    this.saveState();
+                    fleetManager.saveActiveShipStateFromSpaceScene(this);
+                    
+                    // FIXED: Clear active ship immediately and switch scene without delay
+                    // This prevents the update loop from running with null active ship
+                    playerDataManager.setActiveShip(null);
+                    console.log('Active ship cleared - ship is now docked and available for reassignment');
+                    
+                    console.log('Returning to fleet manager after docking');
+                    gameManager.switchScene(fleetManagerScene, { fromSpaceScene: true, dockedReturn: true });
+                } else if (this.ship.isDocked) {
+                    // Ship was already docked, just maintain sound state
                     if (!airlockSoundPlayed) {
                         airlockSound.play();
                         airlockSoundPlayed = true;

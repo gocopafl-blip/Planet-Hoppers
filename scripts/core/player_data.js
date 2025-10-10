@@ -16,12 +16,34 @@ function getNewPlayerData() {
                 shipTypeId: 'stardust_drifter',
                 name: 'Stardust Drifter',
                 currentHealth: 85,
-                consumables: {
-                    fuel: { current: 50 },
-                    oxygen: { current: 100 },
-                    electricity: { current: 100 }
+                maxHealth: 100, // Add max health for easier percentage calculations
+                
+                // Ship location and state for fleet management
+                location: {
+                    type: 'docked', // 'docked', 'space', 'orbit'
+                    x: 0,
+                    y: 0,
+                    velX: 0,
+                    velY: 0,
+                    angle: 0,
+                    isDocked: true,
+                    isOrbitLocked: false,
+                    // For orbit locations
+                    planetName: null,
+                    orbitData: null // { planetIndex, orbitRadius, orbitAngle }
                 },
+                
+                consumables: {
+                    fuel: { current: 50, max: 100 },
+                    oxygen: { current: 100, max: 100 },
+                    electricity: { current: 100, max: 100 }
+                },
+                
                 upgrades: ['extra_cargo_pod'],
+                
+                // Mission assignment for this specific ship
+                assignedMissionId: null,
+                missionState: null, // Mission-specific state data
                 
                 // UPDATED: Now a list of unique drop ships with their own state
                 equippedDropShips: [

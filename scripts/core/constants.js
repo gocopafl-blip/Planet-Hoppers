@@ -13,6 +13,42 @@ canvas.height = 700;
 
 const ASSET_BASE_URL = 'https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/';
 
+// SHIP POSITIONING CONSTANTS
+// These constants define ship placement relative to space dock positions
+// Adjust these values if dock images or layouts change
+
+// Standard docked ship position (close proximity to station)
+const SHIP_DOCKED_OFFSET = {
+    x: 980,   // Distance right of dock center for docked ships
+    y: -50    // Distance above dock center for docked ships
+};
+
+// Launch position for dispatched ships (further from station for realistic launch)
+const SHIP_LAUNCH_OFFSET = {
+    x: 1200,  // Distance right of dock center for launching ships (further than docked)
+    y: -100   // Distance above dock center for launching ships (more separation)
+};
+
+// ORBITAL MECHANICS CONSTANTS
+// These constants define valid orbital parameters for ship positioning and validation
+// Based on planetary physics where ships can orbit within the gravity well boundary
+
+// Orbital radius as multipliers of planet radius (more realistic than fixed distances)
+const ORBIT_RADIUS_MULTIPLIERS = {
+    MIN: 1.1,    // Ships can orbit just outside planet surface (110% of planet radius)
+    DEFAULT: 1.25, // Default safe orbital distance (125% of planet radius) 
+    MAX: 1.35    // Maximum orbit at gravity well edge (135% of planet radius, matches GRAVITY_BOUNDARY_MULTIPLIER)
+};
+
+// Fallback orbital radius for error conditions (when planet data unavailable)
+const FALLBACK_ORBIT_RADIUS = 300;
+
+// Orbital radius validation bounds (absolute minimums/maximums for safety)
+const ORBIT_RADIUS_BOUNDS = {
+    ABSOLUTE_MIN: 100,   // Never orbit closer than this regardless of planet size
+    ABSOLUTE_MAX: 4500   // Never orbit further than this (largest gas giant * MAX multiplier)
+};
+
 function degreesToRadians(degrees) {
     return degrees * (Math.PI / 180);
 }

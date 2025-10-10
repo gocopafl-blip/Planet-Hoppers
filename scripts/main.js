@@ -272,7 +272,13 @@ function setupEventListeners() {
         if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
             // Save space scene state before switching to fleet manager
             gameManager.activeScene.saveState();
-            gameManager.switchScene(fleetManagerScene);
+            
+            // ENHANCED: Also save ship state to fleet manager for proper fleet persistence (Task 3.6 fix)
+            // This ensures the ship's current position/velocity is saved to PlayerDataManager fleet data
+            fleetManager.saveActiveShipStateFromSpaceScene(gameManager.activeScene);
+            
+            // ENHANCED: Pass settings to indicate we're returning from space scene (Task 4.6)
+            gameManager.switchScene(fleetManagerScene, { fromSpaceScene: true });
         }
     });
     document.getElementById('launchBtn').addEventListener('click', () => {

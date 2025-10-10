@@ -13,8 +13,20 @@ const fleetManagerScene = {
         // Remove any old animation classes
         fleetManager.classList.remove('slide-out', 'slide-in', 'clip-reveal', 'clip-close');
 
-        // Add a delay before showing the missions and animating
+        // ENHANCED: Check if returning from space scene for proper state restoration (Task 4.6 & 4.7)
+        const returningFromSpace = settings && settings.fromSpaceScene;
+        const dockedReturn = settings && settings.dockedReturn;
         
+        if (returningFromSpace) {
+            console.log('Fleet Manager: Returning from space scene, refreshing ship states');
+        }
+        
+        if (dockedReturn) {
+            console.log('Fleet Manager: Ship auto-returned after docking - ship is now available for new commands');
+            // Could add special handling here like highlighting the docked ship or showing a message
+        }
+
+        // Add a delay before showing the missions and animating
         setTimeout(() => {
             fleetManager.style.display = 'flex';
             this.showFleetManager();
@@ -31,12 +43,22 @@ const fleetManagerScene = {
         
         // Add fleet list click handler for ship details
         if (this._fleetList) {
-            this._fleetList.addEventListener('click', this.handleFleetClick.bind(this));
+            // Store bound function reference so we can properly remove it later
+            this.boundHandleFleetClick = this.handleFleetClick.bind(this);
+            this._fleetList.addEventListener('click', this.boundHandleFleetClick);
         }
     
         if (this._closeBtn) {
             this._closeBtn.addEventListener('click', this.handleCloseFleetManager);
         }
+    },
+
+    // NEW METHOD: Refresh fleet display without animation (Task 4.6)
+    refreshFleetDisplay() {
+        // This method updates the fleet manager display with current ship states
+        // Used when returning from space scene to show updated ship information
+        console.log('Refreshing fleet display with current ship states');
+        this.populateFleetList();
     },
 
     showFleetManager() {
@@ -45,6 +67,12 @@ const fleetManagerScene = {
         //fleetManager.classList.add('slide-in'); // Alternative: slides in from bottom
         fleetManager.classList.add('clip-reveal'); // Expanding chamfer effect
         
+        // Populate the fleet list with current data
+        this.populateFleetList();
+    },
+    
+    // NEW METHOD: Populate fleet list with current ship data (Task 4.6)
+    populateFleetList() {
         const fleetList = document.getElementById('fleet-list');
 
         // Get the player's fleet from playerDataManager
@@ -65,41 +93,47 @@ const fleetManagerScene = {
                 const glamShotImage = assetManager.getImage(shipData.shipGlamShot);
                 const imageSrc = glamShotImage ? glamShotImage.src : '';
 
-                // Determine ship status and location
+                // ENHANCED: Determine ship status and location from saved fleet data (Task 4.6)
+                // This ensures the fleet manager shows accurate info even after returning from space
                 let status = 'Ready for Dispatch';
                 let location = 'Docked';
                 let actionText = 'Dispatch';
                 let actionType = 'dispatch';
                 
                 if (ship.id === activeShipId) {
-                    status = 'Currently Under Remote Command';
-                    actionText = 'Jump To';
-                    actionType = 'jump_to';
-                    
-                    // Check if we have saved state for current ship in space scene
-                    // Use gameManager.activeScene to access the space scene properly
-                    const currentSpaceScene = gameManager.activeScene;
-                    if (currentSpaceScene && currentSpaceScene.name === 'space' && currentSpaceScene.savedState) {
-                        location = `Deep Space (${Math.round(currentSpaceScene.savedState.shipX)}, ${Math.round(currentSpaceScene.savedState.shipY)})`;
-                        status = 'Active in Deep Space';
-                    } else if (currentSpaceScene && currentSpaceScene.name === 'space') {
-                        if (currentSpaceScene.ship && currentSpaceScene.ship.isDocked) {
-                            location = 'Docked at Station';
-                            status = 'Ready for Dispatch';
-                            actionText = 'Dispatch';
-                            actionType = 'dispatch';
-                        } else if (currentSpaceScene.ship && currentSpaceScene.ship.isOrbitLocked) {
-                            const planetName = currentSpaceScene.ship.orbitingPlanet ? currentSpaceScene.ship.orbitingPlanet.name : 'Unknown Planet';
-                            location = `Orbiting ${planetName}`;
-                            status = 'In Stable Orbit';
-                            actionText = 'Jump To';
-                            actionType = 'jump_to';
-                        } else {
-                            location = 'Deep Space';
-                            status = 'Active in Deep Space';
-                            actionText = 'Jump To';
-                            actionType = 'jump_to';
+                    // For active ship, check its saved location data first
+                    if (ship.location) {
+                        switch (ship.location.type) {
+                            case 'space':
+                                location = `Deep Space (${Math.round(ship.location.x)}, ${Math.round(ship.location.y)})`;
+                                status = 'Active in Deep Space';
+                                actionText = 'Jump To';
+                                actionType = 'jump_to';
+                                break;
+                            case 'orbit':
+                                const planetName = ship.location.planetName || 'Unknown Planet';
+                                location = `Orbiting ${planetName}`;
+                                status = 'In Stable Orbit';
+                                actionText = 'Jump To';
+                                actionType = 'jump_to';
+                                break;
+                            case 'docked':
+                                location = 'Docked at Station';
+                                status = 'Ready for Dispatch';
+                                actionText = 'Dispatch';
+                                actionType = 'dispatch';
+                                break;
+                            default:
+                                // Fallback - treat as remote command active
+                                status = 'Currently Under Remote Command';
+                                actionText = 'Jump To';
+                                actionType = 'jump_to';
                         }
+                    } else {
+                        // No location data - default to remote command status
+                        status = 'Currently Under Remote Command';
+                        actionText = 'Jump To';
+                        actionType = 'jump_to';
                     }
                 } else {
                     // For non-active ships, check their stored state
@@ -133,7 +167,7 @@ const fleetManagerScene = {
                     
                     // Check fuel status
                     const currentFuel = ship.consumables?.fuel?.current || 0;
-                    const maxFuel = shipData.shipFuelCapacity || 100;
+                    const maxFuel = ship.consumables?.fuel?.max || shipData.shipConsumables?.shipFuel?.max || 100;
                     if (currentFuel < maxFuel * 0.1) {
                         status = 'Low Fuel - ' + status;
                     }
@@ -148,7 +182,7 @@ const fleetManagerScene = {
                         <p class="ship-location">Location: ${location}</p>
                         <div class="ship-stats">
                             <span>Health: ${ship.currentHealth}/${ship.maxHealth}</span>
-                            <span>Fuel: ${ship.consumables?.fuel?.current || 0}/${shipData.shipFuelCapacity || 100}</span>
+                            <span>Fuel: ${ship.consumables?.fuel?.current || 0}/${ship.consumables?.fuel?.max || shipData.shipConsumables?.shipFuel?.max || 100}</span>
                         </div>
                     </div>
                     
@@ -165,10 +199,8 @@ const fleetManagerScene = {
                 fleetList.appendChild(shipElement);
             });
         }
-
-        fleetManager.style.display = 'flex';
     },
-    
+
     handleFleetClick(event) {
         // Handle ship container clicks for detailed view
         const shipContainer = event.target.closest('.fleet-ship-container');
@@ -220,16 +252,16 @@ const fleetManagerScene = {
                         </div>
                         <div class="detail-section">
                             <h3>Consumables</h3>
-                            <p><strong>Fuel:</strong> ${ship.consumables?.fuel?.current || 0}/${shipData.shipFuelCapacity || 100}</p>
-                            <p><strong>Oxygen:</strong> ${ship.consumables?.oxygen?.current || 100}/100</p>
-                            <p><strong>Electricity:</strong> ${ship.consumables?.electricity?.current || 100}/100</p>
+                            <p><strong>Fuel:</strong> ${ship.consumables?.fuel?.current || 0}/${ship.consumables?.fuel?.max || shipData.shipConsumables?.shipFuel?.max || 100}</p>
+                            <p><strong>Oxygen:</strong> ${ship.consumables?.oxygen?.current || 100}/${ship.consumables?.oxygen?.max || shipData.shipConsumables?.shipOxygen?.max || 100}</p>
+                            <p><strong>Electricity:</strong> ${ship.consumables?.electricity?.current || 100}/${ship.consumables?.electricity?.max || shipData.shipConsumables?.shipElectricity?.max || 100}</p>
                         </div>
                         <div class="detail-section">
                             <h3>Specifications</h3>
                             <p><strong>Max Speed:</strong> ${shipData.shipMaxSpeed || 'N/A'} %LightSpeed</p>
                             <p><strong>Acceleration:</strong> ${shipData.shipThrustPower || 'N/A'} %LightSpeed</p>
                             <p><strong>Cargo Capacity:</strong> ${shipData.shipCargoCapacity || 0} m³</p>
-                            <p><strong>Fuel Capacity:</strong> ${shipData.shipFuelCapacity || 100} units</p>
+                            <p><strong>Fuel Capacity:</strong> ${ship.consumables?.fuel?.max || shipData.shipConsumables?.shipFuel?.max || 100} units</p>
                         </div>
                         <div class="detail-section">
                             <h3>Upgrades</h3>
@@ -295,7 +327,7 @@ const fleetManagerScene = {
         
         const fuelLevel = ship.consumables?.fuel?.current || 0;
         const shipData = shipCatalogue[ship.shipTypeId];
-        const maxFuel = shipData?.shipFuelCapacity || 100;
+        const maxFuel = ship.consumables?.fuel?.max || shipData?.shipConsumables?.shipFuel?.max || 100;
         
         if (fuelLevel < maxFuel * 0.1) {
             if (!confirm('Ship has low fuel. Dispatch anyway?')) {
@@ -303,13 +335,15 @@ const fleetManagerScene = {
             }
         }
         
-        // Set ship as active and save its location as "just outside dock"
+        // Set ship as active and save its location as "dispatching from dock"
+        // ENHANCED: Use dispatch-specific location for proper launch positioning (Task 3.6)
         this.setActiveShipAndLocation(ship, {
             type: 'space',
-            x: 0, // Will be set by space scene to just outside dock
+            x: 0, // Will be set by space scene to launch position (further from dock)
             y: 0,
             isDocked: false,
-            isOrbitLocked: false
+            isOrbitLocked: false,
+            dispatchMode: 'launch'  // Mark this as a fresh launch for positioning logic
         });
         
         // Switch to space scene
@@ -338,25 +372,19 @@ const fleetManagerScene = {
     },
     
     setActiveShipAndLocation(ship, location) {
-        // Save current active ship state if switching from another ship
-        const currentActiveId = playerDataManager.data.activeShipId;
-        const currentScene = gameManager.activeScene;
+        // UPDATED: Use the FleetManager class for proper ship state management
+        // This integrates with our new PlayerDataManager methods for consistency
         
-        if (currentActiveId && currentActiveId !== ship.id && currentScene && currentScene.name === 'space') {
-            // Save current space scene state for the previously active ship
-            this.saveCurrentShipState(currentActiveId, currentScene);
-        }
+        // First, update the ship's location in the fleet data
+        // This ensures the ship's location is set before we switch to it
+        playerDataManager.updateShipLocation(ship.id, location);
         
-        // Set new active ship
-        playerDataManager.data.activeShipId = ship.id;
+        // Use FleetManager's enhanced setActiveShip method
+        // This automatically saves the current ship's state and switches to the new ship
+        fleetManager.setActiveShip(ship.id);
         
-        // Update ship location
-        ship.location = location;
-        
-        // Save data
-        playerDataManager.saveData();
-        
-        console.log(`Active ship changed to: ${ship.name} (ID: ${ship.id})`);
+        console.log(`Fleet Manager Scene: Switched to ship ${ship.name} (ID: ${ship.id})`);
+        // NOTE: No need to manually save data - FleetManager methods handle saving automatically
     },
     
     saveCurrentShipState(shipId, spaceScene) {
@@ -433,8 +461,9 @@ const fleetManagerScene = {
         //if (this._tradeList) {
         //    this._tradeList.removeEventListener('click', this.handleAcceptTrade);
         //}
-        if (this._fleetList) {
-            this._fleetList.removeEventListener('click', this.handleFleetClick);
+        if (this._fleetList && this.boundHandleFleetClick) {
+            this._fleetList.removeEventListener('click', this.boundHandleFleetClick);
+            this.boundHandleFleetClick = null; // Clean up reference
         }
         if (this._closeBtn) {
             this._closeBtn.removeEventListener('click', this.handleCloseFleetManager);
