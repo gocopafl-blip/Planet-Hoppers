@@ -355,7 +355,36 @@ class SpaceScene {
             console.log(`Restored ship electricity: ${activeShip.consumables.electricity.current}/${activeShip.consumables.electricity.max}`);
         }
         
-        console.log('Ship consumables and health restoration complete');
+        // ENHANCED: Restore navigation waypoints specific to this ship (Issue #2 fix)
+        if (activeShip.navigation && this.navScreen) {
+            // Restore intermediate waypoints
+            if (activeShip.navigation.waypoints && Array.isArray(activeShip.navigation.waypoints)) {
+                this.navScreen.waypoints = [...activeShip.navigation.waypoints];
+                console.log(`Restored ${activeShip.navigation.waypoints.length} navigation waypoints for ship`);
+            }
+            
+            // Restore final destination waypoint
+            if (activeShip.navigation.finalWaypoint) {
+                this.navScreen.finalWaypoint = {...activeShip.navigation.finalWaypoint};
+                console.log(`Restored final waypoint: ${activeShip.navigation.finalWaypoint.name || 'Unknown'}`);
+            }
+            
+            // Clear waypoints if ship had none saved
+            if (!activeShip.navigation.waypoints || activeShip.navigation.waypoints.length === 0) {
+                this.navScreen.waypoints = [];
+            }
+            if (!activeShip.navigation.finalWaypoint) {
+                this.navScreen.finalWaypoint = null;
+            }
+        } else {
+            // Clear navigation for ships without saved nav data
+            if (this.navScreen) {
+                this.navScreen.waypoints = [];
+                this.navScreen.finalWaypoint = null;
+            }
+        }
+        
+        console.log('Ship consumables, health, and navigation restoration complete');
     }
 
     update() {
@@ -453,7 +482,7 @@ class SpaceScene {
                     
                     // Save current ship state before switching scenes (Task 4.7)
                     this.saveState();
-                    fleetManager.saveActiveShipStateFromSpaceScene(this);
+                    fleetManager.saveCurrentShipState(playerDataManager.getActiveShip(), this);
                     
                     // FIXED: Clear active ship immediately and switch scene without delay
                     // This prevents the update loop from running with null active ship

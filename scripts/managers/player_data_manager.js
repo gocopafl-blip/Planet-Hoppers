@@ -155,6 +155,11 @@ class PlayerDataManager {
                 ship.currentHealth = stateData.currentHealth;
             }
             
+            // Update navigation data if provided (Issue #2 fix)
+            if (stateData.navigation) {
+                ship.navigation = { ...ship.navigation, ...stateData.navigation };
+            }
+            
             console.log(`Saved complete state for ship ${shipId}:`, ship);
             this.saveData();
         }
@@ -185,6 +190,11 @@ class PlayerDataManager {
             shipData.consumables = this.createDefaultConsumables(shipData);
         }
         
+        // ENHANCED: Ensure navigation data is properly initialized (Issue #2 fix)
+        if (!shipData.navigation) {
+            shipData.navigation = this.createDefaultNavigation();
+        }
+        
         // Ensure basic required fields exist
         if (!shipData.id) {
             shipData.id = Date.now() + Math.random(); // Fallback ID generation
@@ -213,6 +223,15 @@ class PlayerDataManager {
             isOrbitLocked: false,     // Not in orbit when docked
             planetName: null,         // Not orbiting any planet
             orbitData: null          // No orbital mechanics data
+        };
+    }
+    
+    // NEW METHOD: Create default navigation data for new ships (Issue #2 fix)
+    createDefaultNavigation() {
+        return {
+            waypoints: [],        // No initial waypoints
+            finalWaypoint: null,  // No initial destination
+            lastUpdated: null     // Never updated
         };
     }
     
@@ -355,6 +374,55 @@ class PlayerDataManager {
     // Gets the ID of the player's currently active mission.
     getActiveMissionId() {
         return this.data ? this.data.activeMissionId : null;
+    }
+
+    // PLANET PERSISTENCE METHODS (for planet location consistency)
+    
+    // Save the current planet layout to maintain orbital ship references
+    savePlanetData(celestialBodies) {
+        if (this.data && celestialBodies) {
+            this.data.worldState.planets = celestialBodies.map(planet => ({
+                id: planet.id,
+                planetTypeId: planet.planetTypeId,
+                name: planet.name,
+                x: planet.x,
+                y: planet.y,
+                radius: planet.radius,
+                mass: planet.mass,
+                // Store image key reference instead of image object
+                imageKey: planet.planetImages ? planet.planetImages[0] : null,
+                backgroundOptions: planet.backgroundOptions,
+                // Store other essential planet properties
+                baseGravity: planet.baseGravity,
+                wind: planet.wind,
+                seismicStability: planet.seismicStability,
+                dangerLevel: planet.dangerLevel,
+                hasAtmosphericParticles: planet.hasAtmosphericParticles
+            }));
+            this.data.worldState.lastGenerated = Date.now();
+            console.log('Planet data saved:', this.data.worldState.planets.length, 'planets');
+            this.saveData();
+        }
+    }
+    
+    // Get saved planet data if available
+    getSavedPlanetData() {
+        return this.data?.worldState?.planets || null;
+    }
+    
+    // Check if we have valid saved planet data
+    hasSavedPlanetData() {
+        return this.data?.worldState?.planets && this.data.worldState.planets.length > 0;
+    }
+    
+    // Clear planet data (for regeneration)
+    clearPlanetData() {
+        if (this.data?.worldState) {
+            this.data.worldState.planets = null;
+            this.data.worldState.lastGenerated = null;
+            this.saveData();
+            console.log('Planet data cleared - will regenerate on next game start');
+        }
     }
 
 }

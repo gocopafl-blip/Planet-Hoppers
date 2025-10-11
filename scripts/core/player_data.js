@@ -9,6 +9,12 @@ function getNewPlayerData() {
         activeMissionId: null,
         activeMissionState: null,
 
+        // World State - planets and environment (ADDED for planet persistence)
+        worldState: {
+            planets: null, // Will store generated planet data to maintain consistency
+            lastGenerated: null // Timestamp of when planets were generated
+        },
+
         // Player's Fleet
         fleet: [
             {
@@ -31,6 +37,13 @@ function getNewPlayerData() {
                     // For orbit locations
                     planetName: null,
                     orbitData: null // { planetIndex, orbitRadius, orbitAngle }
+                },
+                
+                // Navigation waypoints specific to this ship (ADDED for nav persistence)
+                navigation: {
+                    waypoints: [], // Array of intermediate waypoints
+                    finalWaypoint: null, // Final destination waypoint
+                    lastUpdated: null // Timestamp of last nav update
                 },
                 
                 consumables: {

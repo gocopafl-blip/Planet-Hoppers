@@ -13,6 +13,15 @@ class PlanetManager {
 
     // The main function to create a new universe of planets
     generatePlanets(count, worldWidth, worldHeight, spaceDocks) {
+        // ENHANCED: Check for saved planet data first to maintain orbital ship consistency
+        if (playerDataManager.hasSavedPlanetData()) {
+            console.log('Restoring saved planet layout to maintain orbital ship positions');
+            this.restoreSavedPlanets();
+            return;
+        }
+        
+        // Generate new planets if no saved data exists
+        console.log('Generating new planet layout');
         this.celestialBodies = []; // Clear any old planets
         const planetTypes = Object.keys(planetCatalogue);
         const minDistance = 20000;
@@ -63,6 +72,58 @@ class PlanetManager {
             }
             attempts++;
         }
+        
+        // ENHANCED: Save the generated planet layout for consistency across game sessions
+        if (this.celestialBodies.length > 0) {
+            playerDataManager.savePlanetData(this.celestialBodies);
+            console.log(`Generated and saved ${this.celestialBodies.length} planets for persistent world state`);
+        }
+    }
+    
+    // NEW METHOD: Restore planets from saved data to maintain orbital ship references
+    restoreSavedPlanets() {
+        const savedPlanets = playerDataManager.getSavedPlanetData();
+        if (!savedPlanets || savedPlanets.length === 0) {
+            console.warn('No saved planet data found, falling back to generation');
+            return false;
+        }
+        
+        this.celestialBodies = savedPlanets.map(planetData => {
+            // Reconstruct planet object from saved data
+            const planetDNA = planetCatalogue[planetData.planetTypeId];
+            if (!planetDNA) {
+                console.warn(`Planet type ${planetData.planetTypeId} not found in catalogue`);
+                return null;
+            }
+            
+            return {
+                id: planetData.id,
+                planetTypeId: planetData.planetTypeId,
+                name: planetData.name,
+                x: planetData.x,
+                y: planetData.y,
+                radius: planetData.radius,
+                mass: planetData.mass,
+                // Restore image from asset manager using saved key
+                image: assetManager.getImage(planetData.imageKey),
+                backgroundOptions: planetData.backgroundOptions,
+                // Restore other properties from catalogue and saved data
+                baseGravity: planetData.baseGravity,
+                wind: planetData.wind,
+                seismicStability: planetData.seismicStability,
+                dangerLevel: planetData.dangerLevel,
+                hasAtmosphericParticles: planetData.hasAtmosphericParticles,
+                // Add catalogue properties that weren't saved
+                ...planetDNA
+            };
+        }).filter(planet => planet !== null); // Remove any failed reconstructions
+        
+        console.log(`Restored ${this.celestialBodies.length} planets from saved data`);
+        
+        // FIXED: Sync global celestialBodies variable with restored planets
+        celestialBodies = this.celestialBodies;
+        
+        return true;
 
         console.log("Planet Manager generated celestial bodies:", this.celestialBodies);
         // We need to update the global variable for now, until we refactor further.

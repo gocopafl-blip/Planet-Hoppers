@@ -28,7 +28,13 @@ class FleetManager {
         // This preserves the ship's location, fuel, health, etc. when switching ships
         const currentActiveShip = playerDataManager.getActiveShip();
         if (currentActiveShip && currentActiveShip.id !== shipId) {
-            this.saveCurrentShipState(currentActiveShip);
+            // If we're in the space scene, save the real-time state including navigation data
+            if (gameManager.activeScene && gameManager.activeScene.sceneName === 'space') {
+                this.saveCurrentShipState(currentActiveShip, gameManager.activeScene);
+            } else {
+                // Fallback to basic state saving if not in space scene
+                this.saveCurrentShipState(currentActiveShip);
+            }
         }
         
         // Set the new active ship using PlayerDataManager
@@ -38,107 +44,106 @@ class FleetManager {
         console.log(`Active ship changed to: ${shipId}`);
     }
 
-    // NEW METHOD: Save the current state of a ship when switching away from it
-    saveCurrentShipState(ship) {
+    // Enhanced method to save ship state with optional real-time data from space scene
+    saveCurrentShipState(ship, spaceScene = null) {
         // This method saves the ship's current state when we switch to a different ship
-        // It captures location, consumables, and health so nothing is lost
+        // If spaceScene is provided, captures real-time data including navigation waypoints
+        // If not, saves basic state with safe fallback values
         
-        // For now, we'll save basic state - this will be enhanced when we integrate
-        // with the space scene to capture real-time position, velocity, etc.
-        const stateToSave = {
-            // Location data (will be updated by space scene integration)
-            location: ship.location || {
-                type: 'docked',       // Safest fallback - ship is at station if location unknown
-                x: 0,                 // Default coordinates (at station)
-                y: 0,
-                velX: 0,             // No velocity when docked
-                velY: 0,
-                angle: 0,            // Default rotation
-                isDocked: true,      // Consistent with 'docked' type - ship is at station
-                isOrbitLocked: false, // Not orbiting when docked
+        let stateToSave;
+        
+        if (spaceScene && spaceScene.ship) {
+            // Real-time state saving from space scene
+            const currentLocation = {
+                type: 'space',  // Default to space, will be overridden below for special cases
+                x: spaceScene.ship.x,
+                y: spaceScene.ship.y,
+                velX: spaceScene.ship.velX || 0,
+                velY: spaceScene.ship.velY || 0,
+                angle: spaceScene.ship.angle || 0,
+                isDocked: spaceScene.ship.isDocked || false,
+                isOrbitLocked: spaceScene.ship.isOrbitLocked || false,
                 planetName: null,
                 orbitData: null
-            },
-            // Preserve current consumables state
-            consumables: ship.consumables,
-            // Preserve current health
-            currentHealth: ship.currentHealth
-        };
+            };
+            
+            // If the ship is orbiting a planet, save the orbit details
+            if (spaceScene.ship.isOrbitLocked && spaceScene.ship.orbitingPlanet) {
+                currentLocation.type = 'orbit';
+                currentLocation.planetName = spaceScene.ship.orbitingPlanet.name;
+                currentLocation.orbitData = {
+                    planetIndex: spaceScene.ship.orbitingPlanet.index,
+                    orbitRadius: spaceScene.ship.orbitRadius,
+                    orbitAngle: spaceScene.ship.orbitAngle,
+                    lockedOrbitSpeed: spaceScene.ship.lockedOrbitSpeed || 0
+                };
+            }
+            
+            // If the ship is docked at a station, mark it as docked
+            if (spaceScene.ship.isDocked) {
+                currentLocation.type = 'docked';
+            }
+            
+            stateToSave = {
+                location: currentLocation,
+                // Save real-time consumables from space scene
+                consumables: {
+                    fuel: { 
+                        current: spaceScene.ship.fuel || ship.consumables?.fuel?.current || 0, 
+                        max: ship.consumables?.fuel?.max || 100 
+                    },
+                    oxygen: { 
+                        current: spaceScene.ship.oxygen || ship.consumables?.oxygen?.current || 100, 
+                        max: ship.consumables?.oxygen?.max || 100 
+                    },
+                    electricity: { 
+                        current: spaceScene.ship.electricity || ship.consumables?.electricity?.current || 100, 
+                        max: ship.consumables?.electricity?.max || 100 
+                    }
+                },
+                // Save real-time health from space scene
+                currentHealth: spaceScene.ship.health || ship.currentHealth,
+                // Save navigation waypoints specific to this ship
+                navigation: {
+                    waypoints: spaceScene.navScreen?.waypoints ? [...spaceScene.navScreen.waypoints] : [],
+                    finalWaypoint: spaceScene.navScreen?.finalWaypoint ? {...spaceScene.navScreen.finalWaypoint} : null,
+                    lastUpdated: Date.now()
+                }
+            };
+        } else {
+            // Basic state saving with fallback values
+            stateToSave = {
+                // Location data with safe fallbacks
+                location: ship.location || {
+                    type: 'docked',       // Safest fallback - ship is at station if location unknown
+                    x: 0,                 // Default coordinates (at station)
+                    y: 0,
+                    velX: 0,             // No velocity when docked
+                    velY: 0,
+                    angle: 0,            // Default rotation
+                    isDocked: true,      // Consistent with 'docked' type - ship is at station
+                    isOrbitLocked: false, // Not orbiting when docked
+                    planetName: null,
+                    orbitData: null
+                },
+                // Preserve current consumables state
+                consumables: ship.consumables,
+                // Preserve current health
+                currentHealth: ship.currentHealth,
+                // Preserve existing navigation data if any
+                navigation: ship.navigation || {
+                    waypoints: [],
+                    finalWaypoint: null,
+                    lastUpdated: null
+                }
+            };
+        }
         
         // Use the PlayerDataManager to save this state
         playerDataManager.saveShipState(ship.id, stateToSave);
         
-        console.log(`Saved state for ship ${ship.id} before switching`);
-    }
-
-    // NEW METHOD: Save real-time ship state from space scene (Task 3.4)
-    saveActiveShipStateFromSpaceScene(spaceScene) {
-        // This method is called by the space scene to save the current ship's real-time state
-        // It captures the ship's actual position, velocity, docking status, etc. from the game
-        
-        const activeShip = playerDataManager.getActiveShip();
-        if (!activeShip || !spaceScene || !spaceScene.ship) {
-            console.warn('Cannot save ship state - missing active ship or space scene data');
-            return;
-        }
-        
-        // Build the location data from the space scene's current state
-        const currentLocation = {
-            type: 'space',  // Default to space, will be overridden below for special cases
-            x: spaceScene.ship.x,
-            y: spaceScene.ship.y,
-            velX: spaceScene.ship.velX || 0,
-            velY: spaceScene.ship.velY || 0,
-            angle: spaceScene.ship.angle || 0,
-            isDocked: spaceScene.ship.isDocked || false,
-            isOrbitLocked: spaceScene.ship.isOrbitLocked || false,
-            planetName: null,
-            orbitData: null
-        };
-        
-        // If the ship is orbiting a planet, save the orbit details
-        if (spaceScene.ship.isOrbitLocked && spaceScene.ship.orbitingPlanet) {
-            currentLocation.type = 'orbit';
-            currentLocation.planetName = spaceScene.ship.orbitingPlanet.name;
-            currentLocation.orbitData = {
-                planetIndex: spaceScene.ship.orbitingPlanet.index,
-                orbitRadius: spaceScene.ship.orbitRadius,
-                orbitAngle: spaceScene.ship.orbitAngle,
-                lockedOrbitSpeed: spaceScene.ship.lockedOrbitSpeed || 0  // FIXED: Save the actual orbital speed
-            };
-        }
-        
-        // If the ship is docked at a station, mark it as docked
-        if (spaceScene.ship.isDocked) {
-            currentLocation.type = 'docked';
-        }
-        
-        // Also save the ship's current consumables and health from space scene
-        const stateToSave = {
-            location: currentLocation,
-            // Save fuel, oxygen, electricity if space scene tracks them
-            consumables: {
-                fuel: { 
-                    current: spaceScene.ship.fuel || activeShip.consumables?.fuel?.current || 0, 
-                    max: activeShip.consumables?.fuel?.max || 100 
-                },
-                oxygen: { 
-                    current: spaceScene.ship.oxygen || activeShip.consumables?.oxygen?.current || 100, 
-                    max: activeShip.consumables?.oxygen?.max || 100 
-                },
-                electricity: { 
-                    current: spaceScene.ship.electricity || activeShip.consumables?.electricity?.current || 100, 
-                    max: activeShip.consumables?.electricity?.max || 100 
-                }
-            },
-            // Save health if space scene tracks it
-            currentHealth: spaceScene.ship.health || activeShip.currentHealth
-        };
-        
-        // Use PlayerDataManager to save this real-time state
-        playerDataManager.saveShipState(activeShip.id, stateToSave);
-        
-        console.log(`Saved real-time state for active ship ${activeShip.id} from space scene`);
+        const saveType = spaceScene ? 'real-time' : 'basic';
+        console.log(`Saved ${saveType} state for ship ${ship.id}`);
     }
 
     buyShip(shipID) {

@@ -81,14 +81,14 @@ This document provides a comprehensive testing plan for validating the fleet man
 **Objective**: Test switching between multiple ships
 
 **Steps**:
-1. [ ] Ensure fleet has at least 2 ships
-2. [ ] Dispatch Ship A to deep space
-3. [ ] Terminate remote command (Ship A in space)
-4. [ ] Dispatch Ship B to different location
-5. [ ] Terminate remote command (Ship B in space)
-6. [ ] Jump To Ship A - verify correct position restoration
-7. [ ] Jump To Ship B - verify correct position restoration
-8. [ ] Verify fleet manager shows both ships with different locations
+1. [X] Ensure fleet has at least 2 ships
+2. [X] Dispatch Ship A to deep space
+3. [X] Terminate remote command (Ship A in space)
+4. [X] Dispatch Ship B to different location
+5. [X] Terminate remote command (Ship B in space)
+6. [X] Jump To Ship A - verify correct position restoration
+7. [X] Jump To Ship B - verify correct position restoration
+8. [X] Verify fleet manager shows both ships with different locations
 
 **Expected Results**:
 - Each ship maintains independent state
@@ -101,20 +101,20 @@ This document provides a comprehensive testing plan for validating the fleet man
 ### During Each Test, Verify:
 
 **Fleet Data Structure**:
-- [ ] `ship.location.type` correctly set ('space', 'orbit', 'docked')
-- [ ] `ship.location.x` and `ship.location.y` accurate
-- [ ] `ship.location.velX` and `ship.location.velY` preserved
-- [ ] `ship.consumables` properly maintained
+- [X] `ship.location.type` correctly set ('space', 'orbit', 'docked')
+- [X] `ship.location.x` and `ship.location.y` accurate
+- [X] `ship.location.velX` and `ship.location.velY` preserved
+- [X] `ship.consumables` properly maintained
 
 **Active Ship Management**:
-- [ ] `playerDataManager.data.activeShipId` correctly updated
-- [ ] Active ship highlighting in fleet manager
-- [ ] Proper action buttons (Dispatch vs Jump To)
+- [X] `playerDataManager.data.activeShipId` correctly updated
+- [X] Active ship highlighting in fleet manager
+- [X] Proper action buttons (Dispatch vs Jump To)
 
 **Scene Transitions**:
-- [ ] No console errors during scene switches
-- [ ] Proper settings passed to scenes
-- [ ] Animation and UI state preserved
+- [X] No console errors during scene switches
+- [X] Proper settings passed to scenes
+- [X] Animation and UI state preserved
 
 ## Console Commands for Testing
 
@@ -221,6 +221,31 @@ The `fleet_testing_utils.js` file provides enhanced testing functions:
 3. Scene transitions now happen immediately after clearing active ship
 
 **Verification**: No error spam in console, and ships should not be highlighted when active ship is cleared.
+
+### Planet Location Persistence (CRITICAL FIX)
+**Symptom**: After page refresh, ships orbiting planets may end up orbiting different planets due to random planet regeneration.
+
+**Root Cause**: Planet locations were randomly generated each session, breaking orbital ship references when game reloaded.
+
+**Fix Applied**: 
+1. Added `worldState.planets` to player data to save planet layout
+2. Modified planet manager to restore saved planets before generating new ones
+3. Added planet data persistence methods to player data manager
+
+**Verification**: Ships should orbit the same named planets before and after page refresh.
+
+### Navigation Waypoint Persistence (CRITICAL FIX)  
+**Symptom**: Switching between ships shows wrong navigation waypoints - each ship shows the last ship's navigation data.
+
+**Root Cause**: Navigation waypoints were stored globally in nav screen instead of per-ship.
+
+**Fix Applied**:
+1. Added `navigation` data structure to ship save state
+2. Save nav waypoints when switching ships in fleet manager
+3. Restore ship-specific waypoints when jumping to ships
+4. Initialize empty navigation data for new ships
+
+**Verification**: Each ship should maintain its own independent navigation waypoints when switching between ships.
 
 ## Success Criteria
 
