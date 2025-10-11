@@ -63,3 +63,10 @@
   - [ ] 5.6 Update mission_manager.js to handle per-ship mission assignments
   - [ ] 5.7 Add mission assignment storage in player data per ship basis
   - [ ] 5.8 Update fleet manager display to show "Active Mission" parameter for ships with assignments
+- [ ] 6.0 Implement Multi-Ship Rendering and Fleet Visualization
+  - [ ] 6.1 Add multi-ship rendering support to space scene for visualizing entire fleet
+  - [ ] 6.2 Implement ship-to-ship visual indicators when multiple ships are in same sector
+  - [ ] 6.3 Add fleet formation and positioning logic for multiple ships in same location
+  - [ ] 6.4 Create visual distinction between active ship and other fleet ships in space view
+  - [ ] 6.5 Add fleet tactical overview mode showing all ship positions simultaneously
+  - [ ] 6.6 Implement ship selection/switching directly from space scene when multiple ships visible
