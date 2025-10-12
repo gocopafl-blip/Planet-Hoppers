@@ -32,6 +32,8 @@ const assetCatalogue = {
         "ad_glam_shot": 'assets/images/ships/small_ships/apex_dart/ad_glam_shot.png',
         "ep_glam_shot": 'assets/images/ships/small_ships/echo_pacer/ep_glam_shot.png',
         "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.png',
+        
+        "bf_glam_shot": 'assets/images/ships/large_ships/black_falcon/bf_glam_shot.jpg',
 
         // Docks and Planets
         "space_dock_alpha": "assets/images/spacedocks/spacedockalpha.png",

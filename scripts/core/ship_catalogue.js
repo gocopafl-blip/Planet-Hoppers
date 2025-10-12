@@ -141,6 +141,7 @@ const shipCatalogue = {
         // Now, only list the unique stats for the Black Falcon
         shipID: 'Black Falcon',
         shipImage: 'black_falcon',
+        shipGlamShot: 'bf_glam_shot',
         shipDescription: "Packing more cargo than its competitors.",
         shipSize: 5.0,
         shipDefaultZoom: 0.5,
