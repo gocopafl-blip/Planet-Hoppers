@@ -70,3 +70,14 @@
   - [ ] 6.4 Create visual distinction between active ship and other fleet ships in space view
   - [ ] 6.5 Add fleet tactical overview mode showing all ship positions simultaneously
   - [ ] 6.6 Implement ship selection/switching directly from space scene when multiple ships visible
+- [ ] 7.0 Implement Universal Dock Interface System
+  - [ ] 7.1 Create shared holo interface CSS classes (.holo-interface) with common glow effects and animations
+  - [ ] 7.2 Add universal close button system (.dock-universal-close) positioned in bottom-right corner
+  - [ ] 7.3 Implement color variants for holo interfaces (red for alerts, green for success, blue default)
+  - [ ] 7.4 Update fleet manager to use shared holo interface classes while preserving custom positioning
+  - [ ] 7.5 Update mission board scene to use shared holo interface system with holo-reveal/holo-close animations
+  - [ ] 7.6 Update trade hub scene to use shared holo interface system and universal close button
+  - [ ] 7.7 Add universal ESC key handler that works across all dock sub-scenes
+  - [ ] 7.8 Implement scene-specific CSS customization system using CSS specificity overrides
+  - [ ] 7.9 Add universal close button to main dock scene for returning to start screen
+  - [ ] 7.10 Create utility functions for adding/removing universal close buttons dynamically

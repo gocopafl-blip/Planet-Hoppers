@@ -41,6 +41,11 @@ const assetCatalogue = {
         "planet1": "assets/images/planets/planet1.png",
         "planet2": "assets/images/planets/planet2.png",
         "planet3": "assets/images/planets/planet3.png",
+        "planet4": "assets/images/planets/volcanic4.png",
+        "planet5": "assets/images/planets/volcanic5.png",
+        "planet6": "assets/images/planets/iceworld6.png",
+        "planet7": "assets/images/planets/iceworld7.png",
+        "planet8": "assets/images/planets/cityworld8.png",
 
         // Planet Backgrounds for Lander Scene
         "earth_planet_a": "assets/images/planets/lander_backgrounds/EarthPlanet_2a.jpg",

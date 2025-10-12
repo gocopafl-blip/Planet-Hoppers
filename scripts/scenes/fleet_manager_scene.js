@@ -67,8 +67,10 @@ const fleetManagerScene = {
         //fleetManager.classList.add('slide-in'); // Alternative: slides in from bottom
         fleetManager.classList.add('clip-reveal'); // Expanding chamfer effect
         
-        // Populate the fleet list with current data
-        this.populateFleetList();
+        // Delay the fleet list population to create the "holo" effect
+        setTimeout(() => {
+            this.populateFleetList();
+        }, 1000); // Delay fleet list population by 300ms for holo effect
     },
     
     // NEW METHOD: Populate fleet list with current ship data (Task 4.6)
@@ -426,6 +428,12 @@ const fleetManagerScene = {
         // Store the dispatch/jump mode for space scene to use
         gameManager.fleetDispatchMode = mode;
         
+        // Clear fleet list content immediately for clean holo effect
+        const fleetList = document.getElementById('fleet-list');
+        if (fleetList) {
+            fleetList.innerHTML = '';
+        }
+        
         // Close fleet manager with animation
         const fleetManager = document.getElementById('fleet-manager');
         fleetManager.classList.remove('clip-reveal');
@@ -442,6 +450,12 @@ const fleetManagerScene = {
     
     handleCloseFleetManager() {
         if (gameManager.activeScene === fleetManagerScene) {
+            // Clear fleet list content immediately for clean holo effect
+            const fleetList = document.getElementById('fleet-list');
+            if (fleetList) {
+                fleetList.innerHTML = '';
+            }
+            
             const fleetManager = document.getElementById('fleet-manager');
             fleetManager.classList.remove('clip-reveal');
             fleetManager.classList.add('clip-close');
@@ -468,6 +482,13 @@ const fleetManagerScene = {
         if (this._closeBtn) {
             this._closeBtn.removeEventListener('click', this.handleCloseFleetManager);
         }
+        
+        // Clear fleet list content to prevent old content from showing on next opening
+        const fleetList = document.getElementById('fleet-list');
+        if (fleetList) {
+            fleetList.innerHTML = '';
+        }
+        
         const fleetManager = document.getElementById('fleet-manager');
         fleetManager.style.display = 'none';
         //tradeHub.classList.remove('slide-in', 'slide-out');

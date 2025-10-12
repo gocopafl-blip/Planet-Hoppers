@@ -78,6 +78,12 @@ class PlanetManager {
             playerDataManager.savePlanetData(this.celestialBodies);
             console.log(`Generated and saved ${this.celestialBodies.length} planets for persistent world state`);
         }
+        
+        // FIXED: Sync global celestialBodies variable with generated planets
+        celestialBodies = this.celestialBodies;
+        
+        console.log("Planet Manager generated celestial bodies:", this.celestialBodies);
+        return this.celestialBodies;
     }
     
     // NEW METHOD: Restore planets from saved data to maintain orbital ship references
@@ -124,10 +130,5 @@ class PlanetManager {
         celestialBodies = this.celestialBodies;
         
         return true;
-
-        console.log("Planet Manager generated celestial bodies:", this.celestialBodies);
-        // We need to update the global variable for now, until we refactor further.
-        celestialBodies = this.celestialBodies;
-        return this.celestialBodies;
     }
 }
