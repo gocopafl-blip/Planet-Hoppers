@@ -18,7 +18,7 @@ const assetCatalogue = {
         //Medium Ships
 
         //Large Ships
-        "black_falcon": 'assets/images/ships/large_ships/BlackFalcon.png',
+        "black_falcon": 'assets/images/ships/large_ships/black_falcon/BlackFalcon.png',
 
         //Drop Ships
         "pea_drop_ship": "assets/images/ships/drop_ships/peaDropShip.png",
@@ -31,8 +31,8 @@ const assetCatalogue = {
         "sd_glam_shot": 'assets/images/ships/small_ships/stardust_drifter/sd_glam_shot.jpg',
         "ad_glam_shot": 'assets/images/ships/small_ships/apex_dart/ad_glam_shot.png',
         "ep_glam_shot": 'assets/images/ships/small_ships/echo_pacer/ep_glam_shot.png',
-        "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.png',
-        
+        "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.jpg',
+
         "bf_glam_shot": 'assets/images/ships/large_ships/black_falcon/bf_glam_shot.jpg',
 
         // Docks and Planets
