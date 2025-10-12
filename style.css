@@ -769,6 +769,38 @@ h2 {
     }
 }
 
+/* Fleet List Container Styles */
+#fleet-list {
+    width: 100%;
+    max-height: 450px; /* Allow for header and padding within fleet-manager */
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+    border-radius: 8px;
+    /* Custom scrollbar styling for fleet list */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(46, 248, 255, 0.6) rgba(20, 20, 40, 0.8);
+}
+
+/* Webkit scrollbar styling for fleet list */
+#fleet-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+#fleet-list::-webkit-scrollbar-track {
+    background: rgba(20, 20, 40, 0.8);
+    border-radius: 4px;
+}
+
+#fleet-list::-webkit-scrollbar-thumb {
+    background: rgba(46, 248, 255, 0.6);
+    border-radius: 4px;
+}
+
+#fleet-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(46, 248, 255, 0.8);
+}
+
 /* Fleet Ship Container Styles */
 .fleet-ship-container {
     display: flex;
