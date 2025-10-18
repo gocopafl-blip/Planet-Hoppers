@@ -179,7 +179,7 @@ const fleetManagerScene = {
                     <img class="fleet-ship-image" src="${imageSrc}" alt="${ship.name}">
                     
                     <div class="fleet-ship-info">
-                        <h3>${ship.name} (ID: ${ship.id})</h3>
+                        <h3>${shipData.shipID} (ID: ${ship.name})</h3>
                         <p class="ship-status">Status: ${status}</p>
                         <p class="ship-location">Location: ${location}</p>
                         <div class="ship-stats">

@@ -823,7 +823,7 @@ h2 {
 
 .fleet-ship-container.active-ship {
     border-color: #2ef8ff;
-    background: rgba(46, 248, 255, 0.1);
+    background: rgba(0, 30, 60, 0.5);
     box-shadow: 0 0 20px rgba(46, 248, 255, 0.4);
 }
 

@@ -146,10 +146,10 @@ class FleetManager {
         console.log(`Saved ${saveType} state for ship ${ship.id}`);
     }
 
-    buyShip(shipID) {
-        const shipData = shipCatalogue[shipID];
+    buyShip(shipCatalogueKey) {
+        const shipData = shipCatalogue[shipCatalogueKey];
         if (!shipData) {
-            console.error(`Ship with ID ${shipID} not found.`);
+            console.error(`Ship with ID ${shipCatalogueKey} not found.`);
             return;
         }
 
@@ -158,7 +158,7 @@ class FleetManager {
             alert(`Not enough credits to buy ${shipData.shipID}.`);
             return;
         }
-
+        const playerGivenName = prompt(`Enter a name for your new ${shipData.shipID}:`);
         // Deduct the price from the player's currency
         playerDataManager.addMoney(-shipData.shipBuyValue);
 
@@ -169,8 +169,8 @@ class FleetManager {
         // Create a new ship object for the fleet
         const newShip = {
             id: Date.now(), // Unique ID for the ship instance
-            shipTypeId: shipID, // Use the catalogue key, not the display name
-            name: shipData.shipName || shipData.shipID,
+            shipTypeId: shipCatalogueKey, // Use the catalogue key, not the display name
+            name: playerGivenName || shipData.shipID,
             currentHealth: shipData.shipMaxHealth || 100,
             maxHealth: shipData.shipMaxHealth || 100,
             
