@@ -34,6 +34,7 @@ const baseShipTemplate = {
 
 // The main catalogue now just lists the unique properties
 const shipCatalogue = {
+    /*
     'default_ship': {
         ...baseShipTemplate, // Start with a copy of all the base stats
 
@@ -50,7 +51,7 @@ const shipCatalogue = {
             rear_right: { x_ratio: 0.45, y_ratio: 0.040, angle_deg: 0 }
         },
     },
-
+*/
     'stardust_drifter': {
         ...baseShipTemplate, // Start with the same base stats
 

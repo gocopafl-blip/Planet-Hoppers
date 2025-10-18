@@ -9,7 +9,7 @@ const assetCatalogue = {
         "ship": "assets/images/ships/ship.png",
 
         //Small Ships
-        "default_ship": "assets/images/ships/defaultShip.png",
+        //"default_ship": "assets/images/ships/defaultShip.png",
         "stardust_drifter": 'assets/images/ships/small_ships/stardust_drifter/stardust_drifter.png',
         "apex_dart": 'assets/images/ships/small_ships/apex_dart/apex_dart.png',
         "echo_pacer": 'assets/images/ships/small_ships/echo_pacer/echo_pacer.png',
