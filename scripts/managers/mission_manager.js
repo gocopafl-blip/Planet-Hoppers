@@ -43,22 +43,38 @@ class MissionManager {
         console.log("Generated available missions:", this.availableMissions);
         return this.availableMissions;
     }
-    acceptMission(missionId) {
-        // First, check if the player is already on a mission.
-        if (playerDataManager.getActiveMissionId()) {
-            // In a real game, you'd show an error message to the player.
-            console.warn("Cannot accept new mission, player already has an active mission.");
+    acceptMission(missionId, shipId = null) {
+        // Check if the mission we're trying to accept is actually available.
+        const missionExists = this.availableMissions.some(m => m.id === missionId);
+        if (!missionExists) {
+            console.error(`Attempted to accept a mission that is not available: ${missionId}`);
             return;
         }
 
-        // Check if the mission we're trying to accept is actually available.
-        const missionExists = this.availableMissions.some(m => m.id === missionId);
-        if (missionExists) {
-            playerDataManager.setActiveMissionId(missionId);
-            playerDataManager.updateActiveMissionState({});
-        } else {
-            console.error(`Attempted to accept a mission that is not available: ${missionId}`);
+        // Per-ship assignment path (preferred for new flow)
+        if (shipId !== null && shipId !== undefined && typeof playerDataManager.getShipById === 'function') {
+            const ship = playerDataManager.getShipById(shipId);
+            if (!ship) {
+                console.error(`acceptMission: Ship ${shipId} not found in player fleet.`);
+                return;
+            }
+            if (ship.assignedMissionId) {
+                console.warn(`Ship ${shipId} already has an assigned mission.`);
+                return;
+            }
+            if (typeof playerDataManager.assignMissionToShip === 'function') {
+                playerDataManager.assignMissionToShip(shipId, missionId, {});
+                return;
+            }
         }
+
+        // Fallback to legacy single active mission if present
+        if (playerDataManager.getActiveMissionId()) {
+            console.warn("Cannot accept new mission, player already has an active mission.");
+            return;
+        }
+        playerDataManager.setActiveMissionId(missionId);
+        playerDataManager.updateActiveMissionState({});
     }
     // Checks for and completes the player's active mission.
     completeMission(scene) {
@@ -68,8 +84,37 @@ class MissionManager {
             return;
         }
 
-        const activeMissionId = playerDataManager.getActiveMissionId();
+        // Diagnostic: Print full fleet and their mission assignments
+        if (typeof playerDataManager.getFleet === 'function') {
+            const fleet = playerDataManager.getFleet();
+            if (Array.isArray(fleet)) {
+                console.log('[MissionManager] Fleet mission assignments:', fleet.map(ship => ({
+                    id: ship.id,
+                    name: ship.name,
+                    assignedMissionId: ship.assignedMissionId,
+                    missionState: ship.missionState
+                })));
+            }
+        }
+
+        // Prefer per-ship assigned mission (new flow). Fallback to legacy active mission.
+        const activeShip = typeof playerDataManager.getActiveShip === 'function' ? playerDataManager.getActiveShip() : null;
+        const shipMissionId = activeShip && activeShip.assignedMissionId ? activeShip.assignedMissionId : null;
+        const usingPerShip = !!shipMissionId;
+        const activeMissionId = shipMissionId || playerDataManager.getActiveMissionId();
+        // GUARD: If per-ship, and assignedMissionId is already null, do not proceed (prevents repeated completion)
+        if (usingPerShip && (!activeShip || !activeShip.assignedMissionId)) {
+            // Already cleared, do not repeat completion
+            return;
+        }
         if (!activeMissionId) return;
+        console.log('[MissionManager] completeMission start', {
+            scene: scene.name,
+            usingPerShip,
+            activeShipId: activeShip ? activeShip.id : null,
+            shipMissionId,
+            globalActiveMissionId: playerDataManager.getActiveMissionId ? playerDataManager.getActiveMissionId() : null
+        });
 
         // 2. Find the mission's data in our master catalogue.
         const missionData = missionCatalogue[activeMissionId];
@@ -80,8 +125,28 @@ class MissionManager {
         let isCompleted = false; // A flag to track if we met the conditions.
 
         // Check the mission's type to decide how to complete it.
+        // Helper accessors for mission state (per-ship vs legacy)
+        const getMissionState = () => {
+            if (usingPerShip) return (activeShip.missionState || {});
+            return playerDataManager.getActiveMissionState();
+        };
+        const updateMissionState = (patch) => {
+            if (usingPerShip) {
+                activeShip.missionState = Object.assign(activeShip.missionState || {}, patch);
+                if (typeof playerDataManager.saveData === 'function') playerDataManager.saveData();
+            } else {
+                playerDataManager.updateActiveMissionState(patch);
+            }
+        };
+
         switch (missionData.type) {
             case 'DELIVER_TO_DOCK':
+                // Diagnostic: Log scene and ship docking state
+                console.log('[MissionManager][DELIVER_TO_DOCK] Check:', {
+                    sceneName: scene.name,
+                    hasShip: !!scene.ship,
+                    isDocked: scene.ship ? scene.ship.isDocked : undefined
+                });
                 // This check is specific to the space scene and is complete when the ship is docked.
                 if (scene.name === 'space' && scene.ship && scene.ship.isDocked) {
                     isCompleted = true;
@@ -104,14 +169,14 @@ class MissionManager {
                 break;
             //
             case 'PICK_UP_CARGO':
-                // Get the current state of this mission
-                const missionState = playerDataManager.getActiveMissionState();
+                // Get the current state of this mission (per-ship or legacy)
+                const missionState = getMissionState();
 
                 // STEP 1: Check if we need to pick up the cargo.
                 // We check this in the lander scene.
                 if (scene.name === 'lander' && scene.gameState === 'landed' && !missionState.hasPickedUpCargo) {
                     // Update the mission state to remember the cargo is collected.
-                    playerDataManager.updateActiveMissionState({ hasPickedUpCargo: true });
+                    updateMissionState({ hasPickedUpCargo: true });
 
                     // Show a confirmation to the player, but the mission is NOT complete yet.
                     alert("Survey Sample Taken: You have retrieved the survey sample. Now, return to the station to collect your contract payout.");
@@ -130,7 +195,29 @@ class MissionManager {
         // If any of the conditions above were met, finalize the mission.
         if (isCompleted) {
             playerDataManager.addMoney(missionData.reward);
-            playerDataManager.setActiveMissionId(null);
+            if (usingPerShip && activeShip) {
+                if (typeof playerDataManager.clearShipMission === 'function') {
+                    console.log('[MissionManager] Clearing per-ship mission', { shipId: activeShip.id, missionId: activeShip.assignedMissionId });
+                    playerDataManager.clearShipMission(activeShip.id);
+                    const postClearShip = typeof playerDataManager.getShipById === 'function' ? playerDataManager.getShipById(activeShip.id) : null;
+                    if (postClearShip) {
+                        console.log('[MissionManager] Post-clear ship state', { assignedMissionId: postClearShip.assignedMissionId });
+                        if (!postClearShip.assignedMissionId) {
+                            console.log('[MissionManager] Mission successfully cleared for ship', postClearShip.id);
+                        } else {
+                            console.warn('[MissionManager] Mission NOT cleared for ship', postClearShip.id, postClearShip.assignedMissionId);
+                        }
+                    }
+                } else {
+                    // Fallback if helper isn't present
+                    activeShip.assignedMissionId = null;
+                    activeShip.missionState = null;
+                    if (typeof playerDataManager.saveData === 'function') playerDataManager.saveData();
+                }
+            } else {
+                console.log('[MissionManager] Clearing legacy global active mission');
+                playerDataManager.setActiveMissionId(null);
+            }
             console.log(`Mission "${missionData.title}" completed! Player earned ${missionData.reward} credits.`);
 
             // We'll use a simple alert for now to notify the player.
