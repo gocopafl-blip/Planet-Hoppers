@@ -54,7 +54,7 @@
   - [x] 4.6 Add proper ship state restoration when returning to fleet manager from space scene
   - [x] 4.7 Add auto-return to fleet manager when ship docks (clears activeShipId and switches to fleet manager scene)
   - [x] 4.8 Test complete workflow: fleet manager → ship selection → space scene → terminate → fleet manager
-- [ ] 5.0 Implement Mission Assignment Flow with Ship Selection
+- [x] 5.0 Implement Mission Assignment Flow with Ship Selection
   - [x] 5.1 Create ship assignment modal HTML structure in index.html
   - [x] 5.2 Add modal styling in style.css with ship selection interface
   - [x] 5.3 Update mission_board_scene.js Accept button to show ship assignment modal instead of direct acceptance
@@ -62,7 +62,7 @@
   - [x] 5.5 Add ship selection logic in modal with mission assignment to chosen ship
   - [x] 5.6 Update mission_manager.js to handle per-ship mission assignments
   - [x] 5.7 Add mission assignment storage in player data per ship basis
-  - [ ] 5.8 Update fleet manager display to show "Active Mission" parameter for ships with assignments
+  - [x] 5.8 Update fleet manager display to show "Active Mission" parameter for ships with assignments
 - [ ] 6.0 Implement Multi-Ship Rendering and Fleet Visualization
   - [ ] 6.1 Add multi-ship rendering support to space scene for visualizing entire fleet
   - [ ] 6.2 Implement ship-to-ship visual indicators when multiple ships are in same sector
