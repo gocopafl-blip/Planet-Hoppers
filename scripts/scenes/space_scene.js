@@ -119,6 +119,15 @@ class SpaceScene {
             this.camera.target = this.ship;
         }
 
+        // Always reset to ship's default zoom when entering space scene
+        const shipData = fleetManager.getActiveShipData();
+        if (shipData && this.camera) {
+            const defaultZoom = shipData.shipDefaultZoom || 1.0;
+            this.camera.defaultZoom = defaultZoom;
+            this.camera.targetZoom = defaultZoom;
+            this.camera.zoomLevel = defaultZoom;
+        }
+
         canvas.style.display = 'block';
         //zoomControls.style.display = 'flex';
     }
@@ -312,7 +321,8 @@ class SpaceScene {
         const defaultZoom = shipData.shipDefaultZoom || 1.0;
         this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
             zoomSmoothing: this.zoomSmoothing,
-            targetZoom: defaultZoom
+            targetZoom: defaultZoom,
+            defaultZoom: defaultZoom  // Add this line
         });
 
         // Clear the dispatch mode

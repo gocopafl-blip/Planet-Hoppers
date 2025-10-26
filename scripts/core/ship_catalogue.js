@@ -60,7 +60,7 @@ const shipCatalogue = {
         shipImage: 'stardust_drifter',
         shipGlamShot: 'sd_glam_shot',
         shipDescription: "A nimble interceptor, prized by scouts and couriers.",
-        shipSize: 0.75,
+        shipSize: 0.4,
         shipDefaultZoom: 1.5,
         shipCargoCapacity: 1, // Slightly More cargo
         shipMaxSpeed: 20.0, // Slightly Slower
@@ -81,8 +81,8 @@ const shipCatalogue = {
         shipImage: 'apex_dart',
         shipGlamShot: 'ad_glam_shot',
         shipDescription: "A nimble interceptor, prized by scouts and couriers.",
-        shipSize: 1.5,
-        shipDefaultZoom: 1.45,
+        shipSize: 0.8,
+        shipDefaultZoom: 1.40,
         shipCargoCapacity: 2, // Slightly More cargo
         shipThrustPower: 0.12, // Slightly Slower
         shipBuyValue: 5000,
@@ -102,8 +102,8 @@ const shipCatalogue = {
         shipImage: 'echo_pacer',
         shipGlamShot: 'ep_glam_shot',
         shipDescription: "A versatile ship favored by explorers and traders alike.",
-        shipSize: 1.5,
-        shipDefaultZoom: 1.45,
+        shipSize: 0.8,
+        shipDefaultZoom: 1.40,
         shipCargoCapacity: 2, // Slightly More cargo
         shipThrustPower: 0.14, // Slightly Slower
         shipBuyValue: 5500,
@@ -123,7 +123,7 @@ const shipCatalogue = {
         shipImage: 'zenith_runner',
         shipGlamShot: 'zr_glam_shot',
         shipDescription: "Packing more cargo than its competitors.",
-        shipSize: 2.5,
+        shipSize: 1.0,
         shipDefaultZoom: 0.9,
         shipCargoCapacity: 4, // Slightly More cargo
         shipThrustPower: 0.14, // Slightly Slower
@@ -144,8 +144,8 @@ const shipCatalogue = {
         shipImage: 'black_falcon',
         shipGlamShot: 'bf_glam_shot',
         shipDescription: "Packing more cargo than its competitors.",
-        shipSize: 5.0,
-        shipDefaultZoom: 0.5,
+        shipSize: 2.5,
+        shipDefaultZoom: 1.0,
         shipCargoCapacity: 4, // Slightly More cargo
 
         shipRotationSpeed: 0.002,
