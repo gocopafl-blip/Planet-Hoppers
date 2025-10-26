@@ -8,8 +8,9 @@ const menu = document.getElementById('menu');
 const shipSelectionMenu = document.getElementById('ship-selection');
 const zoomControls = document.getElementById('zoom-controls');
 
-canvas.width = 1000;
-canvas.height = 700;
+canvas.width = 1200;
+//1400x980 OR 1000x700
+canvas.height = 840;
 
 const ASSET_BASE_URL = 'https://raw.githubusercontent.com/gocopafl-blip/Planet-Hoppers/main/assets/';
 

@@ -56,7 +56,7 @@ const assetCatalogue = {
         "swirling_planet_b": "assets/images/planets/lander_backgrounds/SwirlingPlanet_3b.jpg",
 
         //Scenes
-        "start_screen_bg": "assets/images/dock_backgrounds/start_screen_background.png",
+        "start_screen_bg": "assets/images/dock_backgrounds/start_screen_background.jpg",
         "space_dock_terminal": "assets/images/dock_backgrounds/spaceDockTerminal.png",
         "mission_board_bg": "assets/images/dock_backgrounds/OrbitalCargoSystems.jpg",
         "galactic_trade_hub": "assets/images/dock_backgrounds/galactic_trade_hub.jpg",
