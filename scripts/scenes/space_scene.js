@@ -3,7 +3,8 @@ class SpaceScene {
     constructor() {
         // --- Scene State ---
         this.name = 'space'; // Give the scene a name for the MusicManager
-        this.ship = null;
+        this.ship = null; // The active ship (player-controlled)
+        this.fleetShips = []; // All other fleet ships in the scene (non-controlled)
         this.stars = [];
         this.particles = []; // For thruster effects
         this.spaceDocks = []; // Array to hold all space docks
@@ -127,6 +128,9 @@ class SpaceScene {
             this.camera.targetZoom = defaultZoom;
             this.camera.zoomLevel = defaultZoom;
         }
+
+        // TASK 6.1: Load all fleet ships for visualization
+        this.loadFleetShips();
 
         canvas.style.display = 'block';
         //zoomControls.style.display = 'flex';
@@ -397,6 +401,167 @@ class SpaceScene {
         console.log('Ship consumables, health, and navigation restoration complete');
     }
 
+    // NEW METHOD: Load all fleet ships into the scene for visualization (Task 6.1)
+    loadFleetShips() {
+        // Clear existing fleet ships array
+        this.fleetShips = [];
+
+        // Get all ships from player's fleet
+        const fleet = playerDataManager.getFleet();
+        const activeShipId = playerDataManager.data.activeShipId;
+
+        if (!fleet || fleet.length === 0) {
+            console.log('No fleet ships to load');
+            return;
+        }
+
+        console.log(`Loading ${fleet.length} fleet ships for visualization...`);
+
+        // Load each ship except the active one (active ship is already this.ship)
+        fleet.forEach(shipData => {
+            // Skip the active ship - it's already controlled as this.ship
+            if (shipData.id === activeShipId) {
+                console.log(`Skipping active ship: ${shipData.name} (ID: ${shipData.id})`);
+                return;
+            }
+
+            // Get ship catalogue data
+            const catalogueData = shipCatalogue[shipData.shipTypeId];
+            if (!catalogueData) {
+                console.warn(`No catalogue data for ship type: ${shipData.shipTypeId}`);
+                return;
+            }
+
+            // Determine ship position based on its saved location
+            let shipX, shipY;
+            let ship = null;
+
+            if (shipData.location) {
+                switch (shipData.location.type) {
+                    case 'space':
+                        // Ship is in deep space - use exact coordinates
+                        shipX = shipData.location.x;
+                        shipY = shipData.location.y;
+                        ship = new Ship(shipX, shipY, this, catalogueData);
+                        ship.velX = shipData.location.velX || 0;
+                        ship.velY = shipData.location.velY || 0;
+                        ship.angle = shipData.location.angle || -Math.PI / 2;
+                        console.log(`Loaded ${shipData.name} in deep space at (${shipX}, ${shipY})`);
+                        break;
+
+                    case 'orbit':
+                        // Ship is in orbit around a planet
+                        const planet = celestialBodies.find(p => p.name === shipData.location.planetName);
+                        if (planet && shipData.location.orbitData) {
+                            const orbitRadius = shipData.location.orbitData.orbitRadius || (planet.radius * 1.5);
+                            const orbitAngle = shipData.location.orbitData.orbitAngle || 0;
+                            shipX = planet.x + Math.cos(orbitAngle) * orbitRadius;
+                            shipY = planet.y + Math.sin(orbitAngle) * orbitRadius;
+                            
+                            ship = new Ship(shipX, shipY, this, catalogueData);
+                            ship.isOrbitLocked = true;
+                            ship.orbitingPlanet = planet;
+                            ship.orbitRadius = orbitRadius;
+                            ship.orbitAngle = orbitAngle;
+                            ship.lockedOrbitSpeed = shipData.location.orbitData.lockedOrbitSpeed || 0;
+                            ship.orbitTransitionProgress = 1; // Already in orbit
+                            console.log(`Loaded ${shipData.name} orbiting ${planet.name}`);
+                        } else {
+                            console.warn(`Could not find planet ${shipData.location.planetName} for ship ${shipData.name}`);
+                            return; // Skip this ship
+                        }
+                        break;
+
+                    case 'docked':
+                        // Ship is docked at station - don't render it in space
+                        console.log(`Skipping docked ship: ${shipData.name}`);
+                        return;
+
+                    default:
+                        console.warn(`Unknown location type ${shipData.location.type} for ship ${shipData.name}`);
+                        return;
+                }
+            } else {
+                // No location data - skip this ship
+                console.warn(`No location data for ship ${shipData.name} - skipping`);
+                return;
+            }
+
+            if (ship) {
+                // Store reference to the fleet data for this ship
+                ship.fleetData = shipData;
+                ship.isFleetShip = true; // Mark as non-controllable fleet ship
+                
+                // Add to fleet ships array
+                this.fleetShips.push(ship);
+                console.log(`Successfully loaded fleet ship: ${shipData.name} (ID: ${shipData.id})`);
+            }
+        });
+
+        console.log(`Loaded ${this.fleetShips.length} fleet ships for visualization`);
+    }
+
+    // NEW METHOD: Update all fleet ships with physics (Task 6.1)
+    updateFleetShips() {
+        // Update each fleet ship - they obey physics but don't respond to player controls
+        this.fleetShips.forEach(fleetShip => {
+            if (!fleetShip) return;
+
+            // If ship is orbit-locked, handle orbital mechanics
+            if (fleetShip.isOrbitLocked && fleetShip.orbitingPlanet) {
+                const planet = fleetShip.orbitingPlanet;
+                const orbitalSpeed = fleetShip.lockedOrbitSpeed / fleetShip.orbitRadius;
+                
+                fleetShip.orbitAngle += orbitalSpeed;
+                fleetShip.x = planet.x + Math.cos(fleetShip.orbitAngle) * fleetShip.orbitRadius;
+                fleetShip.y = planet.y + Math.sin(fleetShip.orbitAngle) * fleetShip.orbitRadius;
+                fleetShip.angle = fleetShip.orbitAngle + Math.PI / 2;
+            } else {
+                // Normal physics update for ships in space
+                fleetShip.x += fleetShip.velX;
+                fleetShip.y += fleetShip.velY;
+
+                // Apply gravity from planets
+                for (const planet of celestialBodies) {
+                    const dx = planet.x - fleetShip.x;
+                    const dy = planet.y - fleetShip.y;
+                    const distance = Math.hypot(dx, dy);
+                    const gravityWellEdge = planet.radius * this.GRAVITY_BOUNDARY_MULTIPLIER;
+
+                    // Only apply gravity if the ship is within the planet's gravity well
+                    if (distance < gravityWellEdge && distance > planet.radius) {
+                        const shipSpeed = Math.hypot(fleetShip.velX, fleetShip.velY);
+                        const startSpeed = this.MAX_ORBIT_SPEED;
+                        const fullSpeed = this.GRAVITY_ASSIST_MAX_SPEED;
+
+                        let gravityFactor = 0;
+                        if (shipSpeed > startSpeed) {
+                            const progress = (shipSpeed - startSpeed) / (fullSpeed - startSpeed);
+                            gravityFactor = Math.max(0, Math.min(progress, 1));
+                        }
+
+                        if (gravityFactor > 0) {
+                            const baseForce = this.ORBITAL_CONSTANT * planet.mass / (distance * distance);
+                            const appliedForce = baseForce * gravityFactor;
+                            const angle = Math.atan2(dy, dx);
+                            fleetShip.velX += appliedForce * Math.cos(angle);
+                            fleetShip.velY += appliedForce * Math.sin(angle);
+                        }
+                    }
+                }
+
+                // World boundary checks
+                if (fleetShip.x < 0 || fleetShip.x > this.WORLD_WIDTH || 
+                    fleetShip.y < 0 || fleetShip.y > this.WORLD_HEIGHT) {
+                    fleetShip.x = Math.max(0, Math.min(fleetShip.x, this.WORLD_WIDTH));
+                    fleetShip.y = Math.max(0, Math.min(fleetShip.y, this.WORLD_HEIGHT));
+                    fleetShip.velX *= 0.5; // Dampen velocity at boundaries
+                    fleetShip.velY *= 0.5;
+                }
+            }
+        });
+    }
+
     update() {
         if (!this.ship || this.isPaused) return;
         // --- ORBIT LOCK LOGIC ---
@@ -525,6 +690,10 @@ class SpaceScene {
             p.update();
             return p.lifespan > 0;
         });
+
+        // TASK 6.1: Update all fleet ships (physics only, no player control)
+        this.updateFleetShips();
+
         this.camera.update();
         this.navScreen.update();
 
@@ -642,6 +811,14 @@ class SpaceScene {
             dock.draw(ctx);
         }
 
+        // TASK 6.1: Draw all fleet ships first (behind active ship)
+        this.fleetShips.forEach(fleetShip => {
+            if (fleetShip && fleetShip.draw) {
+                fleetShip.draw();
+            }
+        });
+
+        // Draw active ship on top
         this.ship.draw();
         this.particles.forEach(p => p.draw(ctx));
         this.camera.end(ctx);

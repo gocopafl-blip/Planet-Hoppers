@@ -64,7 +64,9 @@
   - [x] 5.7 Add mission assignment storage in player data per ship basis
   - [x] 5.8 Update fleet manager display to show "Active Mission" parameter for ships with assignments
 - [ ] 6.0 Implement Multi-Ship Rendering and Fleet Visualization
-  - [ ] 6.1 Add multi-ship rendering support to space scene for visualizing entire fleet
+  - [x] 6.1 Add multi-ship rendering support to space scene for visualizing entire fleet
+  - [ ] 6.1.1 BUG FIX: Ship location resets to (0,0) if page refreshed immediately after dispatch without triggering save
+  - [ ] 6.1.2 Add periodic auto-save for fleet ships (save positions every 5-10 seconds while in space scene)
   - [ ] 6.2 Implement ship-to-ship visual indicators when multiple ships are in same sector
   - [ ] 6.3 Add fleet formation and positioning logic for multiple ships in same location
   - [ ] 6.4 Create visual distinction between active ship and other fleet ships in space view
@@ -81,3 +83,9 @@
   - [ ] 7.8 Implement scene-specific CSS customization system using CSS specificity overrides
   - [ ] 7.9 Add universal close button to main dock scene for returning to start screen
   - [ ] 7.10 Create utility functions for adding/removing universal close buttons dynamically
+- [ ] 8.0 Implement Start Screen Game Management
+  - [ ] 8.1 Rename "Activate Holo" button to "Load Game" on start screen
+  - [ ] 8.2 Add "Start New Game" button to start screen
+  - [ ] 8.3 Implement "Start New Game" functionality to clear localStorage and initialize fresh game state
+  - [ ] 8.4 Add confirmation dialog for "Start New Game" to prevent accidental resets
+  - [ ] 8.5 Update start screen styling to accommodate both buttons with clear visual hierarchy

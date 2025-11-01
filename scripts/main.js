@@ -380,7 +380,18 @@ function startGame() {
 // --- AUTO-SAVE ON PAGE UNLOAD ---
 // Save game state before page unload (refresh, close, navigation)
 window.addEventListener('beforeunload', () => {
-    console.log('Page unloading - saving game state...');
+    console.log('Page unloading - checking if save is needed...');
+    
+    // ISSUE #3 FIX: Check if localStorage was intentionally cleared
+    // If playerData doesn't exist in localStorage, user cleared it (testing/reset)
+    // Don't re-save in this case - respect the intentional clearing
+    const existingData = localStorage.getItem('playerData');
+    if (!existingData) {
+        console.log('localStorage is empty - skipping auto-save (intentional reset detected)');
+        return; // Exit early, don't save
+    }
+    
+    console.log('localStorage has data - proceeding with auto-save...');
     
     // Save current ship state if in space scene
     if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.ship) {
