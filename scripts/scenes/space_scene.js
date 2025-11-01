@@ -619,7 +619,7 @@ class SpaceScene {
         //const speed = Math.hypot(this.ship.velX, this.ship.velY);
         //const speedRatio = Math.min(speed / this.maxSpeedForZoom, 1); 
         //this.camera.targetZoom = this.maxZoom - (this.maxZoom - this.minZoom) * speedRatio;
-        missionManager.completeMission(this); // ADD THIS LINE
+        //missionManager.completeMission(this); // ADD THIS LINE
     }
 
 

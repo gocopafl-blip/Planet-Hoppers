@@ -95,6 +95,14 @@ const fleetManagerScene = {
                 const glamShotImage = assetManager.getImage(shipData.shipGlamShot);
                 const imageSrc = glamShotImage ? glamShotImage.src : '';
 
+                console.log('Ship debug:', {
+    shipId: ship.id,
+    shipName: ship.name,
+    activeShipId: activeShipId,
+    isActive: ship.id === activeShipId,
+    locationType: ship.location?.type,
+    locationData: ship.location
+});
                 // ENHANCED: Determine ship status and location from saved fleet data (Task 4.6)
                 // This ensures the fleet manager shows accurate info even after returning from space
                 // Mission status logic
@@ -109,53 +117,53 @@ const fleetManagerScene = {
                 if (hasMission) {
                     missionTitle = missionCatalogue[ship.assignedMissionId].title;
                     status = `On Assignment - ${missionTitle}`;
+                } else {
+                    // Only set status if no mission assigned
+                    status = 'Awaiting Orders';
                 }
 
-                // Only set status if no mission assigned
-                if (!hasMission) {
-                    status = 'Awaiting Orders';
-                    if (ship.id === activeShipId) {
-                        // For active ship, check its saved location data first
-                        if (ship.location) {
-                            switch (ship.location.type) {
-                                case 'space':
-                                    location = `Deep Space (${Math.round(ship.location.x)}, ${Math.round(ship.location.y)})`;
-                                    actionText = 'Jump To';
-                                    actionType = 'jump_to';
-                                    break;
-                                case 'orbit':
-                                    const planetName = ship.location.planetName || 'Unknown Planet';
-                                    location = `Orbiting ${planetName}`;
-                                    actionText = 'Jump To';
-                                    actionType = 'jump_to';
-                                    break;
-                                case 'docked':
-                                    location = 'Docked at Station';
-                                    actionText = 'Dispatch';
-                                    actionType = 'dispatch';
-                                    break;
-                                default:
-                                    // Fallback - treat as remote command active
-                                    actionText = 'Jump To';
-                                    actionType = 'jump_to';
-                            }
-                        }
-                    } else {
-                        // For non-active ships, check their stored state
-                        if (ship.location) {
-                            if (ship.location.type === 'docked') {
-                                location = 'Docked at Station';
-                                actionText = 'Dispatch';
-                                actionType = 'dispatch';
-                            } else if (ship.location.type === 'orbit') {
-                                location = `Orbiting ${ship.location.planetName || 'Unknown Planet'}`;
-                                actionText = 'Jump To';
-                                actionType = 'jump_to';
-                            } else if (ship.location.type === 'space') {
+                // ALWAYS check location, regardless of mission status
+                if (ship.id === activeShipId) {
+                    // For active ship, check its saved location data first
+                    if (ship.location) {
+                        switch (ship.location.type) {
+                            case 'space':
                                 location = `Deep Space (${Math.round(ship.location.x)}, ${Math.round(ship.location.y)})`;
                                 actionText = 'Jump To';
                                 actionType = 'jump_to';
-                            }
+                                break;
+                            case 'orbit':
+                                const planetName = ship.location.planetName || 'Unknown Planet';
+                                location = `Orbiting ${planetName}`;
+                                actionText = 'Jump To';
+                                actionType = 'jump_to';
+                                break;
+                            case 'docked':
+                                location = 'Docked at Station';
+                                actionText = 'Dispatch';
+                                actionType = 'dispatch';
+                                break;
+                            default:
+                                // Fallback - treat as remote command active
+                                actionText = 'Jump To';
+                                actionType = 'jump_to';
+                        }
+                    }
+                } else {
+                    // For non-active ships, check their stored state
+                    if (ship.location) {
+                        if (ship.location.type === 'docked') {
+                            location = 'Docked at Station';
+                            actionText = 'Dispatch';
+                            actionType = 'dispatch';
+                        } else if (ship.location.type === 'orbit') {
+                            location = `Orbiting ${ship.location.planetName || 'Unknown Planet'}`;
+                            actionText = 'Jump To';
+                            actionType = 'jump_to';
+                        } else if (ship.location.type === 'space') {
+                            location = `Deep Space (${Math.round(ship.location.x)}, ${Math.round(ship.location.y)})`;
+                            actionText = 'Jump To';
+                            actionType = 'jump_to';
                         }
                     }
                 }
@@ -530,7 +538,7 @@ const fleetManagerScene = {
             ctx.drawImage(fleetManagerBg, 0, 0, canvas.width, canvas.height);
         }
         if (holodeskOverlay && holodeskOverlay.complete) {
-            ctx.drawImage(holodeskOverlay, 300, 0, 600, 700);
+            ctx.drawImage(holodeskOverlay, (canvas.width - 600)/2, canvas.height - 700, 600, 700);
         }
     },
 

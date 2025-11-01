@@ -861,8 +861,8 @@ h2 {
 #fleet-manager {
     /* 1. Sizing and Positioning (keeping your settings) */
     position: fixed;
-    left: 57%;
-    top: 45%;
+    left: 50%;
+    top: 40%;
     transform: translate(-50%, -50%);
     width: 720px;
     height: 540px;

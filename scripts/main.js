@@ -377,6 +377,25 @@ function startGame() {
     gameManager.loop();
 }
 
+// --- AUTO-SAVE ON PAGE UNLOAD ---
+// Save game state before page unload (refresh, close, navigation)
+window.addEventListener('beforeunload', () => {
+    console.log('Page unloading - saving game state...');
+    
+    // Save current ship state if in space scene
+    if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.ship) {
+        const activeShip = playerDataManager.getActiveShip();
+        if (activeShip) {
+            console.log('Saving active ship state before unload:', activeShip.name);
+            fleetManager.saveCurrentShipState(activeShip, gameManager.activeScene);
+        }
+    }
+    
+    // Ensure all player data is saved to localStorage
+    playerDataManager.saveData();
+    console.log('Game state saved successfully');
+});
+
 // Run the game
 init();
 
