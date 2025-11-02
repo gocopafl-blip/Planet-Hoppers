@@ -15,6 +15,7 @@ class Ship {
         this.width = (shipData.shipWidth || 200) * (shipData.shipSize || 1);
         this.height = (shipData.shipHeight || 240) * (shipData.shipSize || 1);
         this.thrustPower = shipData.shipThrustPower || 0.15;
+        this.shipOrbitThrustPower = shipData.shipOrbitThrustPower || 0.015;
         this.rotationSpeed = shipData.shipRotationSpeed || 0.012;
         this.thrusters = shipData.shipThrusters || {}; // Get thruster layout from data
         

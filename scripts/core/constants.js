@@ -32,14 +32,21 @@ const SHIP_LAUNCH_OFFSET = {
 
 // ORBITAL MECHANICS CONSTANTS
 // These constants define valid orbital parameters for ship positioning and validation
-// Based on planetary physics where ships can orbit within the gravity well boundary
+// Based on simplified orbit system where speed determines orbital radius
 
 // Orbital radius as multipliers of planet radius (more realistic than fixed distances)
 const ORBIT_RADIUS_MULTIPLIERS = {
     MIN: 1.1,    // Ships can orbit just outside planet surface (110% of planet radius)
     DEFAULT: 1.25, // Default safe orbital distance (125% of planet radius) 
-    MAX: 1.35    // Maximum orbit at gravity well edge (135% of planet radius, matches GRAVITY_BOUNDARY_MULTIPLIER)
+    MAX: 1.35    // Maximum orbit at gravity well edge (135% of planet radius)
 };
+
+// Orbital speed range (determines valid orbit entry and radius mapping)
+const MIN_ORBIT_SPEED = 2.0;  // Minimum speed for stable orbit (maps to MIN orbital radius)
+const MAX_ORBIT_SPEED = 5.0;  // Maximum speed for stable orbit (maps to MAX orbital radius)
+
+// Orbit departure warning time (seconds before exceeding max radius to show exit trajectory)
+const ORBIT_DEPARTURE_WARNING_TIME = 2.0;
 
 // Fallback orbital radius for error conditions (when planet data unavailable)
 const FALLBACK_ORBIT_RADIUS = 300;

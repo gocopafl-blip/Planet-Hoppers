@@ -11,6 +11,7 @@ const baseShipTemplate = {
     shipArmor: 'light_armor',
     shipDescription: "A reliable, multi-purpose vessel.",
     shipThrustPower: 0.15,
+    shipOrbitThrustPower: 0.01, // Controls speed of orbital radius changes (tuned for ~360° orbit from min to max radius)
     shipRotationSpeed: 0.012,
     shipMaxSpeed: 20.0,
     shipOverSpeed: 20.1,

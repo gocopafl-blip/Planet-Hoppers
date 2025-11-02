@@ -69,15 +69,67 @@
   - [x] 6.1.2 Save fleet ship positions at key checkpoints (docking, scene exit, page unload)
   - [ ] 6.2 Implement ship-to-ship visual indicators when multiple ships are in same sector
   - [x] 6.6 Implement ship selection/switching directly from space scene when multiple ships visible
-- [ ] 7.0 Implement Enhanced Gravity and Orbital Physics
-  - [ ] 7.1 Analyze and document current gravity implementation and orbital mechanics
-  - [ ] 7.2 Design improved gravity system with realistic orbital dynamics
-  - [ ] 7.3 Implement enhanced gravity calculations for celestial bodies
-  - [ ] 7.4 Add improved orbital insertion and stable orbit mechanics
-  - [ ] 7.5 Implement orbital decay and perturbation effects
-  - [ ] 7.6 Add velocity-based orbital trajectory visualization
-  - [ ] 7.7 Test and tune gravity parameters for gameplay balance
-  - [ ] 7.8 Update physics for both active ship and fleet ships
+- [ ] 7.0 Implement Enhanced Gravity and Orbital Physics (Simplified System)
+  - [x] 7.1 Add orbital speed constants to constants.js
+    - [x] 7.1.1 Add MIN_ORBIT_SPEED constant (2.0)
+    - [x] 7.1.2 Add MAX_ORBIT_SPEED constant (5.0)
+    - [x] 7.1.3 Add ORBIT_DEPARTURE_WARNING_TIME constant (2.0 seconds)
+  - [x] 7.2 Add shipOrbitThrustPower to ship_catalogue.js
+    - [x] 7.2.1 Add shipOrbitThrustPower to baseShipTemplate (~0.015)
+    - [x] 7.2.2 Document: controls speed of orbital radius changes (tuned for ~360° orbit to go min→max)
+  - [x] 7.3 Update speedometer to use orbital speed constants
+    - [x] 7.3.1 Replace magic number 2.0 with MIN_ORBIT_SPEED constant
+    - [x] 7.3.2 Replace magic number 5.0 with MAX_ORBIT_SPEED constant
+    - [x] 7.3.3 Ensure "ORBIT OK" range uses constants throughout
+  - [x] 7.4 Remove gravity well physics system
+    - [x] 7.4.1 Remove gravity calculations from space_scene.js update loop
+    - [x] 7.4.2 Remove GRAVITY_BOUNDARY_MULTIPLIER usage (removed from constructor)
+    - [x] 7.4.3 Remove ORBITAL_CONSTANT and PLANET_MASS_SCALAR (no longer needed)
+    - [x] 7.4.4 Remove gravity assist speed range logic
+    - [x] 7.4.5 Remove gravityFactor calculations
+  - [x] 7.5 Implement automatic orbit entry system
+    - [x] 7.5.1 Detect when ship crosses MAX orbital radius threshold (1.35x planet radius)
+    - [x] 7.5.2 Check if ship speed is within MIN_ORBIT_SPEED to MAX_ORBIT_SPEED range
+    - [x] 7.5.3 If valid speed: calculate target orbital radius via linear interpolation
+    - [x] 7.5.4 Lock ship into orbit at calculated radius with auto-rotation (perpendicular to surface)
+    - [x] 7.5.5 If invalid speed: allow ship to continue toward planet (crash when collisions enabled)
+  - [x] 7.6 Implement in-orbit mechanics
+    - [x] 7.6.1 Disable player rotation controls while in orbit (auto-rotation only)
+    - [x] 7.6.2 Maintain orbital speed indefinitely (no decay) unless player thrusts
+    - [x] 7.6.3 Forward thrust: increase speed using shipOrbitThrustPower → radius grows smoothly
+    - [x] 7.6.4 Reverse thrust: decrease speed using shipOrbitThrustPower → radius shrinks smoothly
+    - [x] 7.6.5 Prevent speed from dropping below MIN_ORBIT_SPEED (maintain minimum orbit)
+    - [x] 7.6.6 Update orbital radius in real-time based on current speed (linear mapping)
+    - [x] 7.6.7 Fixed shipOrbitThrustPower not being copied to Ship instance from catalogue
+    - [x] 7.6.8 Fixed speedometer to display lockedOrbitSpeed when in orbit
+    - [x] 7.6.9 Modified orbit break logic: strafing breaks orbit, thrust/reverse adjusts radius
+  - [x] 7.7 Add orbital path visualization (ring)
+    - [x] 7.7.1 Draw light grey ring at current orbital radius when player thrusts
+    - [x] 7.7.2 Ring grows/shrinks smoothly with radius changes
+    - [x] 7.7.3 Keep ring visible while thrusting OR for 3 seconds after thrust stops
+    - [x] 7.7.4 Fade ring to nothing after 3 second delay (user adjusted from 2 to 3 seconds)
+  - [x] 7.8 Implement orbit exit system
+    - [x] 7.8.1 Detect when speed >= 80% of max range to show departure warning
+    - [x] 7.8.2 Show departure line at 80%+ speed with 10 second fade after thrust stops
+    - [x] 7.8.3 Draw light grey dashed line from ship showing exit trajectory (tangent to orbit)
+    - [x] 7.8.4 Line grows from 500-1500 units based on speed proximity to MAX
+    - [x] 7.8.5 When lockedOrbitSpeed >= MAX_ORBIT_SPEED: break orbit lock automatically
+    - [x] 7.8.6 On exit: set velocity to MAX_ORBIT_SPEED in tangential direction
+    - [x] 7.8.7 On exit: restore full player control, reset camera to shipDefaultZoom
+    - [x] 7.8.8 Removed strafing orbit break - only exit via MAX_ORBIT_SPEED acceleration
+    - [x] 7.8.9 Ring dims to 50% opacity at 80%+ speed to emphasize departure line
+    - [x] 7.8.10 Fixed camera zoom to use shipDefaultZoom instead of hardcoded 1.0
+  - [ ] 7.9 Update fleet ship orbit mechanics
+    - [ ] 7.9.1 Apply new orbit system to updateFleetShips() method
+    - [ ] 7.9.2 Ensure background ships use same orbit entry/exit logic
+    - [ ] 7.9.3 Fleet ships maintain stable orbits without player input
+  - [ ] 7.10 Testing and tuning
+    - [ ] 7.10.1 Test orbit entry at various speeds and angles
+    - [ ] 7.10.2 Verify smooth radius transitions during thrust
+    - [ ] 7.10.3 Test orbit exit timing and departure angle accuracy
+    - [ ] 7.10.4 Tune shipOrbitThrustPower for feel (adjust if transitions too fast/slow)
+    - [ ] 7.10.5 Test with different planet sizes to verify linear interpolation works
+    - [ ] 7.10.6 Verify minimum orbit speed floor prevents dropping below 2.0
 - [ ] 8.0 Implement Real-Time Fleet Background Simulation
   - [ ] 8.1 Create background simulation loop with configurable update rate
     - [ ] 8.1.1 Add FLEET_UPDATE_RATE constant (default 10-15fps for background, 60fps for active)

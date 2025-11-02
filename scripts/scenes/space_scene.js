@@ -23,29 +23,20 @@ class SpaceScene {
         this.WORLD_HEIGHT = canvas.height * 200;
         this.numPlanets = 18;
 
-        // --- Orbital Mechanics Settings ---
-        this.GRAVITY_BOUNDARY_MULTIPLIER = 1.35;  // Gravity well extends to 1.5x planet radius
-        this.ORBITAL_CONSTANT = 0.00035;         // Reduced for more manageable orbital velocities
-        this.PLANET_MASS_SCALAR = 0.4;           // Reduced mass to prevent excessive gravitational acceleration
-
         // --- Camera Settings ---
         this.minZoom = 0.1; // minZoom is now used to configure the camera
         this.maxZoom = 2.5;
         //this.maxSpeedForZoom = 15; Used for dynamic zoom - currently disabled
         this.zoomSmoothing = 0.03;
 
-        // --- Orbit Lock Settings ---
-        this.ORBIT_LOCK_DURATION = 2;       // Time in seconds to lock orbit.
-        this.orbitLockTimer = 0;
-
         // Central place for all flight model speed definitions
         this.MIN_DOCKING_SPEED = 0.1;
         this.MAX_DOCKING_SPEED = 1.0;
-        this.MIN_ORBIT_SPEED = 2.0;
-        this.MAX_ORBIT_SPEED = 5.0;
-        this.GRAVITY_ASSIST_MIN_SPEED = 5.01;
-        this.GRAVITY_ASSIST_MAX_SPEED = 10.0;
         this.MAX_SAFE_STRUCTURAL_SPEED = 25.0;
+        
+        // Orbital ring visibility tracking (Task 7.7.3-7.7.4)
+        this.orbitalRingLastThrustTime = 0;
+        this.orbitalRingLastHighSpeedTime = 0; // Track when speed was last >= 80% for 10s fade
     }
 
     createStars() {
@@ -629,59 +620,108 @@ class SpaceScene {
             const ship = this.ship;
             const planet = this.ship.orbitingPlanet;
 
-            // Check if the player wants to break orbit by thrusting
-            const wantsToMove = ship.thrusting || ship.reversing || ship.strafingLeft || ship.strafingRight;
-            if (wantsToMove) {
-                // Calculate the current orbital velocity before breaking orbit
-                const orbitalSpeed = ship.lockedOrbitSpeed / ship.orbitRadius;
-
-                // Convert orbital angular velocity to linear velocity components
-                // The velocity is tangential to the orbit (perpendicular to the radius)
-                const tangentAngle = ship.orbitAngle + Math.PI / 2; // 90 degrees to the radius
-                ship.velX = orbitalSpeed * ship.orbitRadius * Math.cos(tangentAngle);
-                ship.velY = orbitalSpeed * ship.orbitRadius * Math.sin(tangentAngle);
-
-                ship.isOrbitLocked = false;
-                ship.orbitingPlanet = null;
-                this.orbitLockTimer = 0;
-                this.camera.targetZoom = 1.0;
-
-            } else {
-                const orbitalSpeed = ship.lockedOrbitSpeed / ship.orbitRadius;
-
-                ship.orbitAngle += orbitalSpeed;
-                const targetX = planet.x + Math.cos(ship.orbitAngle) * ship.orbitRadius;
-                const targetY = planet.y + Math.sin(ship.orbitAngle) * ship.orbitRadius;
-                const targetAngle = ship.orbitAngle + Math.PI / 2; // Target orbital angle
-
-                // Smooth transition from approach angle to orbital angle
-                if (ship.orbitTransitionProgress < 1) {
-                    ship.orbitTransitionProgress += 0.01; // Adjust this for faster/slower transition
-                    ship.orbitTransitionProgress = Math.min(ship.orbitTransitionProgress, 1); // Cap at 100%
-
-                    // Smoothly interpolate the ship's angle
-                    const angleDiff = targetAngle - ship.initialApproachAngle;
-                    // Handle angle wrapping (shortest path between angles)
-                    let adjustedAngleDiff = angleDiff;
-                    if (angleDiff > Math.PI) adjustedAngleDiff -= 2 * Math.PI;
-                    if (angleDiff < -Math.PI) adjustedAngleDiff += 2 * Math.PI;
-
-                    ship.angle = ship.initialApproachAngle + (adjustedAngleDiff * ship.orbitTransitionProgress);
-
-                    // Position follows orbital path immediately
-                    ship.x = targetX;
-                    ship.y = targetY;
-                } else {
-                    // Full orbital motion once transition is complete
-                    ship.x = targetX;
-                    ship.y = targetY;
-                    ship.angle = targetAngle;
+            // Orbit can only be exited by accelerating to MAX_ORBIT_SPEED (Task 7.8)
+            // Strafing, rotation, and other controls are disabled while in orbit
+            
+            // --- IN-ORBIT MECHANICS (Task 7.6) ---
+                
+                // Handle thrust controls to change orbital speed/radius
+                const shipOrbitThrustPower = ship.shipOrbitThrustPower || 0.015;
+                
+                // Track thrust time for orbital ring visibility (Task 7.7.3)
+                if (ship.thrusting || ship.reversing) {
+                    this.orbitalRingLastThrustTime = Date.now();
+                    
+                    // Also track high speed time if currently at 80%+ (Task 7.8)
+                    const speedRange = MAX_ORBIT_SPEED - MIN_ORBIT_SPEED;
+                    const speedAboveMin = ship.lockedOrbitSpeed - MIN_ORBIT_SPEED;
+                    const speedFraction = speedAboveMin / speedRange;
+                    const highSpeedThreshold = 0.8; // 80% of max speed
+                    
+                    if (speedFraction >= highSpeedThreshold) {
+                        this.orbitalRingLastHighSpeedTime = Date.now();
+                    }
                 }
+                
+                if (ship.thrusting) {
+                    // Forward thrust increases orbital speed (and radius)
+                    ship.lockedOrbitSpeed += shipOrbitThrustPower;
+                    // Cap at MAX_ORBIT_SPEED
+                    if (ship.lockedOrbitSpeed > MAX_ORBIT_SPEED) {
+                        ship.lockedOrbitSpeed = MAX_ORBIT_SPEED;
+                    }
+                }
+                
+                if (ship.reversing) {
+                    // Reverse thrust decreases orbital speed (and radius)
+                    ship.lockedOrbitSpeed -= shipOrbitThrustPower;
+                    // Prevent dropping below MIN_ORBIT_SPEED
+                    if (ship.lockedOrbitSpeed < MIN_ORBIT_SPEED) {
+                        ship.lockedOrbitSpeed = MIN_ORBIT_SPEED;
+                    }
+                }
+                
+                // --- ORBIT EXIT CHECK (Task 7.8.5-7.8.7) ---
+                // When speed reaches MAX_ORBIT_SPEED, break orbit and restore full control
+                if (ship.lockedOrbitSpeed >= MAX_ORBIT_SPEED) {
+                    // Calculate tangential exit velocity (perpendicular to radius)
+                    const tangentAngle = ship.orbitAngle + Math.PI / 2;
+                    ship.velX = MAX_ORBIT_SPEED * Math.cos(tangentAngle);
+                    ship.velY = MAX_ORBIT_SPEED * Math.sin(tangentAngle);
+                    
+                    // Break orbit lock and restore full player control
+                    ship.isOrbitLocked = false;
+                    ship.orbitingPlanet = null;
+                    this.camera.targetZoom = ship.shipDefaultZoom || 1.0;
+                    
+                    // Continue with normal physics (don't return, let update() run)
+                } else {
+                    // Update orbital radius based on current speed (linear interpolation)
+                    // MIN_ORBIT_SPEED maps to MIN radius, MAX_ORBIT_SPEED maps to MAX radius
+                    const speedRange = MAX_ORBIT_SPEED - MIN_ORBIT_SPEED;
+                    const radiusRange = ORBIT_RADIUS_MULTIPLIERS.MAX - ORBIT_RADIUS_MULTIPLIERS.MIN;
+                    const speedFraction = (ship.lockedOrbitSpeed - MIN_ORBIT_SPEED) / speedRange;
+                    const targetRadiusMultiplier = ORBIT_RADIUS_MULTIPLIERS.MIN + (speedFraction * radiusRange);
+                    ship.orbitRadius = planet.radius * targetRadiusMultiplier;
+                    
+                    // Calculate orbital angular velocity
+                    const orbitalSpeed = ship.lockedOrbitSpeed / ship.orbitRadius;
 
-                this.camera.update();
+                    // Update orbital position
+                    ship.orbitAngle += orbitalSpeed;
+                    const targetX = planet.x + Math.cos(ship.orbitAngle) * ship.orbitRadius;
+                    const targetY = planet.y + Math.sin(ship.orbitAngle) * ship.orbitRadius;
+                    const targetAngle = ship.orbitAngle + Math.PI / 2; // Target orbital angle (perpendicular to planet)
 
-                return;
-            }
+                    // Smooth transition from approach angle to orbital angle
+                    if (ship.orbitTransitionProgress < 1) {
+                        ship.orbitTransitionProgress += 0.01; // Adjust this for faster/slower transition
+                        ship.orbitTransitionProgress = Math.min(ship.orbitTransitionProgress, 1); // Cap at 100%
+
+                        // Smoothly interpolate the ship's angle
+                        const angleDiff = targetAngle - ship.initialApproachAngle;
+                        // Handle angle wrapping (shortest path between angles)
+                        let adjustedAngleDiff = angleDiff;
+                        if (angleDiff > Math.PI) adjustedAngleDiff -= 2 * Math.PI;
+                        if (angleDiff < -Math.PI) adjustedAngleDiff += 2 * Math.PI;
+
+                        ship.angle = ship.initialApproachAngle + (adjustedAngleDiff * ship.orbitTransitionProgress);
+
+                        // Position follows orbital path immediately
+                        ship.x = targetX;
+                        ship.y = targetY;
+                    } else {
+                        // Full orbital motion once transition is complete
+                        // Rotation is automatically maintained by targetAngle (perpendicular to planet surface)
+                        ship.x = targetX;
+                        ship.y = targetY;
+                        ship.angle = targetAngle;
+                    }
+
+                    this.camera.update();
+
+                    return;
+                }
         }
         // --- UNDOCKING LOGIC ---
         const wantsToMove = this.ship.thrusting || this.ship.reversing || this.ship.strafingLeft || this.ship.strafingRight;
@@ -770,71 +810,52 @@ class SpaceScene {
                 this.orbitData = null;
             }
         */
-        // --- Orbital Mechanics Logic ---
+        // --- TASK 7.0: Simplified Orbital Mechanics Logic ---
+        // No gravity wells - ships fly in straight lines until they enter orbital zone
         for (const planet of celestialBodies) {
             // If we are locked in an orbit, ignore all other planets.
             if (this.ship.isOrbitLocked && this.ship.orbitingPlanet !== planet) {
                 continue;
             }
+            
             const dx = planet.x - this.ship.x;
             const dy = planet.y - this.ship.y;
             const distance = Math.hypot(dx, dy);
 
-
-            const gravityWellEdge = planet.radius * this.GRAVITY_BOUNDARY_MULTIPLIER;
-
-            // Only apply gravity if the ship is within the planet's gravity well
-            if (distance < gravityWellEdge && distance > planet.radius) {
+            // TASK 7.5: Check for automatic orbit entry at MAX orbital radius threshold
+            const maxOrbitalRadius = planet.radius * ORBIT_RADIUS_MULTIPLIERS.MAX;
+            
+            // Only check for orbit entry if ship is not already in orbit
+            if (!this.ship.isOrbitLocked && distance <= maxOrbitalRadius && distance > planet.radius) {
                 const shipSpeed = Math.hypot(this.ship.velX, this.ship.velY);
-                const startSpeed = this.MAX_ORBIT_SPEED; // Starts ramping up at 5.0
-                const fullSpeed = this.GRAVITY_ASSIST_MAX_SPEED; // Reaches 100% at 10.0
-
-                let gravityFactor = 0; // Default to 0% gravity
-                if (shipSpeed > startSpeed) {
-                    // Calculate how far the ship's speed is into the transition zone
-                    const progress = (shipSpeed - startSpeed) / (fullSpeed - startSpeed);
-                    // Clamp the value between 0 and 1 to create the 0% to 100% factor
-                    gravityFactor = Math.max(0, Math.min(progress, 1));
+                
+                // Check if ship speed is within valid orbit range
+                if (shipSpeed >= MIN_ORBIT_SPEED && shipSpeed <= MAX_ORBIT_SPEED) {
+                    // Calculate target orbital radius via linear interpolation
+                    // Speed maps linearly: MIN_ORBIT_SPEED → MIN radius, MAX_ORBIT_SPEED → MAX radius
+                    const speedRatio = (shipSpeed - MIN_ORBIT_SPEED) / (MAX_ORBIT_SPEED - MIN_ORBIT_SPEED);
+                    const targetRadiusMultiplier = ORBIT_RADIUS_MULTIPLIERS.MIN + 
+                        (speedRatio * (ORBIT_RADIUS_MULTIPLIERS.MAX - ORBIT_RADIUS_MULTIPLIERS.MIN));
+                    const targetOrbitRadius = planet.radius * targetRadiusMultiplier;
+                    
+                    // Lock ship into orbit
+                    this.ship.isOrbitLocked = true;
+                    this.ship.orbitingPlanet = planet;
+                    this.ship.orbitRadius = targetOrbitRadius;
+                    this.ship.orbitAngle = Math.atan2(dy, dx) + Math.PI;
+                    this.ship.lockedOrbitSpeed = shipSpeed;
+                    this.ship.orbitTransitionProgress = 0; // Start transition at 0%
+                    this.ship.initialApproachAngle = this.ship.angle; // Store current ship angle
+                    this.camera.targetZoom = 0.5; // Set target zoom for orbit view
+                    
+                    console.log(`Orbit locked! Speed: ${shipSpeed.toFixed(2)}, Radius: ${targetOrbitRadius.toFixed(0)}, Multiplier: ${targetRadiusMultiplier.toFixed(2)}`);
                 }
-
-                if (gravityFactor > 0) {
-                    const baseForce = this.ORBITAL_CONSTANT * planet.mass / (distance * distance);
-                    // Apply the force scaled by our gravityFactor
-                    const appliedForce = baseForce * gravityFactor;
-
-                    const angle = Math.atan2(dy, dx);
-                    this.ship.velX += appliedForce * Math.cos(angle);
-                    this.ship.velY += appliedForce * Math.sin(angle);
-                }
-
-                // 2. Check for stable orbit conditions to engage the lock-in timer.
-                if (shipSpeed > this.MIN_ORBIT_SPEED && shipSpeed < this.MAX_ORBIT_SPEED && !this.ship.isOrbitLocked) {
-                    this.ship.inStableOrbit = true;
-                    this.orbitLockTimer += 1 / 60; // Convert frames to seconds
-
-                    if (this.orbitLockTimer >= this.ORBIT_LOCK_DURATION) {
-                        this.ship.isOrbitLocked = true;
-                        this.ship.orbitingPlanet = planet;
-                        this.ship.orbitRadius = distance;
-                        this.ship.orbitAngle = Math.atan2(dy, dx) + Math.PI;
-                        this.ship.lockedOrbitSpeed = Math.hypot(this.ship.velX, this.ship.velY);
-                        this.ship.orbitTransitionProgress = 0; // Start transition at 0%
-                        this.ship.initialApproachAngle = this.ship.angle; // Store current ship angle
-                        this.camera.targetZoom = 0.5; // Set target zoom for orbit view
-                    }
-                } else {
-                    this.ship.inStableOrbit = false;
-                    this.orbitLockTimer = 0;
-                }
+                // If speed is outside valid range, ship continues toward planet (will crash when collisions enabled)
             }
 
-            // Collision check (functionality disabled - handled by orbit lock system)
+            // Collision check (functionality disabled - will be implemented later)
             if (distance < planet.radius) {
-                //console.log("Approaching planet, showing ship selection...");
-                //this.isPaused = true;
-                //if (thrusterSound.isLoaded) thrusterSound.pause();
-                //canvas.style.display = 'none';
-                //shipSelectionMenu.style.display = 'block';
+                // TODO: Implement collision/crash system
             }
         }
         // --- Waypoint Arrival Logic ---
@@ -869,6 +890,12 @@ class SpaceScene {
         celestialBodies.forEach(p => {
             ctx.drawImage(p.image, p.x - p.radius, p.y - p.radius, p.radius * 2, p.radius * 2);
         });
+
+        // Draw orbital path ring if ship is in orbit (Task 7.7)
+        this.drawOrbitalPathRing(ctx);
+        
+        // Draw orbit departure warning line (Task 7.8.3-7.8.4)
+        this.drawOrbitDepartureLine(ctx);
 
         for (const dock of this.spaceDocks) {
             dock.draw(ctx);
@@ -912,7 +939,8 @@ class SpaceScene {
     drawSpeedometer() {
         if (!this.ship) return;
 
-        const speed = Math.hypot(this.ship.velX, this.ship.velY);
+        // Use lockedOrbitSpeed when in orbit, otherwise calculate from velocity
+        const speed = this.ship.isOrbitLocked ? this.ship.lockedOrbitSpeed : Math.hypot(this.ship.velX, this.ship.velY);
         const maxSpeed = 20; // The max speed we want the gauge to show.
 
         // --- Gauge settings ---
@@ -976,7 +1004,7 @@ class SpaceScene {
         if (speed >= 0.01 && speed <= 1.0) {
             ctx.fillStyle = '#a0e0ff'; // Light blue like docking arc
             ctx.fillText('DOCK OK', centerX, centerY + 80);
-        } else if (speed >= 2.0 && speed <= 5.0) {
+        } else if (speed >= MIN_ORBIT_SPEED && speed <= MAX_ORBIT_SPEED) {
             ctx.fillStyle = '#00ff00'; // Green like orbit arc
             ctx.fillText('ORBIT OK', centerX, centerY + 80);
         } else if (speed >= 5.0 && speed <= 10.0) {
@@ -989,6 +1017,121 @@ class SpaceScene {
         }
         ctx.restore();
     }
+    
+    drawOrbitalPathRing(ctx) {
+        // Only draw if ship is in orbit (Task 7.7)
+        if (!this.ship || !this.ship.isOrbitLocked || !this.ship.orbitingPlanet) return;
+        
+        const planet = this.ship.orbitingPlanet;
+        const orbitRadius = this.ship.orbitRadius;
+        
+        // Calculate current speed fraction to determine if we're at high speed
+        const speedRange = MAX_ORBIT_SPEED - MIN_ORBIT_SPEED;
+        const speedAboveMin = this.ship.lockedOrbitSpeed - MIN_ORBIT_SPEED;
+        const speedFraction = speedAboveMin / speedRange;
+        const highSpeedThreshold = 0.8; // 80% of max speed
+        const isAtHighSpeed = speedFraction >= highSpeedThreshold;
+        
+        // Calculate opacity based on time since last thrust or high speed (Task 7.7.3-7.7.4)
+        const currentTime = Date.now();
+        const timeSinceThrust = (currentTime - this.orbitalRingLastThrustTime) / 1000; // Convert to seconds
+        const timeSinceHighSpeed = (currentTime - this.orbitalRingLastHighSpeedTime) / 1000; // Convert to seconds
+        const normalFadeDelay = 3.0; // seconds to keep visible after normal thrust stops
+        const highSpeedFadeDelay = 10.0; // seconds to keep visible at high speed (80%+)
+        const highSpeedRingOpacityMultiplier = 0.5; // Dim the ring at high speed (0.0-1.0) to emphasize departure line
+        
+        let opacity = 0;
+        
+        if (this.ship.thrusting || this.ship.reversing) {
+            // Full opacity while thrusting (dimmed at high speed)
+            opacity = isAtHighSpeed ? highSpeedRingOpacityMultiplier : 1.0;
+        } else if (isAtHighSpeed) {
+            // Currently at high speed (80%+): fade over 10 seconds with dimmer opacity
+            if (timeSinceHighSpeed < highSpeedFadeDelay) {
+                opacity = (1.0 - (timeSinceHighSpeed / highSpeedFadeDelay)) * highSpeedRingOpacityMultiplier;
+            } else {
+                return; // Hidden after 10 second fade
+            }
+        } else if (timeSinceThrust < normalFadeDelay) {
+            // Below 80% speed: fade over 3 seconds
+            opacity = 1.0 - (timeSinceThrust / normalFadeDelay);
+        } else {
+            // Completely hidden after fade delay
+            return; // Don't draw at all
+        }
+        
+        // Draw light grey ring at current orbital radius
+        ctx.save();
+        ctx.strokeStyle = `rgba(200, 200, 200, ${opacity})`; // Light grey with calculated opacity
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(planet.x, planet.y, orbitRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
+    
+    drawOrbitDepartureLine(ctx) {
+        // Only draw if ship is in orbit (Task 7.8.1-7.8.4)
+        if (!this.ship || !this.ship.isOrbitLocked || !this.ship.orbitingPlanet) return;
+        
+        // Calculate how close we are to departure (as a fraction from 0 to 1)
+        const speedRange = MAX_ORBIT_SPEED - MIN_ORBIT_SPEED;
+        const speedAboveMin = this.ship.lockedOrbitSpeed - MIN_ORBIT_SPEED;
+        const speedFraction = speedAboveMin / speedRange;
+        
+        // Warning threshold - show line when at 80% or higher of speed range
+        const warningThreshold = 0.8;
+        const isAtHighSpeed = speedFraction >= warningThreshold;
+        
+        // Only show if currently at or above threshold
+        if (!isAtHighSpeed) {
+            return; // Hidden below 80%
+        }
+        
+        // Calculate opacity - fade over 10 seconds when at high speed
+        const currentTime = Date.now();
+        const timeSinceHighSpeed = (currentTime - this.orbitalRingLastHighSpeedTime) / 1000;
+        const highSpeedFadeDelay = 10.0;
+        
+        let opacity = 0;
+        
+        if (this.ship.thrusting || this.ship.reversing) {
+            // Full opacity while thrusting
+            opacity = 1.0;
+        } else if (timeSinceHighSpeed < highSpeedFadeDelay) {
+            // Fade over 10 seconds at high speed
+            opacity = 1.0 - (timeSinceHighSpeed / highSpeedFadeDelay);
+        } else {
+            // Hidden after 10 second fade
+            return;
+        }
+        
+        // Calculate departure angle (tangent to orbit)
+        const departureAngle = this.ship.orbitAngle + Math.PI / 2;
+        
+        // Line length based on how close to departure (longer as speed increases)
+        const minLineLength = 500;
+        const maxLineLength = 1500;
+        const normalizedSpeed = Math.max(0, speedFraction - warningThreshold) / (1 - warningThreshold);
+        const lineLength = minLineLength + normalizedSpeed * (maxLineLength - minLineLength);
+        
+        // Calculate line endpoint
+        const endX = this.ship.x + Math.cos(departureAngle) * lineLength;
+        const endY = this.ship.y + Math.sin(departureAngle) * lineLength;
+        
+        // Draw departure line with calculated opacity
+        ctx.save();
+        ctx.strokeStyle = `rgba(200, 200, 200, ${opacity})`;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 10]); // Dashed line
+        ctx.beginPath();
+        ctx.moveTo(this.ship.x, this.ship.y);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset line dash
+        ctx.restore();
+    }
+    
     drawCompass() {
         if (!this.ship) return;
 
