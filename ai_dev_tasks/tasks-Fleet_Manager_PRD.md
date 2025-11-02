@@ -68,24 +68,56 @@
   - [x] 6.1.1 BUG FIX: Ship location resets to (0,0) if page refreshed immediately after dispatch without triggering save
   - [x] 6.1.2 Save fleet ship positions at key checkpoints (docking, scene exit, page unload)
   - [ ] 6.2 Implement ship-to-ship visual indicators when multiple ships are in same sector
-  - [ ] 6.3 Add fleet formation and positioning logic for multiple ships in same location
-  - [ ] 6.4 Create visual distinction between active ship and other fleet ships in space view
-  - [ ] 6.5 Add fleet tactical overview mode showing all ship positions simultaneously
   - [ ] 6.6 Implement ship selection/switching directly from space scene when multiple ships visible
-- [ ] 7.0 Implement Universal Dock Interface System
-  - [ ] 7.1 Create shared holo interface CSS classes (.holo-interface) with common glow effects and animations
-  - [ ] 7.2 Add universal close button system (.dock-universal-close) positioned in bottom-right corner
-  - [ ] 7.3 Implement color variants for holo interfaces (red for alerts, green for success, blue default)
-  - [ ] 7.4 Update fleet manager to use shared holo interface classes while preserving custom positioning
-  - [ ] 7.5 Update mission board scene to use shared holo interface system with holo-reveal/holo-close animations
-  - [ ] 7.6 Update trade hub scene to use shared holo interface system and universal close button
-  - [ ] 7.7 Add universal ESC key handler that works across all dock sub-scenes
-  - [ ] 7.8 Implement scene-specific CSS customization system using CSS specificity overrides
-  - [ ] 7.9 Add universal close button to main dock scene for returning to start screen
-  - [ ] 7.10 Create utility functions for adding/removing universal close buttons dynamically
-- [ ] 8.0 Implement Start Screen Game Management
-  - [ ] 8.1 Rename "Activate Holo" button to "Load Game" on start screen
-  - [ ] 8.2 Add "Start New Game" button to start screen
-  - [ ] 8.3 Implement "Start New Game" functionality to clear localStorage and initialize fresh game state
-  - [ ] 8.4 Add confirmation dialog for "Start New Game" to prevent accidental resets
-  - [ ] 8.5 Update start screen styling to accommodate both buttons with clear visual hierarchy
+- [ ] 7.0 Implement Enhanced Gravity and Orbital Physics
+  - [ ] 7.1 Analyze and document current gravity implementation and orbital mechanics
+  - [ ] 7.2 Design improved gravity system with realistic orbital dynamics
+  - [ ] 7.3 Implement enhanced gravity calculations for celestial bodies
+  - [ ] 7.4 Add improved orbital insertion and stable orbit mechanics
+  - [ ] 7.5 Implement orbital decay and perturbation effects
+  - [ ] 7.6 Add velocity-based orbital trajectory visualization
+  - [ ] 7.7 Test and tune gravity parameters for gameplay balance
+  - [ ] 7.8 Update physics for both active ship and fleet ships
+- [ ] 8.0 Implement Real-Time Fleet Background Simulation
+  - [ ] 8.1 Create background simulation loop with configurable update rate
+    - [ ] 8.1.1 Add FLEET_UPDATE_RATE constant (default 10-15fps for background, 60fps for active)
+    - [ ] 8.1.2 Implement scene-independent fleet physics update method
+    - [ ] 8.1.3 Integrate with main game loop in GameManager
+    - [ ] 8.1.4 Add automatic rate switching when entering/exiting space scene
+    - [ ] 8.1.5 Test performance with multiple ships (3-5+)
+  - [ ] 8.2 Implement Fleet Manager Tactical View (Information Display)
+    - [ ] 8.2.1 Create tactical holo-map container in fleet_manager_scene.js
+    - [ ] 8.2.2 Adapt NavScreen class for multi-ship display
+    - [ ] 8.2.3 Apply Fleet Manager styling to tactical view (holographic aesthetic)
+    - [ ] 8.2.4 Render all fleet ships with current positions
+    - [ ] 8.2.5 Display navigation routes for ships with active nav plans
+    - [ ] 8.2.6 Implement ship hover tooltips (name, speed, destination, mission)
+    - [ ] 8.2.7 Add real-time position updates from background simulation
+  - [ ] 8.3 Integrate data persistence with background simulation
+    - [ ] 8.3.1 Update playerDataManager RAM on each simulation tick
+    - [ ] 8.3.2 Verify checkpoint saves capture fleet positions (scene transitions, unload)
+    - [ ] 8.3.3 Test position restoration after page refresh
+    - [ ] 8.3.4 Validate orbital stability during background simulation
+  - [ ] 8.4 Testing and performance validation
+    - [ ] 8.4.1 Test with 3+ ships in different locations
+    - [ ] 8.4.2 Verify ships continue moving when viewing fleet manager
+    - [ ] 8.4.3 Confirm accurate synchronization when entering space scene
+    - [ ] 8.4.4 Monitor resource usage and adjust update rate if needed
+    - [ ] 8.4.5 Test persistence across scene transitions and page refresh
+- [ ] 9.0 Implement Universal Dock Interface System
+  - [ ] 9.1 Create shared holo interface CSS classes (.holo-interface) with common glow effects and animations
+  - [ ] 9.2 Add universal close button system (.dock-universal-close) positioned in bottom-right corner
+  - [ ] 9.3 Implement color variants for holo interfaces (red for alerts, green for success, blue default)
+  - [ ] 9.4 Update fleet manager to use shared holo interface classes while preserving custom positioning
+  - [ ] 9.5 Update mission board scene to use shared holo interface system with holo-reveal/holo-close animations
+  - [ ] 9.6 Update trade hub scene to use shared holo interface system and universal close button
+  - [ ] 9.7 Add universal ESC key handler that works across all dock sub-scenes
+  - [ ] 9.8 Implement scene-specific CSS customization system using CSS specificity overrides
+  - [ ] 9.9 Add universal close button to main dock scene for returning to start screen
+  - [ ] 9.10 Create utility functions for adding/removing universal close buttons dynamically
+- [ ] 10.0 Implement Start Screen Game Management
+  - [ ] 10.1 Rename "Activate Holo" button to "Load Game" on start screen
+  - [ ] 10.2 Add "Start New Game" button to start screen
+  - [ ] 10.3 Implement "Start New Game" functionality to clear localStorage and initialize fresh game state
+  - [ ] 10.4 Add confirmation dialog for "Start New Game" to prevent accidental resets
+  - [ ] 10.5 Update start screen styling to accommodate both buttons with clear visual hierarchy
