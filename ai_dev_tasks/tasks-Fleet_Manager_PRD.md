@@ -65,8 +65,8 @@
   - [x] 5.8 Update fleet manager display to show "Active Mission" parameter for ships with assignments
 - [ ] 6.0 Implement Multi-Ship Rendering and Fleet Visualization
   - [x] 6.1 Add multi-ship rendering support to space scene for visualizing entire fleet
-  - [ ] 6.1.1 BUG FIX: Ship location resets to (0,0) if page refreshed immediately after dispatch without triggering save
-  - [ ] 6.1.2 Add periodic auto-save for fleet ships (save positions every 5-10 seconds while in space scene)
+  - [x] 6.1.1 BUG FIX: Ship location resets to (0,0) if page refreshed immediately after dispatch without triggering save
+  - [x] 6.1.2 Save fleet ship positions at key checkpoints (docking, scene exit, page unload)
   - [ ] 6.2 Implement ship-to-ship visual indicators when multiple ships are in same sector
   - [ ] 6.3 Add fleet formation and positioning logic for multiple ships in same location
   - [ ] 6.4 Create visual distinction between active ship and other fleet ships in space view

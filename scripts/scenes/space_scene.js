@@ -332,6 +332,13 @@ class SpaceScene {
         // Clear the dispatch mode
         gameManager.fleetDispatchMode = null;
 
+        // BUG FIX 6.1.1: Immediately save the ship's position after dispatch/jump to
+        // This ensures that if the page is refreshed right after dispatch, the ship's 
+        // actual position (not the placeholder 0,0) is persisted to localStorage
+        fleetManager.saveCurrentShipState(activeShip, this);
+        playerDataManager.saveData();
+        console.log('Ship position saved immediately after dispatch to prevent (0,0) reset on refresh');
+
         console.log('Fleet dispatch complete - ship positioned and state fully restored via', dispatchMode, 'mode');
     }
 
@@ -562,6 +569,59 @@ class SpaceScene {
         });
     }
 
+    // NEW METHOD: Save fleet ship positions from RAM to localStorage (Task 6.1.2)
+    saveFleetShipsToStorage() {
+        if (!this.fleetShips || this.fleetShips.length === 0) {
+            console.log('No fleet ships to save');
+            return;
+        }
+
+        console.log(`Saving ${this.fleetShips.length} fleet ship positions from RAM to storage...`);
+
+        this.fleetShips.forEach(fleetShip => {
+            if (!fleetShip || !fleetShip.fleetData) {
+                console.warn('Fleet ship missing data, skipping save');
+                return;
+            }
+
+            // Build location object from current RAM state
+            const updatedLocation = {
+                type: 'space',  // Default, will be overridden below
+                x: fleetShip.x,
+                y: fleetShip.y,
+                velX: fleetShip.velX || 0,
+                velY: fleetShip.velY || 0,
+                angle: fleetShip.angle || 0,
+                isDocked: false,
+                isOrbitLocked: false,
+                planetName: null,
+                orbitData: null
+            };
+
+            // If ship is in orbit, save orbital data
+            if (fleetShip.isOrbitLocked && fleetShip.orbitingPlanet) {
+                updatedLocation.type = 'orbit';
+                updatedLocation.isOrbitLocked = true;
+                updatedLocation.planetName = fleetShip.orbitingPlanet.name;
+                updatedLocation.orbitData = {
+                    planetIndex: fleetShip.orbitingPlanet.index,
+                    orbitRadius: fleetShip.orbitRadius,
+                    orbitAngle: fleetShip.orbitAngle,
+                    lockedOrbitSpeed: fleetShip.lockedOrbitSpeed || 0
+                };
+            }
+
+            // Update the ship's location in playerDataManager (RAM)
+            playerDataManager.updateShipLocation(fleetShip.fleetData.id, updatedLocation);
+            
+            console.log(`  Saved ${fleetShip.fleetData.name}: (${Math.round(fleetShip.x)}, ${Math.round(fleetShip.y)})`);
+        });
+
+        // Persist RAM to localStorage
+        playerDataManager.saveData();
+        console.log('Fleet ships saved to localStorage');
+    }
+
     update() {
         if (!this.ship || this.isPaused) return;
         // --- ORBIT LOCK LOGIC ---
@@ -661,6 +721,9 @@ class SpaceScene {
                     // Save current ship state before switching scenes (Task 4.7)
                     this.saveState();
                     fleetManager.saveCurrentShipState(playerDataManager.getActiveShip(), this);
+
+                    // TASK 6.1.2: Save all fleet ship positions before leaving space scene
+                    this.saveFleetShipsToStorage();
 
                     // FIXED: Clear active ship immediately and switch scene without delay
                     // This prevents the update loop from running with null active ship

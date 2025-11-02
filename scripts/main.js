@@ -277,6 +277,11 @@ function setupEventListeners() {
             // This ensures the ship's current position/velocity is saved to PlayerDataManager fleet data
             fleetManager.saveCurrentShipState(playerDataManager.getActiveShip(), gameManager.activeScene);
             
+            // TASK 6.1.2: Save all fleet ship positions before leaving space scene
+            if (gameManager.activeScene.saveFleetShipsToStorage) {
+                gameManager.activeScene.saveFleetShipsToStorage();
+            }
+            
             // ENHANCED: Pass settings to indicate we're returning from space scene (Task 4.6)
             gameManager.switchScene(fleetManagerScene, { fromSpaceScene: true });
         }
@@ -400,10 +405,17 @@ window.addEventListener('beforeunload', () => {
             console.log('Saving active ship state before unload:', activeShip.name);
             fleetManager.saveCurrentShipState(activeShip, gameManager.activeScene);
         }
+        
+        // TASK 6.1.2: Save all fleet ship positions before page unload
+        if (gameManager.activeScene.saveFleetShipsToStorage) {
+            gameManager.activeScene.saveFleetShipsToStorage();
+        }
+        // NOTE: Both methods above call saveData() internally, so no need for additional save
+    } else {
+        // If not in space scene, ensure data is still saved
+        playerDataManager.saveData();
     }
     
-    // Ensure all player data is saved to localStorage
-    playerDataManager.saveData();
     console.log('Game state saved successfully');
 });
 

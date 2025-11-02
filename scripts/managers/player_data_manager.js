@@ -119,7 +119,8 @@ class PlayerDataManager {
         if (ship) {
             ship.location = { ...ship.location, ...locationData };
             console.log(`Updated ship ${shipId} location:`, ship.location);
-            this.saveData();
+            // NOTE: Does not call saveData() - caller is responsible for persisting
+            // This prevents multiple localStorage writes when updating multiple ships
         }
     }
 
