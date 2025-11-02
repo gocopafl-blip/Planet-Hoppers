@@ -390,7 +390,7 @@ window.addEventListener('beforeunload', () => {
     // ISSUE #3 FIX: Check if localStorage was intentionally cleared
     // If playerData doesn't exist in localStorage, user cleared it (testing/reset)
     // Don't re-save in this case - respect the intentional clearing
-    const existingData = localStorage.getItem('playerData');
+    const existingData = localStorage.getItem('planetHoppersSaveData');
     if (!existingData) {
         console.log('localStorage is empty - skipping auto-save (intentional reset detected)');
         return; // Exit early, don't save
