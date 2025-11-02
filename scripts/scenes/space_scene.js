@@ -505,45 +505,121 @@ class SpaceScene {
         this.fleetShips.forEach(fleetShip => {
             if (!fleetShip) return;
 
-            // If ship is orbit-locked, handle orbital mechanics
+            // If ship is orbit-locked, handle orbital mechanics (Task 7.9)
             if (fleetShip.isOrbitLocked && fleetShip.orbitingPlanet) {
                 const planet = fleetShip.orbitingPlanet;
+                
+                // Update orbital radius based on locked speed (same as player ship)
+                const speedRange = MAX_ORBIT_SPEED - MIN_ORBIT_SPEED;
+                const radiusRange = ORBIT_RADIUS_MULTIPLIERS.MAX - ORBIT_RADIUS_MULTIPLIERS.MIN;
+                const speedFraction = (fleetShip.lockedOrbitSpeed - MIN_ORBIT_SPEED) / speedRange;
+                const targetRadiusMultiplier = ORBIT_RADIUS_MULTIPLIERS.MIN + (speedFraction * radiusRange);
+                fleetShip.orbitRadius = planet.radius * targetRadiusMultiplier;
+                
+                // Calculate orbital angular velocity
                 const orbitalSpeed = fleetShip.lockedOrbitSpeed / fleetShip.orbitRadius;
                 
-                fleetShip.orbitAngle += orbitalSpeed;
-                fleetShip.x = planet.x + Math.cos(fleetShip.orbitAngle) * fleetShip.orbitRadius;
-                fleetShip.y = planet.y + Math.sin(fleetShip.orbitAngle) * fleetShip.orbitRadius;
-                fleetShip.angle = fleetShip.orbitAngle + Math.PI / 2;
+                // Update orbital position (using direction: 1 = CCW, -1 = CW)
+                fleetShip.orbitAngle += orbitalSpeed * (fleetShip.orbitDirection || 1);
+                const targetX = planet.x + Math.cos(fleetShip.orbitAngle) * fleetShip.orbitRadius;
+                const targetY = planet.y + Math.sin(fleetShip.orbitAngle) * fleetShip.orbitRadius;
+                // Target angle perpendicular to radius, direction-dependent
+                // CCW (dir=1): +90°, CW (dir=-1): -90°
+                const targetAngle = fleetShip.orbitAngle + (Math.PI / 2) * (fleetShip.orbitDirection || 1);
+                
+                // Smooth transition from approach angle to orbital angle (like player ship)
+                if (fleetShip.orbitTransitionProgress < 1) {
+                    fleetShip.orbitTransitionProgress += 0.01; // Same rate as player ship
+                    fleetShip.orbitTransitionProgress = Math.min(fleetShip.orbitTransitionProgress, 1);
+                    
+                    // Smoothly interpolate the ship's angle
+                    const angleDiff = targetAngle - fleetShip.initialApproachAngle;
+                    // Handle angle wrapping (shortest path between angles)
+                    let adjustedAngleDiff = angleDiff;
+                    if (angleDiff > Math.PI) adjustedAngleDiff -= 2 * Math.PI;
+                    if (angleDiff < -Math.PI) adjustedAngleDiff += 2 * Math.PI;
+                    
+                    fleetShip.angle = fleetShip.initialApproachAngle + (adjustedAngleDiff * fleetShip.orbitTransitionProgress);
+                    
+                    // Position follows orbital path immediately
+                    fleetShip.x = targetX;
+                    fleetShip.y = targetY;
+                } else {
+                    // Full orbital motion once transition is complete
+                    fleetShip.x = targetX;
+                    fleetShip.y = targetY;
+                    fleetShip.angle = targetAngle;
+                }
+            } else if (fleetShip.isApproachingOrbit) {
+                // Ship is approaching orbit - continue straight line with locked velocity
+                fleetShip.x += fleetShip.approachVelX;
+                fleetShip.y += fleetShip.approachVelY;
+                
+                // Check proximity to target orbit for the orbiting planet
+                const planet = fleetShip.orbitingPlanet;
+                if (planet) {
+                    const dx = planet.x - fleetShip.x;
+                    const dy = planet.y - fleetShip.y;
+                    const distance = Math.hypot(dx, dy);
+                    const proximityThreshold = planet.radius * 0.05; // 5% of planet radius tolerance
+                    const distanceToTargetOrbit = Math.abs(distance - fleetShip.targetOrbitRadius);
+                    
+                    if (distanceToTargetOrbit <= proximityThreshold) {
+                        // Ship has arrived at target orbit - lock into orbit
+                        fleetShip.isApproachingOrbit = false;
+                        fleetShip.isOrbitLocked = true;
+                        fleetShip.orbitRadius = fleetShip.targetOrbitRadius;
+                        fleetShip.orbitTransitionProgress = 0; // Start angle transition at 0%
+                        fleetShip.initialApproachAngle = fleetShip.angle; // Store current ship angle
+                        
+                        // Determine orbit direction using cross product of radius and velocity vectors
+                        const radiusX = fleetShip.x - planet.x;
+                        const radiusY = fleetShip.y - planet.y;
+                        const crossProduct = (radiusX * fleetShip.approachVelY) - (radiusY * fleetShip.approachVelX);
+                        fleetShip.orbitDirection = crossProduct >= 0 ? 1 : -1; // 1 = CCW, -1 = CW
+                        
+                        console.log(`Fleet ship locked into orbit around ${planet.name} at radius ${fleetShip.orbitRadius.toFixed(0)}, direction: ${fleetShip.orbitDirection > 0 ? 'CCW' : 'CW'}`);
+                    }
+                }
             } else {
-                // Normal physics update for ships in space
+                // Normal physics update for ships in space (not in orbit, not approaching)
                 fleetShip.x += fleetShip.velX;
                 fleetShip.y += fleetShip.velY;
 
-                // Apply gravity from planets
+                // Check for automatic orbit entry (Task 7.9.2)
                 for (const planet of celestialBodies) {
                     const dx = planet.x - fleetShip.x;
                     const dy = planet.y - fleetShip.y;
                     const distance = Math.hypot(dx, dy);
-                    const gravityWellEdge = planet.radius * this.GRAVITY_BOUNDARY_MULTIPLIER;
+                    const maxOrbitalRadius = planet.radius * ORBIT_RADIUS_MULTIPLIERS.MAX;
 
-                    // Only apply gravity if the ship is within the planet's gravity well
-                    if (distance < gravityWellEdge && distance > planet.radius) {
+                    // Check if ship crosses orbital threshold at valid speed
+                    if (!fleetShip.isOrbitLocked && !fleetShip.isApproachingOrbit && distance <= maxOrbitalRadius && distance > planet.radius) {
                         const shipSpeed = Math.hypot(fleetShip.velX, fleetShip.velY);
-                        const startSpeed = this.MAX_ORBIT_SPEED;
-                        const fullSpeed = this.GRAVITY_ASSIST_MAX_SPEED;
-
-                        let gravityFactor = 0;
-                        if (shipSpeed > startSpeed) {
-                            const progress = (shipSpeed - startSpeed) / (fullSpeed - startSpeed);
-                            gravityFactor = Math.max(0, Math.min(progress, 1));
-                        }
-
-                        if (gravityFactor > 0) {
-                            const baseForce = this.ORBITAL_CONSTANT * planet.mass / (distance * distance);
-                            const appliedForce = baseForce * gravityFactor;
-                            const angle = Math.atan2(dy, dx);
-                            fleetShip.velX += appliedForce * Math.cos(angle);
-                            fleetShip.velY += appliedForce * Math.sin(angle);
+                        
+                        // Only start approach if speed is within valid range
+                        if (shipSpeed >= MIN_ORBIT_SPEED && shipSpeed <= MAX_ORBIT_SPEED) {
+                            // Calculate target orbital radius based on speed (linear interpolation)
+                            const speedRange = MAX_ORBIT_SPEED - MIN_ORBIT_SPEED;
+                            const radiusRange = ORBIT_RADIUS_MULTIPLIERS.MAX - ORBIT_RADIUS_MULTIPLIERS.MIN;
+                            const speedFraction = (shipSpeed - MIN_ORBIT_SPEED) / speedRange;
+                            const targetRadiusMultiplier = ORBIT_RADIUS_MULTIPLIERS.MIN + (speedFraction * radiusRange);
+                            const targetOrbitRadius = planet.radius * targetRadiusMultiplier;
+                            
+                            // Enter "approaching orbit" state - lock speed but let ship continue straight
+                            fleetShip.isApproachingOrbit = true;
+                            fleetShip.orbitingPlanet = planet;
+                            fleetShip.targetOrbitRadius = targetOrbitRadius;
+                            fleetShip.lockedOrbitSpeed = shipSpeed;
+                            // Calculate angle from planet center to ship (not ship to planet!)
+                            fleetShip.orbitAngle = Math.atan2(fleetShip.y - planet.y, fleetShip.x - planet.x);
+                            
+                            // Lock velocity - ship can't change during approach
+                            fleetShip.approachVelX = fleetShip.velX;
+                            fleetShip.approachVelY = fleetShip.velY;
+                            
+                            console.log(`Fleet ship approaching orbit around ${planet.name} at speed ${shipSpeed.toFixed(2)}`);
+                            break; // Only approach one planet
                         }
                     }
                 }
@@ -615,6 +691,11 @@ class SpaceScene {
 
     update() {
         if (!this.ship || this.isPaused) return;
+        
+        // TASK 6.1 & 7.9: Update all fleet ships FIRST (before active ship logic)
+        // This ensures fleet ships continue moving even when active ship is in orbit
+        this.updateFleetShips();
+        
         // --- ORBIT LOCK LOGIC ---
         if (this.ship.isOrbitLocked && this.ship.orbitingPlanet) {
             const ship = this.ship;
@@ -687,11 +768,13 @@ class SpaceScene {
                     // Calculate orbital angular velocity
                     const orbitalSpeed = ship.lockedOrbitSpeed / ship.orbitRadius;
 
-                    // Update orbital position
-                    ship.orbitAngle += orbitalSpeed;
+                    // Update orbital position (using direction: 1 = CCW, -1 = CW)
+                    ship.orbitAngle += orbitalSpeed * (ship.orbitDirection || 1);
                     const targetX = planet.x + Math.cos(ship.orbitAngle) * ship.orbitRadius;
                     const targetY = planet.y + Math.sin(ship.orbitAngle) * ship.orbitRadius;
-                    const targetAngle = ship.orbitAngle + Math.PI / 2; // Target orbital angle (perpendicular to planet)
+                    // Target angle perpendicular to radius, direction-dependent
+                    // CCW (dir=1): +90°, CW (dir=-1): -90°
+                    const targetAngle = ship.orbitAngle + (Math.PI / 2) * (ship.orbitDirection || 1);
 
                     // Smooth transition from approach angle to orbital angle
                     if (ship.orbitTransitionProgress < 1) {
@@ -723,6 +806,18 @@ class SpaceScene {
                     return;
                 }
         }
+        
+        // --- APPROACHING ORBIT LOGIC (Task 7.9.4) ---
+        // Ship is coasting in straight line toward target orbit radius, controls disabled
+        if (this.ship.isApproachingOrbit) {
+            // Manually update ship position with locked velocity
+            this.ship.x += this.ship.approachVelX;
+            this.ship.y += this.ship.approachVelY;
+            
+            // Continue to orbit proximity check in the celestial bodies loop below
+            // (don't return early - let the proximity check run)
+        }
+        
         // --- UNDOCKING LOGIC ---
         const wantsToMove = this.ship.thrusting || this.ship.reversing || this.ship.strafingLeft || this.ship.strafingRight;
         if (this.ship.isDocked && wantsToMove) {
@@ -794,8 +889,7 @@ class SpaceScene {
             return p.lifespan > 0;
         });
 
-        // TASK 6.1: Update all fleet ships (physics only, no player control)
-        this.updateFleetShips();
+        // Fleet ships already updated at start of update() method
 
         this.camera.update();
         this.navScreen.update();
@@ -825,8 +919,8 @@ class SpaceScene {
             // TASK 7.5: Check for automatic orbit entry at MAX orbital radius threshold
             const maxOrbitalRadius = planet.radius * ORBIT_RADIUS_MULTIPLIERS.MAX;
             
-            // Only check for orbit entry if ship is not already in orbit
-            if (!this.ship.isOrbitLocked && distance <= maxOrbitalRadius && distance > planet.radius) {
+            // Only check for orbit entry if ship is not already in orbit or approaching orbit
+            if (!this.ship.isOrbitLocked && !this.ship.isApproachingOrbit && distance <= maxOrbitalRadius && distance > planet.radius) {
                 const shipSpeed = Math.hypot(this.ship.velX, this.ship.velY);
                 
                 // Check if ship speed is within valid orbit range
@@ -838,19 +932,51 @@ class SpaceScene {
                         (speedRatio * (ORBIT_RADIUS_MULTIPLIERS.MAX - ORBIT_RADIUS_MULTIPLIERS.MIN));
                     const targetOrbitRadius = planet.radius * targetRadiusMultiplier;
                     
-                    // Lock ship into orbit
-                    this.ship.isOrbitLocked = true;
+                    // Enter "approaching orbit" state - lock speed but let ship continue straight
+                    this.ship.isApproachingOrbit = true;
                     this.ship.orbitingPlanet = planet;
-                    this.ship.orbitRadius = targetOrbitRadius;
-                    this.ship.orbitAngle = Math.atan2(dy, dx) + Math.PI;
+                    this.ship.targetOrbitRadius = targetOrbitRadius;
                     this.ship.lockedOrbitSpeed = shipSpeed;
-                    this.ship.orbitTransitionProgress = 0; // Start transition at 0%
+                    this.ship.orbitAngle = Math.atan2(dy, dx) + Math.PI;
+                    
+                    // Lock velocity - ship can't thrust during approach
+                    this.ship.approachVelX = this.ship.velX;
+                    this.ship.approachVelY = this.ship.velY;
+                    
+                    console.log(`Approaching orbit! Speed: ${shipSpeed.toFixed(2)}, Target Radius: ${targetOrbitRadius.toFixed(0)}`);
+                }
+                // If speed is outside valid range, ship continues toward planet (will crash when collisions enabled)
+            }
+            
+            // Handle ship approaching orbit - continue straight line until near target radius
+            if (this.ship.isApproachingOrbit && this.ship.orbitingPlanet === planet) {
+                // Ship continues moving in straight line with locked velocity
+                this.ship.velX = this.ship.approachVelX;
+                this.ship.velY = this.ship.approachVelY;
+                
+                // Check if ship is close enough to target orbit radius to lock in
+                const proximityThreshold = planet.radius * 0.05; // 5% of planet radius tolerance
+                const distanceToTargetOrbit = Math.abs(distance - this.ship.targetOrbitRadius);
+                
+                if (distanceToTargetOrbit <= proximityThreshold) {
+                    // Ship has arrived at target orbit - lock into orbit
+                    this.ship.isApproachingOrbit = false;
+                    this.ship.isOrbitLocked = true;
+                    this.ship.orbitRadius = this.ship.targetOrbitRadius;
+                    this.ship.orbitTransitionProgress = 0; // Start angle transition at 0%
                     this.ship.initialApproachAngle = this.ship.angle; // Store current ship angle
                     this.camera.targetZoom = 0.5; // Set target zoom for orbit view
                     
-                    console.log(`Orbit locked! Speed: ${shipSpeed.toFixed(2)}, Radius: ${targetOrbitRadius.toFixed(0)}, Multiplier: ${targetRadiusMultiplier.toFixed(2)}`);
+                    // Determine orbit direction using cross product of radius and velocity vectors
+                    // Cross product z-component: (r.x * v.y) - (r.y * v.x)
+                    // Positive = counter-clockwise, Negative = clockwise
+                    const radiusX = this.ship.x - planet.x;
+                    const radiusY = this.ship.y - planet.y;
+                    const crossProduct = (radiusX * this.ship.approachVelY) - (radiusY * this.ship.approachVelX);
+                    this.ship.orbitDirection = crossProduct >= 0 ? 1 : -1; // 1 = CCW, -1 = CW
+                    
+                    console.log(`Orbit locked at radius ${this.ship.orbitRadius.toFixed(0)}! Direction: ${this.ship.orbitDirection > 0 ? 'CCW' : 'CW'}`);
                 }
-                // If speed is outside valid range, ship continues toward planet (will crash when collisions enabled)
             }
 
             // Collision check (functionality disabled - will be implemented later)

@@ -119,17 +119,23 @@
     - [x] 7.8.8 Removed strafing orbit break - only exit via MAX_ORBIT_SPEED acceleration
     - [x] 7.8.9 Ring dims to 50% opacity at 80%+ speed to emphasize departure line
     - [x] 7.8.10 Fixed camera zoom to use shipDefaultZoom instead of hardcoded 1.0
-  - [ ] 7.9 Update fleet ship orbit mechanics
-    - [ ] 7.9.1 Apply new orbit system to updateFleetShips() method
-    - [ ] 7.9.2 Ensure background ships use same orbit entry/exit logic
-    - [ ] 7.9.3 Fleet ships maintain stable orbits without player input
-  - [ ] 7.10 Testing and tuning
-    - [ ] 7.10.1 Test orbit entry at various speeds and angles
-    - [ ] 7.10.2 Verify smooth radius transitions during thrust
-    - [ ] 7.10.3 Test orbit exit timing and departure angle accuracy
-    - [ ] 7.10.4 Tune shipOrbitThrustPower for feel (adjust if transitions too fast/slow)
-    - [ ] 7.10.5 Test with different planet sizes to verify linear interpolation works
-    - [ ] 7.10.6 Verify minimum orbit speed floor prevents dropping below 2.0
+  - [x] 7.9 Update fleet ship orbit mechanics
+    - [x] 7.9.1 Apply new orbit system to updateFleetShips() method
+    - [x] 7.9.2 Implement fleet ship orbit entry with speed checks and linear interpolation
+    - [x] 7.9.3 Fleet ships maintain stable orbits without player input
+    - [x] 7.9.4 Fixed fleet ship orbit angle calculation (180° teleportation bug)
+    - [x] 7.9.5 Added smooth angle transition for fleet ships (matching player ship)
+    - [x] 7.9.6 Implemented smooth orbit approach (no jumping/teleporting on entry)
+  - [x] 7.10 Testing and tuning
+    - [x] 7.10.1 Test orbit entry at various speeds and angles
+    - [x] 7.10.2 Verify smooth radius transitions during thrust
+    - [x] 7.10.3 Test orbit exit timing and departure angle accuracy
+    - [x] 7.10.4 Tune shipOrbitThrustPower for feel (adjust if transitions too fast/slow)
+    - [x] 7.10.5 Test with different planet sizes to verify linear interpolation works
+    - [x] 7.10.6 Verify minimum orbit speed floor prevents dropping below 2.0
+    - [x] 7.10.7 FIXED: Orbit direction now respects approach velocity (CCW vs CW via cross product)
+    - [ ] 7.10.8 Continue troubleshooting orbit radius issues
+    - [ ] 7.10.9 Troubleshoot fleet transfer click not transferring nav data.
 - [ ] 8.0 Implement Real-Time Fleet Background Simulation
   - [ ] 8.1 Create background simulation loop with configurable update rate
     - [ ] 8.1.1 Add FLEET_UPDATE_RATE constant (default 10-15fps for background, 60fps for active)
