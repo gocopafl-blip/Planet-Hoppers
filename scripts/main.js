@@ -172,6 +172,9 @@ function setupEventListeners() {
             // Check if the click was inside the radar circle
             if (Math.hypot(x - radarX, y - radarY) <= radarRadius) {
                 gameManager.activeScene.navScreen.toggle();
+            } else {
+                // TASK 6.6: Check if click was on a fleet ship to switch control
+                gameManager.activeScene.handleShipClick(x, y);
             }
         }
     });

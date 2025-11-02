@@ -68,7 +68,7 @@
   - [x] 6.1.1 BUG FIX: Ship location resets to (0,0) if page refreshed immediately after dispatch without triggering save
   - [x] 6.1.2 Save fleet ship positions at key checkpoints (docking, scene exit, page unload)
   - [ ] 6.2 Implement ship-to-ship visual indicators when multiple ships are in same sector
-  - [ ] 6.6 Implement ship selection/switching directly from space scene when multiple ships visible
+  - [x] 6.6 Implement ship selection/switching directly from space scene when multiple ships visible
 - [ ] 7.0 Implement Enhanced Gravity and Orbital Physics
   - [ ] 7.1 Analyze and document current gravity implementation and orbital mechanics
   - [ ] 7.2 Design improved gravity system with realistic orbital dynamics

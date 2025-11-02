@@ -1334,4 +1334,116 @@ class SpaceScene {
         }
         return false;
     }
+
+    // TASK 6.6: Handle clicks on canvas to detect fleet ship selection
+    handleShipClick(canvasX, canvasY) {
+        if (!this.camera || !this.fleetShips || this.fleetShips.length === 0) {
+            return; // No fleet ships to click on
+        }
+
+        // Convert canvas coordinates to world coordinates using camera transform
+        // The camera uses its begin() method which translates to center the view on camera.x, camera.y
+        // So we need to reverse that transformation
+        const worldX = (canvasX - canvas.width / 2) / this.camera.zoomLevel + this.camera.x;
+        const worldY = (canvasY - canvas.height / 2) / this.camera.zoomLevel + this.camera.y;
+
+        // Check each fleet ship for collision with click point
+        for (let i = 0; i < this.fleetShips.length; i++) {
+            const fleetShip = this.fleetShips[i];
+            if (!fleetShip || !fleetShip.fleetData) continue;
+
+            // Calculate ship bounds (ships are drawn centered at x,y with rotation)
+            // Use a simple rectangular collision check with some padding for easier clicking
+            const shipHalfWidth = fleetShip.width / 2;
+            const shipHalfHeight = fleetShip.height / 2;
+            const clickPadding = 50; // Make clickable area slightly larger than visual ship
+
+            // Simple AABB collision (ignore rotation for click detection to make it easier)
+            const inBoundsX = worldX >= fleetShip.x - shipHalfWidth - clickPadding && 
+                            worldX <= fleetShip.x + shipHalfWidth + clickPadding;
+            const inBoundsY = worldY >= fleetShip.y - shipHalfHeight - clickPadding && 
+                            worldY <= fleetShip.y + shipHalfHeight + clickPadding;
+
+            if (inBoundsX && inBoundsY) {
+                // Player clicked on this fleet ship - switch control to it
+                this.switchToFleetShip(i);
+                return; // Exit after first match
+            }
+        }
+    }
+
+    // TASK 6.6: Switch active ship control to a clicked fleet ship
+    switchToFleetShip(fleetShipIndex) {
+        const clickedFleetShip = this.fleetShips[fleetShipIndex];
+        if (!clickedFleetShip || !clickedFleetShip.fleetData) {
+            console.error('Invalid fleet ship index for switching');
+            return;
+        }
+
+        console.log(`Switching control from ${this.ship.fleetData?.name || 'Unknown'} to ${clickedFleetShip.fleetData.name}...`);
+
+        // Step 1: Save current active ship's state to RAM
+        const currentActiveShipId = playerDataManager.data.activeShipId;
+        const currentShipLocation = {
+            type: this.ship.isOrbitLocked ? 'orbit' : 'space',
+            x: this.ship.x,
+            y: this.ship.y,
+            velX: this.ship.velX || 0,
+            velY: this.ship.velY || 0,
+            angle: this.ship.angle || 0,
+            isDocked: this.ship.isDocked || false,
+            isOrbitLocked: this.ship.isOrbitLocked || false,
+            planetName: this.ship.orbitingPlanet?.name || null,
+            orbitData: null
+        };
+
+        if (this.ship.isOrbitLocked && this.ship.orbitingPlanet) {
+            currentShipLocation.orbitData = {
+                planetIndex: this.ship.orbitingPlanet.index,
+                orbitRadius: this.ship.orbitRadius,
+                orbitAngle: this.ship.orbitAngle,
+                lockedOrbitSpeed: this.ship.lockedOrbitSpeed || 0
+            };
+        }
+
+        playerDataManager.updateShipLocation(currentActiveShipId, currentShipLocation);
+        console.log(`  Saved current ship ${currentActiveShipId} state to RAM`);
+
+        // Step 2: Update activeShipId in playerDataManager RAM
+        const newActiveShipId = clickedFleetShip.fleetData.id;
+        playerDataManager.data.activeShipId = newActiveShipId;
+        console.log(`  Updated activeShipId to ${newActiveShipId}`);
+
+        // Step 3: Swap ships - make clicked fleet ship the new active ship
+        // Store reference to old active ship
+        const oldActiveShip = this.ship;
+        
+        // Make clicked ship the new active ship
+        this.ship = clickedFleetShip;
+        this.ship.isFleetShip = false; // Mark as player-controllable
+        
+        // Store old active ship in the fleet ships array at the clicked position
+        // IMPORTANT: Ensure the old ship keeps its fleetData so it can be clicked again
+        oldActiveShip.isFleetShip = true; // Mark as non-controllable
+        if (!oldActiveShip.fleetData) {
+            // If old ship doesn't have fleetData, find it from playerDataManager
+            const shipInfo = playerDataManager.data.fleet.find(s => s.id === currentActiveShipId);
+            oldActiveShip.fleetData = shipInfo;
+        }
+        this.fleetShips[fleetShipIndex] = oldActiveShip;
+        
+        console.log(`  Swapped ship instances in scene arrays`);
+
+        // Step 4: Update camera target and position to follow new active ship
+        this.camera.target = this.ship;  // CRITICAL: Update camera's target
+        this.camera.x = this.ship.x;
+        this.camera.y = this.ship.y;
+        console.log(`  Camera target updated and centered on new ship at (${Math.round(this.ship.x)}, ${Math.round(this.ship.y)})`);
+
+        // Step 5: Save to localStorage
+        playerDataManager.saveData();
+        console.log(`  Saved all changes to localStorage`);
+
+        console.log(`✓ Successfully switched control to ${this.ship.fleetData.name}`);
+    }
 };
