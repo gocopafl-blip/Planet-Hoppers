@@ -134,7 +134,7 @@
     - [x] 7.10.5 Test with different planet sizes to verify linear interpolation works
     - [x] 7.10.6 Verify minimum orbit speed floor prevents dropping below 2.0
     - [x] 7.10.7 FIXED: Orbit direction now respects approach velocity (CCW vs CW via cross product)
-    - [ ] 7.10.8 Continue troubleshooting orbit radius issues
+    - [!] 7.10.8 Continue troubleshooting orbit radius issues
     - [ ] 7.10.9 Troubleshoot fleet transfer click not transferring nav data.
 - [ ] 8.0 Implement Real-Time Fleet Background Simulation
   - [ ] 8.1 Create background simulation loop with configurable update rate

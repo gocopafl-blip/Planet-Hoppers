@@ -235,6 +235,9 @@ class SpaceScene {
 
                         // FIXED: Simply restore the exact saved orbital speed
                         this.ship.lockedOrbitSpeed = location.orbitData.lockedOrbitSpeed || 0;
+                        
+                        // Restore orbit direction (CCW=1, CW=-1)
+                        this.ship.orbitDirection = location.orbitData.orbitDirection || 1;
 
                         // Set orbit transition as complete (ship is already in stable orbit)
                         this.ship.orbitTransitionProgress = 1; // 100% - no transition needed
@@ -462,6 +465,7 @@ class SpaceScene {
                             ship.orbitRadius = orbitRadius;
                             ship.orbitAngle = orbitAngle;
                             ship.lockedOrbitSpeed = shipData.location.orbitData.lockedOrbitSpeed || 0;
+                            ship.orbitDirection = shipData.location.orbitData.orbitDirection || 1; // Restore orbit direction
                             ship.orbitTransitionProgress = 1; // Already in orbit
                             console.log(`Loaded ${shipData.name} orbiting ${planet.name}`);
                         } else {
@@ -674,7 +678,8 @@ class SpaceScene {
                     planetIndex: fleetShip.orbitingPlanet.index,
                     orbitRadius: fleetShip.orbitRadius,
                     orbitAngle: fleetShip.orbitAngle,
-                    lockedOrbitSpeed: fleetShip.lockedOrbitSpeed || 0
+                    lockedOrbitSpeed: fleetShip.lockedOrbitSpeed || 0,
+                    orbitDirection: fleetShip.orbitDirection || 1
                 };
             }
 
@@ -1232,8 +1237,9 @@ class SpaceScene {
             return;
         }
         
-        // Calculate departure angle (tangent to orbit)
-        const departureAngle = this.ship.orbitAngle + Math.PI / 2;
+        // Calculate departure angle (tangent to orbit, direction-dependent)
+        // CCW (dir=1): +90°, CW (dir=-1): -90°
+        const departureAngle = this.ship.orbitAngle + (Math.PI / 2) * (this.ship.orbitDirection || 1);
         
         // Line length based on how close to departure (longer as speed increases)
         const minLineLength = 500;

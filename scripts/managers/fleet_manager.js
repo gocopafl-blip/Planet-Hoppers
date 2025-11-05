@@ -75,7 +75,8 @@ class FleetManager {
                     planetIndex: spaceScene.ship.orbitingPlanet.index,
                     orbitRadius: spaceScene.ship.orbitRadius,
                     orbitAngle: spaceScene.ship.orbitAngle,
-                    lockedOrbitSpeed: spaceScene.ship.lockedOrbitSpeed || 0
+                    lockedOrbitSpeed: spaceScene.ship.lockedOrbitSpeed || 0,
+                    orbitDirection: spaceScene.ship.orbitDirection || 1
                 };
             }
             
