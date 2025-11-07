@@ -16,9 +16,12 @@ const assetCatalogue = {
         "zenith_runner": 'assets/images/ships/small_ships/zenith_runner/zenith_runner.png',
 
         //Medium Ships
-
+        "apex_arrow": 'assets/images/ships/medium_ships/apex_arrow/apex_arrow.png',
+        "star_surfer": 'assets/images/ships/medium_ships/star_surfer/star_surfer.png',
+        
         //Large Ships
         "black_falcon": 'assets/images/ships/large_ships/black_falcon/BlackFalcon.png',
+        "big_boy": 'assets/images/ships/large_ships/big_boy/BigBoy.png',
 
         //Drop Ships
         "pea_drop_ship": "assets/images/ships/drop_ships/peaDropShip.png",
@@ -28,12 +31,18 @@ const assetCatalogue = {
         "lander_heavy": "assets/images/ships/lander-heavy.png",
 
         // Glam Shots
+        // Small Ships
         "sd_glam_shot": 'assets/images/ships/small_ships/stardust_drifter/sd_glam_shot.jpg',
         "ad_glam_shot": 'assets/images/ships/small_ships/apex_dart/ad_glam_shot.png',
         "ep_glam_shot": 'assets/images/ships/small_ships/echo_pacer/ep_glam_shot.png',
         "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.jpg',
 
+        // Medium Ships
+        "aa_glam_shot": 'assets/images/ships/medium_ships/apex_arrow/aa_glam_shot.jpg',
+        "ss_glam_shot": 'assets/images/ships/medium_ships/star_surfer/ss_glam_shot.jpg',
+        // Large Ships
         "bf_glam_shot": 'assets/images/ships/large_ships/black_falcon/bf_glam_shot.jpg',
+        "bb_glam_shot": 'assets/images/ships/large_ships/big_boy/bb_glam_shot.jpg',
 
         // Docks and Planets
         "space_dock_alpha": "assets/images/spacedocks/spacedockalpha.png",

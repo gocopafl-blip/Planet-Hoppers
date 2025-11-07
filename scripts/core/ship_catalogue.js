@@ -137,6 +137,48 @@ const shipCatalogue = {
             rear_right: { x_ratio: 0.06, y_ratio: 0.40, angle_deg: 0 }
         },
     },
+    'apex_arrow': {
+        ...baseShipTemplate, // Start with the same base stats
+
+        // Now, only list the unique stats for the Apex Arrow
+        shipID: 'Apex Arrow',
+        shipImage: 'apex_arrow',
+        shipGlamShot: 'aa_glam_shot',
+        shipDescription: "Packing more cargo than its competitors.",
+        shipSize: 1.0,
+        shipDefaultZoom: 0.9,
+        shipCargoCapacity: 4, // Slightly More cargo
+        shipThrustPower: 0.14, // Slightly Slower
+        shipBuyValue: 5500,
+        shipSellValue: 4500,
+        shipThrusters: { // A completely different thruster layout
+            front_left: { x_ratio: -0.04, y_ratio: -0.42, angle_deg: 360 },
+            front_right: { x_ratio: 0.055, y_ratio: -0.42, angle_deg: 360 },
+            rear_left: { x_ratio: -0.050, y_ratio: 0.40, angle_deg: 0 },
+            rear_right: { x_ratio: 0.06, y_ratio: 0.40, angle_deg: 0 }
+        },
+    },
+    'star_surfer': {
+        ...baseShipTemplate, // Start with the same base stats
+
+        // Now, only list the unique stats for the Star Surfer
+        shipID: 'Star Surfer',
+        shipImage: 'star_surfer',
+        shipGlamShot: 'ss_glam_shot',
+        shipDescription: "Packing more cargo than its competitors.",
+        shipSize: 1.0,
+        shipDefaultZoom: 0.9,
+        shipCargoCapacity: 4, // Slightly More cargo
+        shipThrustPower: 0.14, // Slightly Slower
+        shipBuyValue: 5500,
+        shipSellValue: 4500,
+        shipThrusters: { // A completely different thruster layout
+            front_left: { x_ratio: -0.04, y_ratio: -0.42, angle_deg: 360 },
+            front_right: { x_ratio: 0.055, y_ratio: -0.42, angle_deg: 360 },
+            rear_left: { x_ratio: -0.050, y_ratio: 0.40, angle_deg: 0 },
+            rear_right: { x_ratio: 0.06, y_ratio: 0.40, angle_deg: 0 }
+        },
+    },
     'black_falcon': {
         ...baseShipTemplate, // Start with the same base stats
 
@@ -147,7 +189,7 @@ const shipCatalogue = {
         shipDescription: "Packing more cargo than its competitors.",
         shipSize: 2.5,
         shipDefaultZoom: 1.0,
-        shipCargoCapacity: 4, // Slightly More cargo
+        shipCargoCapacity: 12, // Slightly More cargo
 
         shipRotationSpeed: 0.002,
         shipThrustPower: 0.04, // Slightly Slower
@@ -158,6 +200,29 @@ const shipCatalogue = {
             front_right: { x_ratio: 0.055, y_ratio: -0.42, angle_deg: 360 },
             rear_left: { x_ratio: -0.050, y_ratio: 0.40, angle_deg: 0 },
             rear_right: { x_ratio: 0.06, y_ratio: 0.40, angle_deg: 0 }
+        },
+    },
+    'big_boy': {
+        ...baseShipTemplate, // Start with the same base stats
+
+        // Now, only list the unique stats for the Big Boy
+        shipID: 'Big Boy',
+        shipImage: 'big_boy',
+        shipGlamShot: 'bb_glam_shot',
+        shipDescription: "A heavy hauler that excels in cargo capacity.",
+        shipSize: 5.0,
+        shipDefaultZoom: 0.7,
+        shipCargoCapacity: 16, // Slightly More cargo
+
+        shipRotationSpeed: 0.002,
+        shipThrustPower: 0.04, // Slightly Slower
+        shipBuyValue: 5500,
+        shipSellValue: 4500,
+        shipThrusters: { // A completely different thruster layout
+            front_left: { x_ratio: -0.055, y_ratio: -0.42, angle_deg: 360 },
+            front_right: { x_ratio: 0.038, y_ratio: -0.42, angle_deg: 360 },
+            rear_left: { x_ratio: -0.125, y_ratio: 0.405, angle_deg: 0 },
+            rear_right: { x_ratio: 0.105, y_ratio: 0.405, angle_deg: 0 }
         },
     },
 };
