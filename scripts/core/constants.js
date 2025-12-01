@@ -57,6 +57,13 @@ const ORBIT_RADIUS_BOUNDS = {
     ABSOLUTE_MAX: 4500   // Never orbit further than this (largest gas giant * MAX multiplier)
 };
 
+// FLEET BACKGROUND SIMULATION CONSTANTS (Task 8.1)
+// These constants control the update rate for fleet ship physics simulation
+// Background simulation runs at reduced rate when space scene is inactive
+const FLEET_BACKGROUND_UPDATE_RATE = 12;  // 12 fps for background simulation (when not in space scene)
+const FLEET_ACTIVE_UPDATE_RATE = 60;      // 60 fps when space scene is active
+const FLEET_UPDATE_INTERVAL_MS = 1000 / FLEET_BACKGROUND_UPDATE_RATE;  // ~83ms between updates at 12fps
+
 function degreesToRadians(degrees) {
     return degrees * (Math.PI / 180);
 }

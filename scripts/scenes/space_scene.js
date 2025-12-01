@@ -54,6 +54,10 @@ class SpaceScene {
     }
     start(settings) {
         console.log("Starting Space Scene...");
+        
+        // Task 8.1.7: Store reference to space scene in gameManager for world state access
+        gameManager.spaceScene = this;
+        
         document.getElementById('player-hud').style.display = 'block';
         this.difficulty = settings.difficulty;
         this.isPaused = false;
@@ -505,7 +509,10 @@ class SpaceScene {
 
     // NEW METHOD: Update all fleet ships with physics (Task 6.1)
     updateFleetShips() {
-        // Update each fleet ship - they obey physics but don't respond to player controls
+        // Task 8.1.6: Update each fleet ship - they obey physics but don't respond to player controls
+        // NOTE: Background simulator also updates fleet data, but when space scene is active,
+        // the space scene's Ship instances are authoritative for rendering. The space scene
+        // saves ship state back to fleet data when leaving (via saveFleetShipsToStorage).
         this.fleetShips.forEach(fleetShip => {
             if (!fleetShip) return;
 

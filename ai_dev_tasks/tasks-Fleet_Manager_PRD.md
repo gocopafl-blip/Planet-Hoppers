@@ -136,13 +136,13 @@
     - [x] 7.10.7 FIXED: Orbit direction now respects approach velocity (CCW vs CW via cross product)
     - [!] 7.10.8 Continue troubleshooting orbit radius issues
     - [ ] 7.10.9 Troubleshoot fleet transfer click not transferring nav data.
-- [ ] 8.0 Implement Real-Time Fleet Background Simulation
-  - [ ] 8.1 Create background simulation loop with configurable update rate
-    - [ ] 8.1.1 Add FLEET_UPDATE_RATE constant (default 10-15fps for background, 60fps for active)
-    - [ ] 8.1.2 Implement scene-independent fleet physics update method
-    - [ ] 8.1.3 Integrate with main game loop in GameManager
-    - [ ] 8.1.4 Add automatic rate switching when entering/exiting space scene
-    - [ ] 8.1.5 Test performance with multiple ships (3-5+)
+- [x] 8.0 Implement Real-Time Fleet Background Simulation
+  - [x] 8.1 Create background simulation loop with configurable update rate
+    - [x] 8.1.1 Add FLEET_UPDATE_RATE constant (default 10-15fps for background, 60fps for active)
+    - [x] 8.1.2 Implement scene-independent fleet physics update method
+    - [x] 8.1.3 Integrate with main game loop in GameManager
+    - [x] 8.1.4 Add automatic rate switching when entering/exiting space scene
+    - [x] 8.1.5 Test performance with multiple ships (3-5+)
   - [ ] 8.2 Implement Fleet Manager Tactical View (Information Display)
     - [ ] 8.2.1 Create tactical holo-map container in fleet_manager_scene.js
     - [ ] 8.2.2 Adapt NavScreen class for multi-ship display

@@ -257,5 +257,129 @@ class FleetManager {
         }
         // NOTE: PlayerDataManager methods automatically save data, so no manual save needed
     }
+
+    // Task 8.1.2: Extract fleet physics logic for background simulation
+    // This method updates fleet ship physics working with fleet data from playerDataManager
+    // It can be called independently of the space scene for background simulation
+    updateFleetPhysics(fleetShips, celestialBodies, worldWidth, worldHeight, deltaTime) {
+        // Update each fleet ship's physics
+        // fleetShips: Array of fleet ship data objects from playerDataManager.data.fleet
+        // celestialBodies: Array of planet objects
+        // worldWidth/Height: World boundary dimensions
+        // deltaTime: Time elapsed since last update (for future use)
+        
+        if (!fleetShips || fleetShips.length === 0) {
+            return;
+        }
+
+        const activeShipId = playerDataManager.data.activeShipId;
+
+        fleetShips.forEach(shipData => {
+            if (!shipData || !shipData.location) return;
+
+            // Skip active ship - it's handled by space scene when active
+            if (shipData.id === activeShipId) return;
+
+            // Skip docked ships - no physics needed
+            if (shipData.location.type === 'docked' || shipData.location.isDocked) return;
+
+            const location = shipData.location;
+            
+            // If ship is orbit-locked, handle orbital mechanics (Task 7.9)
+            if (location.type === 'orbit' && location.isOrbitLocked && location.orbitData) {
+                const planet = celestialBodies.find(p => p && (p.name === location.planetName || p.index === location.orbitData.planetIndex));
+                if (!planet) {
+                    console.warn(`Planet ${location.planetName} not found for ship ${shipData.name} in orbit`);
+                    return;
+                }
+
+                // Update orbital radius based on locked speed
+                const speedRange = MAX_ORBIT_SPEED - MIN_ORBIT_SPEED;
+                const radiusRange = ORBIT_RADIUS_MULTIPLIERS.MAX - ORBIT_RADIUS_MULTIPLIERS.MIN;
+                const speedFraction = (location.orbitData.lockedOrbitSpeed - MIN_ORBIT_SPEED) / speedRange;
+                const targetRadiusMultiplier = ORBIT_RADIUS_MULTIPLIERS.MIN + (speedFraction * radiusRange);
+                location.orbitData.orbitRadius = planet.radius * targetRadiusMultiplier;
+                
+                // Calculate orbital angular velocity
+                const orbitalSpeed = location.orbitData.lockedOrbitSpeed / location.orbitData.orbitRadius;
+                
+                // Update orbital position (using direction: 1 = CCW, -1 = CW)
+                location.orbitData.orbitAngle += orbitalSpeed * (location.orbitData.orbitDirection || 1) * (deltaTime || 0.016); // Scale by deltaTime
+                
+                // Calculate new position
+                location.x = planet.x + Math.cos(location.orbitData.orbitAngle) * location.orbitData.orbitRadius;
+                location.y = planet.y + Math.sin(location.orbitData.orbitAngle) * location.orbitData.orbitRadius;
+                
+                // Update angle (perpendicular to radius)
+                location.angle = location.orbitData.orbitAngle + (Math.PI / 2) * (location.orbitData.orbitDirection || 1);
+                
+                // Update velocity to match orbital motion (for consistency)
+                const tangentX = -Math.sin(location.orbitData.orbitAngle) * location.orbitData.lockedOrbitSpeed;
+                const tangentY = Math.cos(location.orbitData.orbitAngle) * location.orbitData.lockedOrbitSpeed;
+                location.velX = tangentX * (location.orbitData.orbitDirection || 1);
+                location.velY = tangentY * (location.orbitData.orbitDirection || 1);
+
+            } else if (location.type === 'space') {
+                // Normal physics update for ships in space (not in orbit, not docked)
+                location.x += location.velX * (deltaTime ? deltaTime / 0.016 : 1); // Scale by deltaTime
+                location.y += location.velY * (deltaTime ? deltaTime / 0.016 : 1);
+
+                // Check for automatic orbit entry (Task 7.9.2)
+                for (const planet of celestialBodies) {
+                    if (!planet) continue;
+                    
+                    const dx = planet.x - location.x;
+                    const dy = planet.y - location.y;
+                    const distance = Math.hypot(dx, dy);
+                    const maxOrbitalRadius = planet.radius * ORBIT_RADIUS_MULTIPLIERS.MAX;
+
+                    // Check if ship crosses orbital threshold at valid speed
+                    if (distance <= maxOrbitalRadius && distance > planet.radius) {
+                        const shipSpeed = Math.hypot(location.velX, location.velY);
+                        
+                        // Only start approach if speed is within valid range
+                        if (shipSpeed >= MIN_ORBIT_SPEED && shipSpeed <= MAX_ORBIT_SPEED) {
+                            // Calculate target orbital radius based on speed (linear interpolation)
+                            const speedRange = MAX_ORBIT_SPEED - MIN_ORBIT_SPEED;
+                            const radiusRange = ORBIT_RADIUS_MULTIPLIERS.MAX - ORBIT_RADIUS_MULTIPLIERS.MIN;
+                            const speedFraction = (shipSpeed - MIN_ORBIT_SPEED) / speedRange;
+                            const targetRadiusMultiplier = ORBIT_RADIUS_MULTIPLIERS.MIN + (speedFraction * radiusRange);
+                            const targetOrbitRadius = planet.radius * targetRadiusMultiplier;
+                            
+                            // Enter orbit state
+                            location.type = 'orbit';
+                            location.isOrbitLocked = true;
+                            location.planetName = planet.name;
+                            location.orbitData = {
+                                planetIndex: planet.index,
+                                orbitRadius: targetOrbitRadius,
+                                orbitAngle: Math.atan2(location.y - planet.y, location.x - planet.x),
+                                lockedOrbitSpeed: shipSpeed,
+                                orbitDirection: 1 // Will be calculated on first orbit update if needed
+                            };
+                            
+                            // Determine orbit direction using cross product
+                            const radiusX = location.x - planet.x;
+                            const radiusY = location.y - planet.y;
+                            const crossProduct = (radiusX * location.velY) - (radiusY * location.velX);
+                            location.orbitData.orbitDirection = crossProduct >= 0 ? 1 : -1; // 1 = CCW, -1 = CW
+                            
+                            console.log(`Ship ${shipData.name} entered orbit around ${planet.name} at radius ${targetOrbitRadius.toFixed(0)}, direction: ${location.orbitData.orbitDirection > 0 ? 'CCW' : 'CW'}`);
+                            break; // Only approach one planet
+                        }
+                    }
+                }
+
+                // World boundary checks
+                if (location.x < 0 || location.x > worldWidth || 
+                    location.y < 0 || location.y > worldHeight) {
+                    location.x = Math.max(0, Math.min(location.x, worldWidth));
+                    location.y = Math.max(0, Math.min(location.y, worldHeight));
+                    location.velX *= 0.5; // Dampen velocity at boundaries
+                    location.velY *= 0.5;
+                }
+            }
+        });
+    }
 };
 

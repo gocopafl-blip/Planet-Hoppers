@@ -381,6 +381,10 @@ function setupEventListeners() {
 
 // --- GAME INITIALIZATION ---
 function startGame() {
+    // Task 8.1.4: Start background fleet simulator
+    // The simulator runs continuously from game start, updating fleet physics even when not in space scene
+    gameManager.backgroundFleetSimulator.start();
+    
     // Start the main game loop
     gameManager.loop();
 }
