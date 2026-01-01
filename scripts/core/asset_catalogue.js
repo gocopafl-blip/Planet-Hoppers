@@ -18,7 +18,7 @@ const assetCatalogue = {
         //Medium Ships
 
         //Large Ships
-        "black_falcon": 'assets/images/ships/large_ships/BlackFalcon.png',
+        "black_falcon": 'assets/images/ships/large_ships/black_falcon/BlackFalcon.png',
 
         //Drop Ships
         "pea_drop_ship": "assets/images/ships/drop_ships/peaDropShip.png",
