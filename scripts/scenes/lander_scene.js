@@ -112,8 +112,11 @@ const landerScene = {
     triggerCrash() {
         if (!this.lander.crashed) {
             this.gameState = 'crashed';
-            if (thrusterSound.isLoaded) thrusterSound.pause();
-            if (explosionSound.isLoaded) { explosionSound.currentTime = 0; explosionSound.play().catch(e => console.error("Explosion sound failed:", e)); }
+            if (typeof thrusterSound !== 'undefined' && thrusterSound && thrusterSound.isLoaded) thrusterSound.pause();
+            if (typeof explosionSound !== 'undefined' && explosionSound && explosionSound.isLoaded) { 
+                explosionSound.currentTime = 0; 
+                explosionSound.play().catch(e => console.error("Explosion sound failed:", e)); 
+            }
             for (let i = 0; i < 50; i++) this.particles.push(new this.Particle(this.lander.x, this.lander.y, false));
             this.lander.crashed = true;
         }
@@ -228,7 +231,7 @@ const landerScene = {
                 const upright = Math.abs(this.lander.angle - (-Math.PI / 2)) < 0.2;
                 if (onPad && safeSpeed && upright) {
                     this.gameState = 'landed';
-                    if (thrusterSound.isLoaded) thrusterSound.pause();
+                    if (typeof thrusterSound !== 'undefined' && thrusterSound && thrusterSound.isLoaded) thrusterSound.pause();
                 } else { this.triggerCrash(); }
             }
             /*const zoomOutZone = { left: this.terrain.padStart - canvas.width * 0.2, right: this.terrain.padEnd + canvas.width * 0.2 };
@@ -270,12 +273,30 @@ const landerScene = {
     start(settings) {
         console.log("Starting Lander Scene...");
         this.isReady = false;
-        this.selectedShip = settings.selectedShip;
-        const difficulty = settings.difficulty;
+        
+        // Validate and set selectedShip, default to classic if not provided
+        if (!settings.selectedShip || !settings.selectedShip.width || !settings.selectedShip.img) {
+            console.warn('Invalid or missing selectedShip in settings, defaulting to classic');
+            // Use shipTypes if available, otherwise create a minimal fallback
+            if (typeof shipTypes !== 'undefined' && shipTypes.classic) {
+                this.selectedShip = shipTypes.classic;
+            } else {
+                // Minimal fallback if shipTypes isn't available (shouldn't happen in normal flow)
+                this.selectedShip = { width: 80, height: 80, img: new Image(), thrusterOffset: 40 };
+            }
+        } else {
+            this.selectedShip = settings.selectedShip;
+        }
+        
+        // Default to 'medium' if difficulty is not provided
+        const difficulty = settings.difficulty || 'medium';
         switch (difficulty) {
             case 'easy': this.difficultySettings = { gravity: 0.008, fuel: 1000, safeSpeed: 1.5, padWidth: 140 }; break;
             case 'medium': this.difficultySettings = { gravity: 0.01, fuel: 700, safeSpeed: 1.0, padWidth: 100 }; break;
             case 'hard': this.difficultySettings = { gravity: 0.012, fuel: 500, safeSpeed: 0.7, padWidth: 60 }; break;
+            default: 
+                console.warn(`Unknown difficulty "${difficulty}", defaulting to 'medium'`);
+                this.difficultySettings = { gravity: 0.01, fuel: 700, safeSpeed: 1.0, padWidth: 100 };
         }
         console.log('Lander scene settings:', settings);
         console.log('Planet data:', settings.planet);
@@ -342,7 +363,7 @@ const landerScene = {
             case 'ArrowRight': case 'd': this.lander.rotation = isDown ? this.ROTATION_SPEED : 0; break;
         }
         const newThrusting = this.lander.thrusting;
-        if (thrusterSound.isLoaded) {
+        if (typeof thrusterSound !== 'undefined' && thrusterSound && thrusterSound.isLoaded) {
             if (newThrusting && !oldThrusting) { thrusterSound.currentTime = 0; thrusterSound.play().catch(e => console.error("Thruster sound play failed:", e)); }
             else if (!newThrusting && oldThrusting) { thrusterSound.pause(); }
         }
