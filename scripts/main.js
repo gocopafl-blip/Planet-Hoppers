@@ -296,11 +296,15 @@ function setupEventListeners() {
             // Get the planet the ship is orbiting
             const orbitingPlanet = gameManager.activeScene.ship.orbitingPlanet;
 
-            settings.selectedShip = shipTypes.classic;
-            settings.planet = orbitingPlanet; // Pass the planet data to lander scene
+            // Create a fresh settings object for the lander scene
+            const landerSettings = {
+                selectedShip: shipTypes.classic,
+                planet: orbitingPlanet, // Pass the planet data to lander scene
+                difficulty: settings.difficulty || 'medium' // Default to medium if not set
+            };
 
             console.log('Launching to planet:', orbitingPlanet);
-            gameManager.switchScene(landerScene, settings);
+            gameManager.switchScene(landerScene, landerSettings);
         }
     });
     document.getElementById('easyBtn').addEventListener('click', () => gameManager.switchScene(spaceScene, { difficulty: 'easy' }));
@@ -342,7 +346,7 @@ function setupEventListeners() {
 
     canvas.addEventListener('click', () => {
         if (gameManager.activeScene === landerScene && (landerScene.gameState === 'landed' || landerScene.gameState === 'crashed')) {
-            if (thrusterSound.isLoaded) thrusterSound.pause();
+            if (typeof thrusterSound !== 'undefined' && thrusterSound && thrusterSound.isLoaded) thrusterSound.pause();
 
             if (landerScene.gameState === 'landed') {
                 // SUCCESS: Return to space scene with preserved state
