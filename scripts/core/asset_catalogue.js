@@ -9,16 +9,19 @@ const assetCatalogue = {
         "ship": "assets/images/ships/ship.png",
 
         //Small Ships
-        "default_ship": "assets/images/ships/defaultShip.png",
+        //"default_ship": "assets/images/ships/defaultShip.png",
         "stardust_drifter": 'assets/images/ships/small_ships/stardust_drifter/stardust_drifter.png',
         "apex_dart": 'assets/images/ships/small_ships/apex_dart/apex_dart.png',
         "echo_pacer": 'assets/images/ships/small_ships/echo_pacer/echo_pacer.png',
         "zenith_runner": 'assets/images/ships/small_ships/zenith_runner/zenith_runner.png',
 
         //Medium Ships
-
+        "apex_arrow": 'assets/images/ships/medium_ships/apex_arrow/apex_arrow.png',
+        "star_surfer": 'assets/images/ships/medium_ships/star_surfer/star_surfer.png',
+        
         //Large Ships
         "black_falcon": 'assets/images/ships/large_ships/black_falcon/BlackFalcon.png',
+        "big_boy": 'assets/images/ships/large_ships/big_boy/BigBoy.png',
 
         //Drop Ships
         "pea_drop_ship": "assets/images/ships/drop_ships/peaDropShip.png",
@@ -28,10 +31,18 @@ const assetCatalogue = {
         "lander_heavy": "assets/images/ships/lander-heavy.png",
 
         // Glam Shots
+        // Small Ships
         "sd_glam_shot": 'assets/images/ships/small_ships/stardust_drifter/sd_glam_shot.jpg',
         "ad_glam_shot": 'assets/images/ships/small_ships/apex_dart/ad_glam_shot.png',
         "ep_glam_shot": 'assets/images/ships/small_ships/echo_pacer/ep_glam_shot.png',
-        "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.png',
+        "zr_glam_shot": 'assets/images/ships/small_ships/zenith_runner/zr_glam_shot.jpg',
+
+        // Medium Ships
+        "aa_glam_shot": 'assets/images/ships/medium_ships/apex_arrow/aa_glam_shot.jpg',
+        "ss_glam_shot": 'assets/images/ships/medium_ships/star_surfer/ss_glam_shot.jpg',
+        // Large Ships
+        "bf_glam_shot": 'assets/images/ships/large_ships/black_falcon/bf_glam_shot.jpg',
+        "bb_glam_shot": 'assets/images/ships/large_ships/big_boy/bb_glam_shot.jpg',
 
         // Docks and Planets
         "space_dock_alpha": "assets/images/spacedocks/spacedockalpha.png",
@@ -39,6 +50,11 @@ const assetCatalogue = {
         "planet1": "assets/images/planets/planet1.png",
         "planet2": "assets/images/planets/planet2.png",
         "planet3": "assets/images/planets/planet3.png",
+        "planet4": "assets/images/planets/volcanic4.png",
+        "planet5": "assets/images/planets/volcanic5.png",
+        "planet6": "assets/images/planets/iceworld6.png",
+        "planet7": "assets/images/planets/iceworld7.png",
+        "planet8": "assets/images/planets/cityworld8.png",
 
         // Planet Backgrounds for Lander Scene
         "earth_planet_a": "assets/images/planets/lander_backgrounds/EarthPlanet_2a.jpg",
@@ -49,7 +65,7 @@ const assetCatalogue = {
         "swirling_planet_b": "assets/images/planets/lander_backgrounds/SwirlingPlanet_3b.jpg",
 
         //Scenes
-        "start_screen_bg": "assets/images/dock_backgrounds/start_screen_background.png",
+        "start_screen_bg": "assets/images/dock_backgrounds/start_screen_background.jpg",
         "space_dock_terminal": "assets/images/dock_backgrounds/spaceDockTerminal.png",
         "mission_board_bg": "assets/images/dock_backgrounds/OrbitalCargoSystems.jpg",
         "galactic_trade_hub": "assets/images/dock_backgrounds/galactic_trade_hub.jpg",

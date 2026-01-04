@@ -18,6 +18,9 @@
         <div id="player-hud" style="display: none;">
             <div id="hud-company-name"></div>
             <div id="hud-bank-balance"></div>
+            <button id="terminateRemoteCommandBtn"
+                style="position: absolute; bottom: 120px; right: 20px; padding: 8px 15px; background: rgba(255, 0, 0, 0.8); color: white; border: 2px solid #ff4444; border-radius: 5px; font-size: 12px; cursor: pointer;">Terminate
+                Remote Command</button>
         </div>
 
         <div id="nav-screen" style="display: none;">
@@ -37,6 +40,19 @@
             <div id="trade-list">
             </div>
             <button id="closeTradeHubBtn" class="close-button">X</button>
+        </div>
+
+        <!-- Ship Assignment Modal (Task 5.1) -->
+        <div id="ship-assignment-modal" style="display: none;">
+            <div id="ship-assignment-content">
+                <h2>Assign Ship to Mission</h2>
+                <div id="ship-assignment-list"><!-- populated dynamically --></div>
+                <div id="ship-assignment-actions">
+                    <button id="ship-assignment-confirm">Assign</button>
+                    <button id="ship-assignment-cancel" class="close-button">Cancel</button>
+                </div>
+                <button id="closeShipAssignmentModalBtn" class="close-button">X</button>
+            </div>
         </div>
 
         <div id="fleet-manager" style="display: none;">
@@ -62,7 +78,7 @@
             <button id="getPaidBtn" style="position: absolute; top: 60px; right: 50px;">Get Paid</button>
             <!--<button id="completeMissionBtn" style="position: absolute; top: 60px; right: 250px;">Complete
                 Mission</button>-->
-            <button id="departBtn">Depart Station</button>
+            <!--<button id="departBtn">Depart Station</button>-->
             <div id="dock-menu">
                 <ul>
                     <li>Titan Supply Services</li>
@@ -77,7 +93,7 @@
         </div>
 
         <div id="access-dock-ui" style="display: none;">
-            <button id="accessDockBtn">Access SpaceDock</button>
+            <button id="accessDockBtn">Dock Ship</button>
         </div>
 
         <div id="launch-ui" style="display: none;">

@@ -159,7 +159,7 @@ function setupEventListeners() {
     const spaceScene = new SpaceScene();
     const navScreenElement = document.getElementById('nav-screen');
     canvas.addEventListener('click', (event) => {
-        if (gameManager.activeScene === spaceScene) {
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
@@ -171,35 +171,38 @@ function setupEventListeners() {
 
             // Check if the click was inside the radar circle
             if (Math.hypot(x - radarX, y - radarY) <= radarRadius) {
-                spaceScene.navScreen.toggle();
+                gameManager.activeScene.navScreen.toggle();
+            } else {
+                // TASK 6.6: Check if click was on a fleet ship to switch control
+                gameManager.activeScene.handleShipClick(x, y);
             }
         }
     });
 
     document.getElementById('closeNavScreenBtn').addEventListener('click', () => {
-        if (gameManager.activeScene === spaceScene) {
-            spaceScene.navScreen.hide();
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
+            gameManager.activeScene.navScreen.hide();
         }
     });
     navScreenElement.addEventListener('wheel', (event) => {
         event.preventDefault(); // Prevents the whole page from scrolling
-        if (spaceScene.navScreen.isOpen) {
-            spaceScene.navScreen.handleZoom(event);
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.navScreen && gameManager.activeScene.navScreen.isOpen) {
+            gameManager.activeScene.navScreen.handleZoom(event);
         }
     });
 
 
     // This event listener handles left, middle, and right clicks
     navScreenElement.addEventListener('mousedown', (event) => {
-        if (spaceScene.navScreen.isOpen) {
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.navScreen && gameManager.activeScene.navScreen.isOpen) {
             event.preventDefault(); // Prevent default browser actions for all buttons
 
             if (event.button === 0) { // 0 is the left mouse button
-                spaceScene.navScreen.handleSetWaypoint(event);
+                gameManager.activeScene.navScreen.handleSetWaypoint(event);
             } else if (event.button === 1) { // 1 is the middle mouse button
-                spaceScene.navScreen.handlePanStart(event);
+                gameManager.activeScene.navScreen.handlePanStart(event);
             } else if (event.button === 2) { // 2 is the right mouse button
-                spaceScene.navScreen.handleSetWaypoint(event);
+                gameManager.activeScene.navScreen.handleSetWaypoint(event);
             }
         }
     });
@@ -211,16 +214,16 @@ function setupEventListeners() {
 
     // Listen for mouse move to pan the map
     navScreenElement.addEventListener('mousemove', (event) => {
-        if (spaceScene.navScreen.isOpen) {
-            spaceScene.navScreen.handlePanMove(event);
-            spaceScene.navScreen.handleMouseMove(event);
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.navScreen && gameManager.activeScene.navScreen.isOpen) {
+            gameManager.activeScene.navScreen.handlePanMove(event);
+            gameManager.activeScene.navScreen.handleMouseMove(event);
         }
     });
 
     // Listen for mouse up to stop panning
     navScreenElement.addEventListener('mouseup', (event) => {
-        if (spaceScene.navScreen.isOpen) {
-            spaceScene.navScreen.handlePanEnd(event);
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.navScreen && gameManager.activeScene.navScreen.isOpen) {
+            gameManager.activeScene.navScreen.handlePanEnd(event);
         }
     });
     /*
@@ -247,11 +250,12 @@ function setupEventListeners() {
         startScreen.style.display = 'none'; // Hide the start screen
         gameManager.switchScene(spaceDockScene); // Start with the Space Dock scene
     });
-
+/*
     document.getElementById('departBtn').addEventListener('click', () => {
         gameManager.switchScene(spaceScene, { difficulty: 'easy' }); // For now, it will always be 'easy'
     });
-    // Event listener for our new test button
+    */
+// Event listener for our new test button
     document.getElementById('getPaidBtn').addEventListener('click', () => {
         playerDataManager.addMoney(5000); // Give the player 500 credits
     });
@@ -261,16 +265,36 @@ function setupEventListeners() {
 
     document.getElementById('accessDockBtn').addEventListener('click', () => {
         // Check if the current scene is the spaceScene before switching
-        if (gameManager.activeScene === spaceScene) {
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
             gameManager.switchScene(spaceDockScene);
         }
     });
+    
+    document.getElementById('terminateRemoteCommandBtn').addEventListener('click', () => {
+        // Check if the current scene is the spaceScene before switching
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
+            // Save space scene state before switching to fleet manager
+            gameManager.activeScene.saveState();
+            
+            // ENHANCED: Also save ship state to fleet manager for proper fleet persistence (Task 3.6 fix)
+            // This ensures the ship's current position/velocity is saved to PlayerDataManager fleet data
+            fleetManager.saveCurrentShipState(playerDataManager.getActiveShip(), gameManager.activeScene);
+            
+            // TASK 6.1.2: Save all fleet ship positions before leaving space scene
+            if (gameManager.activeScene.saveFleetShipsToStorage) {
+                gameManager.activeScene.saveFleetShipsToStorage();
+            }
+            
+            // ENHANCED: Pass settings to indicate we're returning from space scene (Task 4.6)
+            gameManager.switchScene(fleetManagerScene, { fromSpaceScene: true });
+        }
+    });
     document.getElementById('launchBtn').addEventListener('click', () => {
-        if (gameManager.activeScene === spaceScene && spaceScene.ship.isOrbitLocked) {
-            spaceScene.saveState(); // Save space scene state before switching
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.ship && gameManager.activeScene.ship.isOrbitLocked) {
+            gameManager.activeScene.saveState(); // Save space scene state before switching
 
             // Get the planet the ship is orbiting
-            const orbitingPlanet = spaceScene.ship.orbitingPlanet;
+            const orbitingPlanet = gameManager.activeScene.ship.orbitingPlanet;
 
             settings.selectedShip = shipTypes.classic;
             settings.planet = orbitingPlanet; // Pass the planet data to lander scene
@@ -357,9 +381,50 @@ function setupEventListeners() {
 
 // --- GAME INITIALIZATION ---
 function startGame() {
+    // Task 8.1.4: Start background fleet simulator
+    // The simulator runs continuously from game start, updating fleet physics even when not in space scene
+    gameManager.backgroundFleetSimulator.start();
+    
     // Start the main game loop
     gameManager.loop();
 }
+
+// --- AUTO-SAVE ON PAGE UNLOAD ---
+// Save game state before page unload (refresh, close, navigation)
+window.addEventListener('beforeunload', () => {
+    console.log('Page unloading - checking if save is needed...');
+    
+    // ISSUE #3 FIX: Check if localStorage was intentionally cleared
+    // If playerData doesn't exist in localStorage, user cleared it (testing/reset)
+    // Don't re-save in this case - respect the intentional clearing
+    const existingData = localStorage.getItem('planetHoppersSaveData');
+    if (!existingData) {
+        console.log('localStorage is empty - skipping auto-save (intentional reset detected)');
+        return; // Exit early, don't save
+    }
+    
+    console.log('localStorage has data - proceeding with auto-save...');
+    
+    // Save current ship state if in space scene
+    if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.ship) {
+        const activeShip = playerDataManager.getActiveShip();
+        if (activeShip) {
+            console.log('Saving active ship state before unload:', activeShip.name);
+            fleetManager.saveCurrentShipState(activeShip, gameManager.activeScene);
+        }
+        
+        // TASK 6.1.2: Save all fleet ship positions before page unload
+        if (gameManager.activeScene.saveFleetShipsToStorage) {
+            gameManager.activeScene.saveFleetShipsToStorage();
+        }
+        // NOTE: Both methods above call saveData() internally, so no need for additional save
+    } else {
+        // If not in space scene, ensure data is still saved
+        playerDataManager.saveData();
+    }
+    
+    console.log('Game state saved successfully');
+});
 
 // Run the game
 init();

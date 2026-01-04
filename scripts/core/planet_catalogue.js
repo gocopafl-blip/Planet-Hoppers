@@ -10,7 +10,7 @@ const planetCatalogue = {
         namePrefixes: ["Jovin", "Aerlon", "Strato", "Helios"], // For random name generation
         baseRadius: { min: 2600, max: 3000 },
         // Use asset keys from asset_catalogue.js
-        planetImages: ["planet1", "planet3"],
+        planetImages: ["planet1", "planet3", "planet6", "planet7"],
         // Gas giants don't have surfaces; keep a placeholder background image key if needed
         landerBackgrounds: ["earth_planet_a"],
         // --- Lander Scene Parameters ---
@@ -27,7 +27,7 @@ const planetCatalogue = {
         planetTypeId: "terran_world",
         namePrefixes: ["Terra", "Gaea", "Veridia", "Eden"],
         baseRadius: { min: 1800, max: 2200 },
-        planetImages: ["planet2"],
+        planetImages: ["planet2", "planet8"],
         landerBackgrounds: ["earth_planet_a", "earth_planet_b"],
         // --- Lander Scene Parameters ---
         baseGravity: 0.01,
@@ -41,7 +41,7 @@ const planetCatalogue = {
         planetTypeId: "volcanic_world",
         namePrefixes: ["Hades", "Crematoria", "Infernus", "Pyra"],
         baseRadius: { min: 1400, max: 1800 },
-        planetImages: ["planet3"],
+        planetImages: ["planet3", "planet4", "planet5"],
         landerBackgrounds: ["swirling_planet_a", "swirling_planet_b"],
         // --- Lander Scene Parameters ---
         baseGravity: 0.012,

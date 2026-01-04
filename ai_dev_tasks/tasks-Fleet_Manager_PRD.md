@@ -1,0 +1,181 @@
+## Relevant Files
+
+- `index.html` - Update button text and IDs for UI changes (Fleet Terminal Access, Dock Ship, remove Depart Station, add Terminate Remote Command)
+- `scripts/main.js` - Update event listeners for renamed buttons and new functionality  
+- `scripts/scenes/space_dock_scene.js` - Update button references and event handlers for renamed Fleet Terminal Access button
+- `scripts/scenes/space_scene.js` - Add Terminate Remote Command button logic and update Access Dock behavior
+- `scripts/scenes/fleet_manager_scene.js` - Implement fleet display UI, ship interaction, and Jump To/Dispatch functionality
+- `scripts/scenes/mission_board_scene.js` - Add ship assignment modal for mission acceptance flow
+- `scripts/managers/fleet_manager.js` - Extend fleet management functionality for ship state persistence and active ship switching
+- `scripts/managers/mission_manager.js` - Add ship assignment logic for missions
+- `scripts/core/player_data.js` - Update fleet structure to support per-ship mission assignments and state persistence
+- `scripts/managers/player_data_manager.js` - Add fleet and active ship management methods
+- `style.css` - Add styling for ship assignment modal and updated fleet manager UI
+
+### Notes
+
+- The existing fleet manager scene has basic structure but needs significant enhancement to match PRD requirements
+- Player data structure already has fleet array but needs mission assignment per ship
+- Current fleet manager uses hardcoded activeShipId in FleetManager class - needs integration with player data
+- Space scene already has state persistence methods that can be leveraged for multi-ship state management
+
+## Tasks
+
+- [x] 1.0 Update UI Elements and Button Structure
+  - [x] 1.1 Rename "Fleet Management Services" button to "Fleet Terminal Access" in index.html dock menu
+  - [x] 1.2 Remove "Depart Station" button from space dock UI in index.html
+  - [x] 1.3 Rename "Access SpaceDock" button to "Dock Ship" in space scene UI
+  - [x] 1.4 Add "Terminate Remote Command" button to space scene HUD near speedometer
+  - [x] 1.5 Update event listeners in main.js for renamed buttons
+  - [x] 1.6 Update space_dock_scene.js event handler references for renamed fleet button
+- [x] 2.0 Implement Core Fleet Manager Scene Functionality
+  - [x] 2.1 Create fleet list display showing all player ships with containers for each ship
+  - [x] 2.2 Add ship container layout with glam-shot image, ship info (name, ID, status, location), and action button
+  - [x] 2.3 Implement visual highlighting for currently active ship in fleet list
+  - [x] 2.4 Add ship status determination logic (Ready for Dispatch, Orbiting Planet, Deep Space, etc.)
+  - [x] 2.5 Add ship location display logic (Docked, planet names, coordinates for deep space)
+  - [x] 2.6 Implement ship container click handler to show detailed ship parameters in expanded view
+  - [x] 2.7 Add "Jump To" and "Dispatch" button functionality with proper ship state checking
+- [x] 3.0 Add Ship State Management and Persistence
+  - [x] 3.1 Update player_data.js fleet structure to include ship location, velocity, fuel, and mission assignment
+  - [x] 3.2 Add fleet management methods to player_data_manager.js for ship state operations
+  - [x] 3.3 Implement ship state persistence when switching between ships in fleet_manager.js
+  - [x] 3.4 Add active ship switching functionality that saves current ship state and loads target ship state
+  - [x] 3.5 Update space scene to restore ship state from fleet data when entering via Jump To or Dispatch
+  - [x] 3.6 Add ship positioning logic for Dispatch (placing ship outside dock) vs Jump To (current location)
+  - [x] 3.7 Add proper error handling for missing ship data or invalid locations
+  - [x] 3.8 Add proper ship location initialization for new ships (set to docked state when added to fleet)
+- [x] 4.0 Add Remote Command Termination and Space Scene Integration
+  - [x] 4.1 Implement "Terminate Remote Command" button click handler in space scene
+  - [x] 4.2 Add ship state saving logic when terminating remote command (FIXED - added fleet manager save call)
+  - [x] 4.3 Add scene transition from space scene back to fleet manager via terminate button
+  - [x] 4.4 Update space scene start method to properly handle ship spawning for both Jump To and Dispatch actions
+  - [x] 4.5 Integrate fleet manager ship selection with space scene ship initialization
+  - [x] 4.6 Add proper ship state restoration when returning to fleet manager from space scene
+  - [x] 4.7 Add auto-return to fleet manager when ship docks (clears activeShipId and switches to fleet manager scene)
+  - [x] 4.8 Test complete workflow: fleet manager → ship selection → space scene → terminate → fleet manager
+- [x] 5.0 Implement Mission Assignment Flow with Ship Selection
+  - [x] 5.1 Create ship assignment modal HTML structure in index.html
+  - [x] 5.2 Add modal styling in style.css with ship selection interface
+  - [x] 5.3 Update mission_board_scene.js Accept button to show ship assignment modal instead of direct acceptance
+  - [x] 5.4 Implement modal population with available (unassigned) ships from player fleet
+  - [x] 5.5 Add ship selection logic in modal with mission assignment to chosen ship
+  - [x] 5.6 Update mission_manager.js to handle per-ship mission assignments
+  - [x] 5.7 Add mission assignment storage in player data per ship basis
+  - [x] 5.8 Update fleet manager display to show "Active Mission" parameter for ships with assignments
+- [ ] 6.0 Implement Multi-Ship Rendering and Fleet Visualization
+  - [x] 6.1 Add multi-ship rendering support to space scene for visualizing entire fleet
+  - [x] 6.1.1 BUG FIX: Ship location resets to (0,0) if page refreshed immediately after dispatch without triggering save
+  - [x] 6.1.2 Save fleet ship positions at key checkpoints (docking, scene exit, page unload)
+  - [ ] 6.2 Implement ship-to-ship visual indicators when multiple ships are in same sector
+  - [x] 6.6 Implement ship selection/switching directly from space scene when multiple ships visible
+- [ ] 7.0 Implement Enhanced Gravity and Orbital Physics (Simplified System)
+  - [x] 7.1 Add orbital speed constants to constants.js
+    - [x] 7.1.1 Add MIN_ORBIT_SPEED constant (2.0)
+    - [x] 7.1.2 Add MAX_ORBIT_SPEED constant (5.0)
+    - [x] 7.1.3 Add ORBIT_DEPARTURE_WARNING_TIME constant (2.0 seconds)
+  - [x] 7.2 Add shipOrbitThrustPower to ship_catalogue.js
+    - [x] 7.2.1 Add shipOrbitThrustPower to baseShipTemplate (~0.015)
+    - [x] 7.2.2 Document: controls speed of orbital radius changes (tuned for ~360° orbit to go min→max)
+  - [x] 7.3 Update speedometer to use orbital speed constants
+    - [x] 7.3.1 Replace magic number 2.0 with MIN_ORBIT_SPEED constant
+    - [x] 7.3.2 Replace magic number 5.0 with MAX_ORBIT_SPEED constant
+    - [x] 7.3.3 Ensure "ORBIT OK" range uses constants throughout
+  - [x] 7.4 Remove gravity well physics system
+    - [x] 7.4.1 Remove gravity calculations from space_scene.js update loop
+    - [x] 7.4.2 Remove GRAVITY_BOUNDARY_MULTIPLIER usage (removed from constructor)
+    - [x] 7.4.3 Remove ORBITAL_CONSTANT and PLANET_MASS_SCALAR (no longer needed)
+    - [x] 7.4.4 Remove gravity assist speed range logic
+    - [x] 7.4.5 Remove gravityFactor calculations
+  - [x] 7.5 Implement automatic orbit entry system
+    - [x] 7.5.1 Detect when ship crosses MAX orbital radius threshold (1.35x planet radius)
+    - [x] 7.5.2 Check if ship speed is within MIN_ORBIT_SPEED to MAX_ORBIT_SPEED range
+    - [x] 7.5.3 If valid speed: calculate target orbital radius via linear interpolation
+    - [x] 7.5.4 Lock ship into orbit at calculated radius with auto-rotation (perpendicular to surface)
+    - [x] 7.5.5 If invalid speed: allow ship to continue toward planet (crash when collisions enabled)
+  - [x] 7.6 Implement in-orbit mechanics
+    - [x] 7.6.1 Disable player rotation controls while in orbit (auto-rotation only)
+    - [x] 7.6.2 Maintain orbital speed indefinitely (no decay) unless player thrusts
+    - [x] 7.6.3 Forward thrust: increase speed using shipOrbitThrustPower → radius grows smoothly
+    - [x] 7.6.4 Reverse thrust: decrease speed using shipOrbitThrustPower → radius shrinks smoothly
+    - [x] 7.6.5 Prevent speed from dropping below MIN_ORBIT_SPEED (maintain minimum orbit)
+    - [x] 7.6.6 Update orbital radius in real-time based on current speed (linear mapping)
+    - [x] 7.6.7 Fixed shipOrbitThrustPower not being copied to Ship instance from catalogue
+    - [x] 7.6.8 Fixed speedometer to display lockedOrbitSpeed when in orbit
+    - [x] 7.6.9 Modified orbit break logic: strafing breaks orbit, thrust/reverse adjusts radius
+  - [x] 7.7 Add orbital path visualization (ring)
+    - [x] 7.7.1 Draw light grey ring at current orbital radius when player thrusts
+    - [x] 7.7.2 Ring grows/shrinks smoothly with radius changes
+    - [x] 7.7.3 Keep ring visible while thrusting OR for 3 seconds after thrust stops
+    - [x] 7.7.4 Fade ring to nothing after 3 second delay (user adjusted from 2 to 3 seconds)
+  - [x] 7.8 Implement orbit exit system
+    - [x] 7.8.1 Detect when speed >= 80% of max range to show departure warning
+    - [x] 7.8.2 Show departure line at 80%+ speed with 10 second fade after thrust stops
+    - [x] 7.8.3 Draw light grey dashed line from ship showing exit trajectory (tangent to orbit)
+    - [x] 7.8.4 Line grows from 500-1500 units based on speed proximity to MAX
+    - [x] 7.8.5 When lockedOrbitSpeed >= MAX_ORBIT_SPEED: break orbit lock automatically
+    - [x] 7.8.6 On exit: set velocity to MAX_ORBIT_SPEED in tangential direction
+    - [x] 7.8.7 On exit: restore full player control, reset camera to shipDefaultZoom
+    - [x] 7.8.8 Removed strafing orbit break - only exit via MAX_ORBIT_SPEED acceleration
+    - [x] 7.8.9 Ring dims to 50% opacity at 80%+ speed to emphasize departure line
+    - [x] 7.8.10 Fixed camera zoom to use shipDefaultZoom instead of hardcoded 1.0
+  - [x] 7.9 Update fleet ship orbit mechanics
+    - [x] 7.9.1 Apply new orbit system to updateFleetShips() method
+    - [x] 7.9.2 Implement fleet ship orbit entry with speed checks and linear interpolation
+    - [x] 7.9.3 Fleet ships maintain stable orbits without player input
+    - [x] 7.9.4 Fixed fleet ship orbit angle calculation (180° teleportation bug)
+    - [x] 7.9.5 Added smooth angle transition for fleet ships (matching player ship)
+    - [x] 7.9.6 Implemented smooth orbit approach (no jumping/teleporting on entry)
+  - [x] 7.10 Testing and tuning
+    - [x] 7.10.1 Test orbit entry at various speeds and angles
+    - [x] 7.10.2 Verify smooth radius transitions during thrust
+    - [x] 7.10.3 Test orbit exit timing and departure angle accuracy
+    - [x] 7.10.4 Tune shipOrbitThrustPower for feel (adjust if transitions too fast/slow)
+    - [x] 7.10.5 Test with different planet sizes to verify linear interpolation works
+    - [x] 7.10.6 Verify minimum orbit speed floor prevents dropping below 2.0
+    - [x] 7.10.7 FIXED: Orbit direction now respects approach velocity (CCW vs CW via cross product)
+    - [!] 7.10.8 Continue troubleshooting orbit radius issues
+    - [ ] 7.10.9 Troubleshoot fleet transfer click not transferring nav data.
+- [x] 8.0 Implement Real-Time Fleet Background Simulation
+  - [x] 8.1 Create background simulation loop with configurable update rate
+    - [x] 8.1.1 Add FLEET_UPDATE_RATE constant (default 10-15fps for background, 60fps for active)
+    - [x] 8.1.2 Implement scene-independent fleet physics update method
+    - [x] 8.1.3 Integrate with main game loop in GameManager
+    - [x] 8.1.4 Add automatic rate switching when entering/exiting space scene
+    - [x] 8.1.5 Test performance with multiple ships (3-5+)
+  - [ ] 8.2 Implement Fleet Manager Tactical View (Information Display)
+    - [ ] 8.2.1 Create tactical holo-map container in fleet_manager_scene.js
+    - [ ] 8.2.2 Adapt NavScreen class for multi-ship display
+    - [ ] 8.2.3 Apply Fleet Manager styling to tactical view (holographic aesthetic)
+    - [ ] 8.2.4 Render all fleet ships with current positions
+    - [ ] 8.2.5 Display navigation routes for ships with active nav plans
+    - [ ] 8.2.6 Implement ship hover tooltips (name, speed, destination, mission)
+    - [ ] 8.2.7 Add real-time position updates from background simulation
+  - [ ] 8.3 Integrate data persistence with background simulation
+    - [ ] 8.3.1 Update playerDataManager RAM on each simulation tick
+    - [ ] 8.3.2 Verify checkpoint saves capture fleet positions (scene transitions, unload)
+    - [ ] 8.3.3 Test position restoration after page refresh
+    - [ ] 8.3.4 Validate orbital stability during background simulation
+  - [ ] 8.4 Testing and performance validation
+    - [ ] 8.4.1 Test with 3+ ships in different locations
+    - [ ] 8.4.2 Verify ships continue moving when viewing fleet manager
+    - [ ] 8.4.3 Confirm accurate synchronization when entering space scene
+    - [ ] 8.4.4 Monitor resource usage and adjust update rate if needed
+    - [ ] 8.4.5 Test persistence across scene transitions and page refresh
+- [ ] 9.0 Implement Universal Dock Interface System
+  - [ ] 9.1 Create shared holo interface CSS classes (.holo-interface) with common glow effects and animations
+  - [ ] 9.2 Add universal close button system (.dock-universal-close) positioned in bottom-right corner
+  - [ ] 9.3 Implement color variants for holo interfaces (red for alerts, green for success, blue default)
+  - [ ] 9.4 Update fleet manager to use shared holo interface classes while preserving custom positioning
+  - [ ] 9.5 Update mission board scene to use shared holo interface system with holo-reveal/holo-close animations
+  - [ ] 9.6 Update trade hub scene to use shared holo interface system and universal close button
+  - [ ] 9.7 Add universal ESC key handler that works across all dock sub-scenes
+  - [ ] 9.8 Implement scene-specific CSS customization system using CSS specificity overrides
+  - [ ] 9.9 Add universal close button to main dock scene for returning to start screen
+  - [ ] 9.10 Create utility functions for adding/removing universal close buttons dynamically
+- [ ] 10.0 Implement Start Screen Game Management
+  - [ ] 10.1 Rename "Activate Holo" button to "Load Game" on start screen
+  - [ ] 10.2 Add "Start New Game" button to start screen
+  - [ ] 10.3 Implement "Start New Game" functionality to clear localStorage and initialize fresh game state
+  - [ ] 10.4 Add confirmation dialog for "Start New Game" to prevent accidental resets
+  - [ ] 10.5 Update start screen styling to accommodate both buttons with clear visual hierarchy
