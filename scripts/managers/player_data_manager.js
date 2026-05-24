@@ -25,9 +25,19 @@ class PlayerDataManager {
 
     // Saves the current data object to localStorage.
     saveData() {
-        if (this.data) {
+        if (!this.data) return false;
+        try {
             localStorage.setItem(this.SAVE_KEY, JSON.stringify(this.data));
-            console.log("Player data SAVED.", this.data);
+            console.log("Player data SAVED.");
+            return true;
+        } catch (err) {
+            // Common when opening index.html via file:// — some browsers block or restrict storage.
+            console.warn(
+                "Could not save to localStorage (progress kept in memory for this session only). " +
+                "Use Go Live (http://localhost) for reliable saves. Error:",
+                err
+            );
+            return false;
         }
     }
 

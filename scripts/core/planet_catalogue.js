@@ -12,15 +12,21 @@ const planetCatalogue = {
         // Use asset keys from asset_catalogue.js
         planetImages: ["planet1", "planet3", "planet6", "planet7"],
         // Gas giants don't have surfaces; keep a placeholder background image key if needed
-        landerBackgrounds: ["earth_planet_a"],
+        landerBackgrounds: ["earth_planet_a", "swirling_planet_a", "swirling_planet_b"],
         // --- Lander Scene Parameters ---
-        baseGravity: 0, // No landing
-        wind: { min: 0, max: 0 },
-        seismicStability: 1.0, // Perfectly stable
-        dangerLevel: 0,
-        // --- Special Effects ---
-        // We can add flags for our game to look for later!
-        hasAtmosphericParticles: true
+        gravityG: { min: 0.5, max: 1.2 },
+        wind: { min: 4, max: 14 },
+        seismicStability: 1.0,
+        dangerLevel: 2,
+        hasAtmosphericParticles: true,
+        landerTerrain: {
+            mode: 'gas',
+            padCount: { min: 1, max: 2 },
+            padWidth: { min: 90, max: 120 },
+            fuel: { min: 750, max: 950 },
+            safeSpeed: { min: 1.0, max: 1.4 },
+            padDrift: { min: 0.15, max: 0.45 }
+        }
     },
 
     "terran_world": {
@@ -30,11 +36,18 @@ const planetCatalogue = {
         planetImages: ["planet2", "planet8"],
         landerBackgrounds: ["earth_planet_a", "earth_planet_b"],
         // --- Lander Scene Parameters ---
-        baseGravity: 0.01,
-        wind: { min: 0, max: 5 }, // Gentle breezes
+        gravityG: { min: 0.7, max: 1.8 },
+        wind: { min: 0, max: 8 },
         seismicStability: 0.9, // Mostly stable
         dangerLevel: 1,
-        hasAtmosphericParticles: false
+        hasAtmosphericParticles: false,
+        landerTerrain: {
+            mode: 'terran',
+            padWidth: { min: 100, max: 140 },
+            fuel: { min: 650, max: 850 },
+            safeSpeed: { min: 0.85, max: 1.15 },
+            islandChance: 0.35
+        }
     },
 
     "volcanic_world": {
@@ -44,11 +57,16 @@ const planetCatalogue = {
         planetImages: ["planet3", "planet4", "planet5"],
         landerBackgrounds: ["swirling_planet_a", "swirling_planet_b"],
         // --- Lander Scene Parameters ---
-        baseGravity: 0.012,
-        wind: { min: 2, max: 10 }, // Gusty, unpredictable winds
+        gravityG: { min: 1.2, max: 2.5 },
+        wind: { min: 3, max: 12 },
         seismicStability: 0.4, // Very unstable! Lots of quakes.
         dangerLevel: 8,
-        // --- Special Effects ---
-        hasVolcanicParticles: true // A new flag for our game!
+        hasVolcanicParticles: true,
+        landerTerrain: {
+            mode: 'volcanic',
+            padWidth: { min: 70, max: 100 },
+            fuel: { min: 550, max: 750 },
+            safeSpeed: { min: 0.65, max: 0.95 }
+        }
     }
 };

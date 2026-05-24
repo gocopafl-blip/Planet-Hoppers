@@ -17,7 +17,10 @@ class PlanetManager {
         if (playerDataManager.hasSavedPlanetData()) {
             console.log('Restoring saved planet layout to maintain orbital ship positions');
             this.restoreSavedPlanets();
-            return;
+            if (this.celestialBodies.length > 0) {
+                return;
+            }
+            console.warn('Saved planet data could not be restored — generating a new layout');
         }
         
         // Generate new planets if no saved data exists
