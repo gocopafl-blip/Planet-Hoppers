@@ -84,6 +84,8 @@ class ConsumablesManager {
         const ship = playerDataManager.getShipById(shipId);
         if (!ship) return { ok: false, message: 'Ship not found.' };
 
+        playerDataManager.ensureShipConsumables(ship);
+
         const { units, cost } = this.getFillCost(ship, consumableKey);
         if (units <= 0) return { ok: false, message: 'Already at maximum.' };
 
@@ -104,6 +106,8 @@ class ConsumablesManager {
     purchaseFillAll(shipId) {
         const ship = playerDataManager.getShipById(shipId);
         if (!ship) return { ok: false, message: 'Ship not found.' };
+
+        playerDataManager.ensureShipConsumables(ship);
 
         const { total, breakdown } = this.getFillAllCost(ship);
         if (total <= 0) return { ok: false, message: 'All consumables already full.' };

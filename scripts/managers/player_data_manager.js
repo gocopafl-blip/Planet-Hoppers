@@ -18,10 +18,103 @@ class PlayerDataManager {
             console.log("No save file found. Created NEW player data.", this.data);
         }
 
+        this.migrateSaveData();
+
         // ENHANCED: Initialize fleet location data for existing saves (Task 3.8)
         // This ensures compatibility with save files created before the fleet system
         this.initializeFleetLocationData();
         this.initializeTransactionLedger();
+    }
+
+    /**
+     * Upgrade older localStorage saves so new systems (worldState, ledger, consumables) do not crash.
+     */
+    migrateSaveData() {
+        if (!this.data) return false;
+
+        let changed = false;
+
+        if (!this.data.worldState) {
+            this.data.worldState = { planets: null, lastGenerated: null };
+            changed = true;
+        }
+
+        this.initializeTransactionLedger();
+
+        if (!Array.isArray(this.data.fleet)) {
+            this.data.fleet = [];
+            changed = true;
+        }
+
+        this.data.fleet.forEach(ship => {
+            if (this.normalizeShipTypeId(ship)) changed = true;
+            if (this.ensureShipConsumables(ship)) changed = true;
+        });
+
+        if (changed) {
+            console.log('Player save migrated to current schema.');
+            this.saveData();
+        }
+
+        return changed;
+    }
+
+    /** Map legacy display-name shipTypeId values to catalogue keys. */
+    normalizeShipTypeId(ship) {
+        if (!ship?.shipTypeId) return false;
+        if (shipCatalogue[ship.shipTypeId]) return false;
+
+        for (const [catalogueKey, catalogueData] of Object.entries(shipCatalogue)) {
+            if (catalogueData.shipID === ship.shipTypeId || catalogueKey === ship.shipTypeId) {
+                console.warn(
+                    `Save migration: ship "${ship.name}" shipTypeId "${ship.shipTypeId}" → "${catalogueKey}"`
+                );
+                ship.shipTypeId = catalogueKey;
+                return true;
+            }
+        }
+
+        if (ship.name) {
+            for (const [catalogueKey, catalogueData] of Object.entries(shipCatalogue)) {
+                if (catalogueData.shipID === ship.name) {
+                    console.warn(
+                        `Save migration: ship "${ship.name}" shipTypeId inferred → "${catalogueKey}"`
+                    );
+                    ship.shipTypeId = catalogueKey;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /** Ensure fuel / oxygen / electricity slots exist with numeric current and max. */
+    ensureShipConsumables(ship) {
+        const catalogue = ship?.shipTypeId ? shipCatalogue[ship.shipTypeId] : null;
+        const template = catalogue
+            ? { shipConsumables: catalogue.shipConsumables }
+            : ship;
+        const defaults = this.createDefaultConsumables(template);
+
+        if (!ship.consumables) {
+            ship.consumables = defaults;
+            return true;
+        }
+
+        let changed = false;
+        ['fuel', 'oxygen', 'electricity'].forEach(key => {
+            const slot = ship.consumables[key];
+            if (!slot || typeof slot.max !== 'number') {
+                ship.consumables[key] = { ...defaults[key] };
+                changed = true;
+            } else if (slot.current == null || Number.isNaN(slot.current)) {
+                slot.current = slot.max;
+                changed = true;
+            }
+        });
+
+        return changed;
     }
 
     // Saves the current data object to localStorage.
@@ -494,8 +587,13 @@ class PlayerDataManager {
 
     // Save the current planet layout to maintain orbital ship references
     savePlanetData(celestialBodies) {
-        if (this.data && celestialBodies) {
-            this.data.worldState.planets = celestialBodies.map(planet => ({
+        if (!this.data || !celestialBodies) return;
+
+        if (!this.data.worldState) {
+            this.data.worldState = { planets: null, lastGenerated: null };
+        }
+
+        this.data.worldState.planets = celestialBodies.map(planet => ({
                 id: planet.id,
                 index: planet.index,
                 planetTypeId: planet.planetTypeId,
@@ -513,11 +611,10 @@ class PlayerDataManager {
                 seismicStability: planet.seismicStability,
                 dangerLevel: planet.dangerLevel,
                 hasAtmosphericParticles: planet.hasAtmosphericParticles
-            }));
-            this.data.worldState.lastGenerated = Date.now();
-            console.log('Planet data saved:', this.data.worldState.planets.length, 'planets');
-            this.saveData();
-        }
+        }));
+        this.data.worldState.lastGenerated = Date.now();
+        console.log('Planet data saved:', this.data.worldState.planets.length, 'planets');
+        this.saveData();
     }
 
     // Get saved planet data if available

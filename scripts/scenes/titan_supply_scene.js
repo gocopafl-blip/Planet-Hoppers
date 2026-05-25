@@ -91,12 +91,16 @@ const titanSupplyScene = {
         }
 
         docked.forEach(ship => {
+            playerDataManager.ensureShipConsumables(ship);
+
             const fillAll = consumablesManager.getFillAllCost(ship);
             const card = document.createElement('div');
             card.className = 'supply-item';
 
             const rows = ['fuel', 'oxygen', 'electricity'].map(key => {
-                const c = ship.consumables[key];
+                const c = ship.consumables?.[key];
+                if (!c) return '';
+
                 const { units, cost } = consumablesManager.getFillCost(ship, key);
                 const label = consumablesCatalogue[key].label;
                 const pct = c.max ? Math.round((c.current / c.max) * 100) : 0;
