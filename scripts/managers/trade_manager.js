@@ -130,7 +130,12 @@ class TradeManager {
 
         // If any of the conditions above were met, finalize the mission.
         if (isCompleted) {
-            playerDataManager.addMoney(missionData.reward);
+            playerDataManager.credit(
+                missionData.reward,
+                FINANCE_CATEGORIES.MISSION,
+                `Mission complete: ${missionData.title}`,
+                { missionId: activeMissionId }
+            );
             playerDataManager.setActiveMissionId(null);
             console.log(`Mission "${missionData.title}" completed! Player earned ${missionData.reward} credits.`);
 

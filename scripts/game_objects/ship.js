@@ -56,6 +56,13 @@ class Ship {
     }
 
     update() {
+        if (typeof this.fuel === 'number' && this.fuel <= 0) {
+            this.thrusting = false;
+            this.reversing = false;
+            this.strafingLeft = false;
+            this.strafingRight = false;
+        }
+
         // --- UPDATED: Use 'this.rotationSpeed' ---
         if (this.rotatingLeft) this.rotation -= this.rotationSpeed * 0.1;
         if (this.rotatingRight) this.rotation += this.rotationSpeed * 0.1;

@@ -40,10 +40,12 @@ class PlanetManager {
             const mass = Math.pow(radius, 3) * 0.4 * (planetDNA.baseGravity / 0.01); // Mass is now affected by gravity type!
 
             // 3. Create the new planet object with a unique ID
+            const planetIndex = this.celestialBodies.length;
             const newPlanet = {
-                id: `planet_${this.celestialBodies.length}_${Date.now()}`, // A guaranteed unique ID
+                id: `planet_${planetIndex}_${Date.now()}`, // A guaranteed unique ID
+                index: planetIndex,
                 planetTypeId: planetDNA.planetTypeId,
-                name: `${this.getRandomElement(planetDNA.namePrefixes)} ${this.celestialBodies.length}`,
+                name: `${this.getRandomElement(planetDNA.namePrefixes)} ${planetIndex}`,
                 x: Math.random() * worldWidth * 0.8 + worldWidth * 0.1,
                 y: Math.random() * worldHeight * 0.8 + worldHeight * 0.1,
                 radius: radius,
@@ -97,7 +99,7 @@ class PlanetManager {
             return false;
         }
         
-        this.celestialBodies = savedPlanets.map(planetData => {
+        this.celestialBodies = savedPlanets.map((planetData, index) => {
             // Reconstruct planet object from saved data
             const planetDNA = planetCatalogue[planetData.planetTypeId];
             if (!planetDNA) {
@@ -107,6 +109,7 @@ class PlanetManager {
             
             return {
                 id: planetData.id,
+                index: planetData.index ?? index,
                 planetTypeId: planetData.planetTypeId,
                 name: planetData.name,
                 x: planetData.x,

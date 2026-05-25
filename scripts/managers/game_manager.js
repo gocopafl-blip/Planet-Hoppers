@@ -55,9 +55,12 @@ class BackgroundFleetSimulator {
                 return;
             }
 
-            // Get world state
             const planets = planetManager.celestialBodies || [];
-            
+            if (planets.length === 0) {
+                this.accumulatedTime -= this.updateInterval;
+                continue;
+            }
+
             // Get world dimensions (use space scene's world dimensions if available, otherwise default)
             let worldWidth, worldHeight;
             if (gameManager.spaceScene) {

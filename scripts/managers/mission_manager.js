@@ -194,7 +194,15 @@ class MissionManager {
 
         // If any of the conditions above were met, finalize the mission.
         if (isCompleted) {
-            playerDataManager.addMoney(missionData.reward);
+            playerDataManager.credit(
+                missionData.reward,
+                FINANCE_CATEGORIES.MISSION,
+                `Mission complete: ${missionData.title}`,
+                {
+                    missionId: activeMissionId,
+                    shipId: activeShip?.id ?? null
+                }
+            );
             if (usingPerShip && activeShip) {
                 if (typeof playerDataManager.clearShipMission === 'function') {
                     console.log('[MissionManager] Clearing per-ship mission', { shipId: activeShip.id, missionId: activeShip.assignedMissionId });

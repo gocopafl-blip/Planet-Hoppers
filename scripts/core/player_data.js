@@ -5,6 +5,7 @@ function getNewPlayerData() {
         // Player Profile
         cargoCoName: "StarHopper Cargo",
         playerBankBalance: 2500,
+        transactionLedger: [],
         activeShipId: 1,
         activeMissionId: null,
         activeMissionState: null,

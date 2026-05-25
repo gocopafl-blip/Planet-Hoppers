@@ -478,6 +478,31 @@ button:hover {
     color: #0c0606;
 }
 
+#request-tow-ui {
+    position: absolute;
+    bottom: 130px;
+    left: 20px;
+    z-index: 100;
+}
+
+#requestTowBtn {
+    background-color: #00000099;
+    color: #ffaa66;
+    border: 2px solid #ff8844;
+    border-radius: 35px;
+    padding: 12px 22px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1em;
+    cursor: pointer;
+    text-shadow: 2px 2px 4px #000;
+    transition: all 0.2s ease;
+}
+
+#requestTowBtn:hover {
+    background-color: #ff884466;
+    color: #fff;
+}
+
 #launchBtn {
     position: absolute;
     bottom: 30px;
@@ -794,6 +819,115 @@ h2 {
 
 /* We will add this class with JavaScript to trigger the fly-out */
 #trade-hub.slide-out {
+    animation: slideOutToBottom 0.5s ease-in forwards;
+}
+
+#titan-supply {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 820px;
+    height: 80vh;
+    z-index: 10;
+    background: rgba(20, 30, 25, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 24px;
+    overflow: hidden;
+    color: #e8ffe8;
+    font-family: 'Orbitron', Arial, sans-serif;
+}
+
+.titan-header {
+    flex-shrink: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(120, 200, 120, 0.25);
+}
+
+#titan-supply h2 {
+    margin: 0 0 4px 0;
+    text-align: center;
+}
+
+.titan-subtitle {
+    text-align: center;
+    font-size: 0.85rem;
+    opacity: 0.85;
+    margin: 0 0 8px 0;
+}
+
+#titan-balance.titan-balance {
+    text-align: center;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+#titan-supply-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.titan-empty {
+    text-align: center;
+    opacity: 0.9;
+}
+
+.supply-item {
+    background: rgba(30, 50, 35, 0.9);
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid rgba(120, 200, 120, 0.35);
+}
+
+.supply-item h3 {
+    margin: 0 0 4px 0;
+}
+
+.supply-ship-type {
+    margin: 0 0 12px 0;
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+
+.supply-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.supply-footer {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.supply-fill-all {
+    background: #3a9e4a;
+}
+
+.supply-fill-all:hover {
+    background: #2d7a38;
+}
+
+.accept-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+#titan-supply.slide-in {
+    animation: slideInFromBottom 0.5s ease-out forwards;
+}
+
+#titan-supply.slide-out {
     animation: slideOutToBottom 0.5s ease-in forwards;
 }
 

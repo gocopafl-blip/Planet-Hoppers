@@ -12,9 +12,13 @@ const spaceDockScene = {
         canvas.style.display = 'block';
 
         // Add dock menu listeners
+        this._titanSupplyLi = document.querySelector('#dock-menu li:nth-child(1)');
         this._orbitalCargoLi = document.querySelector('#dock-menu li:nth-child(2)');
         this._galacticTradeHubLi = document.querySelector('#dock-menu li:nth-child(4)');
         this._fleetManagerLi = document.querySelector('#dock-menu li:nth-child(7)');
+        if (this._titanSupplyLi) {
+            this._titanSupplyLi.addEventListener('click', this.handleTitanSupplyClick);
+        }
         if (this._orbitalCargoLi) {
             this._orbitalCargoLi.addEventListener('click', this.handleOrbitalCargoClick);
         }
@@ -23,6 +27,11 @@ const spaceDockScene = {
         }
         if (this._fleetManagerLi) {
             this._fleetManagerLi.addEventListener('click', this.handleFleetManagerClick);
+        }
+
+        if (settings?.openTitanSupply) {
+            delete settings.openTitanSupply;
+            setTimeout(() => gameManager.switchScene(titanSupplyScene), 400);
         }
     },
 
@@ -33,6 +42,9 @@ const spaceDockScene = {
         document.getElementById('mission-board').style.display = 'none';
 
         // Remove dock menu listeners
+        if (this._titanSupplyLi) {
+            this._titanSupplyLi.removeEventListener('click', this.handleTitanSupplyClick);
+        }
         if (this._orbitalCargoLi) {
             this._orbitalCargoLi.removeEventListener('click', this.handleOrbitalCargoClick);
         }
@@ -63,6 +75,10 @@ const spaceDockScene = {
         // We will use this later for keyboard shortcuts.
     },
     // Handler functions for dock menu
+    handleTitanSupplyClick() {
+        gameManager.switchScene(titanSupplyScene);
+    },
+
     handleOrbitalCargoClick(event) {
         gameManager.switchScene(missionBoardScene);
     },

@@ -5,6 +5,35 @@ class FleetManager {
         // The active ship ID is now stored in playerDataManager.data.activeShipId
         // This allows the active ship to persist across game sessions and be shared
         // between different game systems (fleet manager, space scene, etc.)
+        this._orbitPlanetWarned = new Set();
+    }
+
+    findPlanetForLocation(location, celestialBodies) {
+        if (!location) return null;
+        const bodies = celestialBodies || [];
+
+        const planetId = location.orbitData?.planetId;
+        if (planetId) {
+            const byId = bodies.find(p => p && p.id === planetId);
+            if (byId) return byId;
+        }
+        if (location.planetName) {
+            const byName = bodies.find(p => p && p.name === location.planetName);
+            if (byName) return byName;
+        }
+        const planetIndex = location.orbitData?.planetIndex;
+        if (planetIndex != null) {
+            const byIndex = bodies.find(p => p && p.index === planetIndex);
+            if (byIndex) return byIndex;
+        }
+        return null;
+    }
+
+    demoteStaleOrbit(location) {
+        location.type = 'space';
+        location.isOrbitLocked = false;
+        location.planetName = null;
+        location.orbitData = null;
     }
 
     // A method to get the full data object for the active ship
@@ -72,6 +101,7 @@ class FleetManager {
                 currentLocation.type = 'orbit';
                 currentLocation.planetName = spaceScene.ship.orbitingPlanet.name;
                 currentLocation.orbitData = {
+                    planetId: spaceScene.ship.orbitingPlanet.id,
                     planetIndex: spaceScene.ship.orbitingPlanet.index,
                     orbitRadius: spaceScene.ship.orbitRadius,
                     orbitAngle: spaceScene.ship.orbitAngle,
@@ -160,8 +190,20 @@ class FleetManager {
             return;
         }
         const playerGivenName = prompt(`Enter a name for your new ${shipData.shipID}:`);
-        // Deduct the price from the player's currency
-        playerDataManager.addMoney(-shipData.shipBuyValue);
+        if (playerGivenName === null) {
+            return;
+        }
+
+        const paid = playerDataManager.spend(
+            shipData.shipBuyValue,
+            FINANCE_CATEGORIES.SHIP,
+            `Purchased ${shipData.shipID}`,
+            { shipTypeId: shipCatalogueKey, shipName: playerGivenName || shipData.shipID }
+        );
+        if (!paid) {
+            alert(`Not enough credits to buy ${shipData.shipID}.`);
+            return;
+        }
 
         // Add the ship to the player's fleet (store full ship object)
         if (!playerDataManager.data.fleet) {
@@ -250,7 +292,12 @@ class FleetManager {
         if (removedShip) {
             // Refund the player a portion of the ship's price (80% of original value)
             const refundAmount = Math.floor(shipData.shipSellValue || (shipData.shipBuyValue * 0.8));
-            playerDataManager.addMoney(refundAmount);
+            playerDataManager.credit(
+                refundAmount,
+                FINANCE_CATEGORIES.SHIP,
+                `Sold ${removedShip.name}`,
+                { shipId: removedShip.id, shipTypeId: removedShip.shipTypeId }
+            );
             
             console.log(`Sold ship: ${removedShip.name} for ${refundAmount} credits`);
             alert(`Sold ${removedShip.name} for ${refundAmount} credits`);
@@ -287,9 +334,16 @@ class FleetManager {
             
             // If ship is orbit-locked, handle orbital mechanics (Task 7.9)
             if (location.type === 'orbit' && location.isOrbitLocked && location.orbitData) {
-                const planet = celestialBodies.find(p => p && (p.name === location.planetName || p.index === location.orbitData.planetIndex));
+                const planet = this.findPlanetForLocation(location, celestialBodies);
                 if (!planet) {
-                    console.warn(`Planet ${location.planetName} not found for ship ${shipData.name} in orbit`);
+                    const warnKey = `${shipData.id}:${location.planetName || location.orbitData.planetId || 'unknown'}`;
+                    if (!this._orbitPlanetWarned.has(warnKey)) {
+                        this._orbitPlanetWarned.add(warnKey);
+                        console.warn(
+                            `Planet ${location.planetName || location.orbitData.planetId} not found for ship ${shipData.name} in orbit — reverting to free flight at last position`
+                        );
+                    }
+                    this.demoteStaleOrbit(location);
                     return;
                 }
 

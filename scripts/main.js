@@ -156,7 +156,7 @@ function setupEventListeners() {
 
     // --- Removed: Dock menu, mission board, and trade hub listeners now handled in their respective scene files ---
 
-    const spaceScene = new SpaceScene();
+    const spaceScene = gameManager.getSpaceScene();
     const navScreenElement = document.getElementById('nav-screen');
     canvas.addEventListener('click', (event) => {
         if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
@@ -257,7 +257,7 @@ function setupEventListeners() {
     */
 // Event listener for our new test button
     document.getElementById('getPaidBtn').addEventListener('click', () => {
-        playerDataManager.addMoney(5000); // Give the player 500 credits
+        playerDataManager.credit(5000, FINANCE_CATEGORIES.DEBUG, 'Debug credit (Get Paid button)');
     });
     /*document.getElementById('completeMissionBtn').addEventListener('click', () => {
         missionManager.completeMission();
@@ -267,6 +267,12 @@ function setupEventListeners() {
         // Check if the current scene is the spaceScene before switching
         if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
             gameManager.switchScene(spaceDockScene);
+        }
+    });
+
+    document.getElementById('requestTowBtn').addEventListener('click', () => {
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
+            rescueManager.requestTow(gameManager.activeScene);
         }
     });
     
@@ -291,16 +297,23 @@ function setupEventListeners() {
     });
     document.getElementById('launchBtn').addEventListener('click', () => {
         if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.ship && gameManager.activeScene.ship.isOrbitLocked) {
-            gameManager.activeScene.saveState(); // Save space scene state before switching
+            const space = gameManager.activeScene;
+            space.saveState();
 
-            // Get the planet the ship is orbiting
-            const orbitingPlanet = gameManager.activeScene.ship.orbitingPlanet;
+            const activeShip = playerDataManager.getActiveShip();
+            if (activeShip) {
+                fleetManager.saveCurrentShipState(activeShip, space);
+                playerDataManager.saveData();
+            }
 
-            // Create a fresh settings object for the lander scene
+            delete settings.fromFleetManager;
+            delete settings.dispatchMode;
+
+            const orbitingPlanet = space.ship.orbitingPlanet;
             const landerSettings = {
                 selectedShip: shipTypes.classic,
-                planet: orbitingPlanet, // Pass the planet data to lander scene
-                difficulty: settings.difficulty || 'medium' // Default to medium if not set
+                planet: orbitingPlanet,
+                difficulty: settings.difficulty || 'medium'
             };
 
             console.log('Launching to planet:', orbitingPlanet);
@@ -349,9 +362,10 @@ function setupEventListeners() {
             if (typeof thrusterSound !== 'undefined' && thrusterSound && thrusterSound.isLoaded) thrusterSound.pause();
 
             if (landerScene.gameState === 'landed') {
-                // SUCCESS: Return to space scene with preserved state
                 console.log('Lander mission successful, returning to space scene with preserved state');
-                gameManager.switchScene(spaceScene, settings);
+                delete settings.fromFleetManager;
+                delete settings.dispatchMode;
+                gameManager.switchScene(gameManager.getSpaceScene(), { returnFromLander: true });
             } else {
                 // CRASHED: Return to spacedock scene (no state preservation needed)
                 console.log('Lander mission failed, returning to spacedock');

@@ -21,6 +21,7 @@ class PlayerDataManager {
         // ENHANCED: Initialize fleet location data for existing saves (Task 3.8)
         // This ensures compatibility with save files created before the fleet system
         this.initializeFleetLocationData();
+        this.initializeTransactionLedger();
     }
 
     // Saves the current data object to localStorage.
@@ -43,16 +44,96 @@ class PlayerDataManager {
 
     // A helper function to easily get the player's bank balance.
     getBalance() {
-        return this.data.playerBankBalance;
+        return this.data?.playerBankBalance ?? 0;
     }
-    addMoney(amount) {
-        if (this.data) {
-            // Task 5.7: Ensure all ships have mission assignment fields
-            this.initializeFleetMissionFields();
-            this.data.playerBankBalance += amount;
-            console.log(`Added ${amount} credits. New balance: ${this.data.playerBankBalance}`);
-            this.saveData(); // This is the crucial step!
+
+    initializeTransactionLedger() {
+        if (!this.data) return;
+        if (!Array.isArray(this.data.transactionLedger)) {
+            this.data.transactionLedger = [];
         }
+    }
+
+    /**
+     * Append a ledger row (newest first). Amount is always stored as a positive number.
+     */
+    recordTransaction(type, category, amount, description, meta = {}) {
+        if (!this.data) return null;
+        this.initializeTransactionLedger();
+
+        const entry = {
+            id: `tx_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+            timestamp: Date.now(),
+            type,
+            category,
+            amount: Math.abs(Math.round(amount)),
+            balanceAfter: this.data.playerBankBalance,
+            description: description || '',
+            ...meta
+        };
+
+        this.data.transactionLedger.unshift(entry);
+        if (this.data.transactionLedger.length > FINANCE_LEDGER_MAX_ENTRIES) {
+            this.data.transactionLedger.length = FINANCE_LEDGER_MAX_ENTRIES;
+        }
+        return entry;
+    }
+
+    /**
+     * Credit the account (deposits). Used for mission payouts, ship sales, loan disbursement, etc.
+     */
+    credit(amount, category, description, meta = {}) {
+        if (!this.data || amount <= 0) return false;
+
+        this.data.playerBankBalance += amount;
+        this.recordTransaction(
+            FINANCE_TRANSACTION_TYPES.DEPOSIT,
+            category,
+            amount,
+            description,
+            meta
+        );
+        console.log(`[Finance] +${amount} (${category}): ${description}. Balance: ${this.data.playerBankBalance}`);
+        this.saveData();
+        return true;
+    }
+
+    /**
+     * Debit the account if funds are available (withdrawals / expenses).
+     */
+    spend(amount, category, description, meta = {}) {
+        if (!this.data || amount <= 0) return false;
+        if (this.getBalance() < amount) {
+            console.warn(`[Finance] Insufficient funds for ${amount} (${category}): ${description}`);
+            return false;
+        }
+
+        this.data.playerBankBalance -= amount;
+        this.recordTransaction(
+            FINANCE_TRANSACTION_TYPES.WITHDRAWAL,
+            category,
+            amount,
+            description,
+            meta
+        );
+        console.log(`[Finance] -${amount} (${category}): ${description}. Balance: ${this.data.playerBankBalance}`);
+        this.saveData();
+        return true;
+    }
+
+    getTransactionHistory(limit = 50) {
+        if (!this.data?.transactionLedger) return [];
+        return this.data.transactionLedger.slice(0, limit);
+    }
+
+    /** @deprecated Prefer credit() or spend() with a FINANCE_CATEGORIES label. */
+    addMoney(amount) {
+        if (!this.data) return false;
+        this.initializeFleetMissionFields();
+        if (amount >= 0) {
+            return this.credit(amount, FINANCE_CATEGORIES.OTHER, 'Account adjustment');
+        }
+        return this.spend(-amount, FINANCE_CATEGORIES.OTHER, 'Account adjustment');
     }
 
     // Task 5.7: Ensure all ships have assignedMissionId and missionState fields
@@ -416,6 +497,7 @@ class PlayerDataManager {
         if (this.data && celestialBodies) {
             this.data.worldState.planets = celestialBodies.map(planet => ({
                 id: planet.id,
+                index: planet.index,
                 planetTypeId: planet.planetTypeId,
                 name: planet.name,
                 x: planet.x,
