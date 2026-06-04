@@ -14,6 +14,7 @@ function getNewPlayerData() {
         worldState: {
             planets: null, // Will store generated planet data to maintain consistency
             lastGenerated: null // Timestamp of when planets were generated
+            // Each planet entry may include discoveryStatus: undiscovered | surveyed | active_destination
         },
 
         // Player's Fleet

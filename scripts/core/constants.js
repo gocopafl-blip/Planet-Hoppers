@@ -67,6 +67,19 @@ const FLEET_UPDATE_INTERVAL_MS = 1000 / FLEET_BACKGROUND_UPDATE_RATE;  // ~83ms 
 /** Space scene integrates velocity once per frame at this rate (see ship.js). */
 const SPACE_PHYSICS_FPS = 60;
 
+/** Per-planet discovery progression (Phase 1 — discovery loop). */
+const PLANET_DISCOVERY_STATUS = {
+    UNDISCOVERED: 'undiscovered',
+    SURVEYED: 'surveyed',
+    ACTIVE_DESTINATION: 'active_destination'
+};
+
+const PLANET_DISCOVERY_STATUSES = Object.values(PLANET_DISCOVERY_STATUS);
+
+function isValidPlanetDiscoveryStatus(status) {
+    return PLANET_DISCOVERY_STATUSES.includes(status);
+}
+
 /** Cap consumables delta (tab backgrounded) so one frame cannot drain a full tank. */
 const CONSUMABLES_MAX_DELTA_SEC = 0.1;
 

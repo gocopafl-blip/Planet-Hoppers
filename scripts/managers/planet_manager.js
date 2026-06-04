@@ -44,6 +44,7 @@ class PlanetManager {
             const newPlanet = {
                 id: `planet_${planetIndex}_${Date.now()}`, // A guaranteed unique ID
                 index: planetIndex,
+                discoveryStatus: PLANET_DISCOVERY_STATUS.UNDISCOVERED,
                 planetTypeId: planetDNA.planetTypeId,
                 name: `${this.getRandomElement(planetDNA.namePrefixes)} ${planetIndex}`,
                 x: Math.random() * worldWidth * 0.8 + worldWidth * 0.1,
@@ -86,6 +87,7 @@ class PlanetManager {
         
         // FIXED: Sync global celestialBodies variable with generated planets
         celestialBodies = this.celestialBodies;
+        playerDataManager.applyDiscoveryStatusToCelestialBodies(this.celestialBodies);
         
         console.log("Planet Manager generated celestial bodies:", this.celestialBodies);
         return this.celestialBodies;
@@ -110,6 +112,9 @@ class PlanetManager {
             return {
                 id: planetData.id,
                 index: planetData.index ?? index,
+                discoveryStatus: isValidPlanetDiscoveryStatus(planetData.discoveryStatus)
+                    ? planetData.discoveryStatus
+                    : PLANET_DISCOVERY_STATUS.UNDISCOVERED,
                 planetTypeId: planetData.planetTypeId,
                 name: planetData.name,
                 x: planetData.x,
@@ -134,6 +139,7 @@ class PlanetManager {
         
         // FIXED: Sync global celestialBodies variable with restored planets
         celestialBodies = this.celestialBodies;
+        playerDataManager.applyDiscoveryStatusToCelestialBodies(this.celestialBodies);
         
         return true;
     }

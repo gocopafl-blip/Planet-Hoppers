@@ -83,7 +83,7 @@ Work **top to bottom** within each phase unless you deliberately skip ahead. Che
 
 *Goal: first session “wow” = find something new and unlock new work.*
 
-- [ ] **1.1 Survey state** — Persist per-planet (or per-sector) flags: `undiscovered` → `surveyed` → `active destination`. Store in `playerData` / `worldState`.
+- [x] **1.1 Survey state** — Persist per-planet flags: `undiscovered` → `surveyed` → `active_destination` in `worldState.planets` + live `celestialBodies`. API: `playerDataManager.getPlanetDiscoveryStatus(id)`, `markPlanetSurveyed(id)`, `markPlanetActiveDestination(id)`, `getPlanetsByDiscoveryStatus(status)`.
 - [ ] **1.2 Scan mission payout** — Extend `SCAN_PLANET` / orbit missions so completing scan marks planet surveyed + grants discovery bonus credits.
 - [ ] **1.3 Fog / visibility** — Nav or radar: unsurveyed bodies hidden or vague until scanned (start simple: hide planet name on mission board until surveyed).
 - [ ] **1.4 Unlock missions** — Mission board shows **locked** vs **unlocked** jobs; tier-2 jobs require “surveyed [planet type]” or “visited N worlds.”

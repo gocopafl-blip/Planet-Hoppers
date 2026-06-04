@@ -51,12 +51,113 @@ class PlayerDataManager {
             if (this.ensureShipConsumables(ship)) changed = true;
         });
 
+        if (this.migratePlanetDiscoveryData()) changed = true;
+
         if (changed) {
             console.log('Player save migrated to current schema.');
             this.saveData();
         }
 
         return changed;
+    }
+
+    /** Ensure every saved planet has a valid discoveryStatus (Phase 1.1). */
+    migratePlanetDiscoveryData() {
+        const planets = this.data?.worldState?.planets;
+        if (!Array.isArray(planets)) return false;
+
+        let changed = false;
+        planets.forEach(planet => {
+            if (!planet || isValidPlanetDiscoveryStatus(planet.discoveryStatus)) return;
+            planet.discoveryStatus = PLANET_DISCOVERY_STATUS.UNDISCOVERED;
+            changed = true;
+        });
+        return changed;
+    }
+
+    getPlanetRecordById(planetId) {
+        const planets = this.data?.worldState?.planets;
+        if (!planets || planetId == null) return null;
+        return planets.find(p => p && p.id === planetId) || null;
+    }
+
+    getPlanetDiscoveryStatus(planetId) {
+        const record = this.getPlanetRecordById(planetId);
+        if (!record) return PLANET_DISCOVERY_STATUS.UNDISCOVERED;
+        return isValidPlanetDiscoveryStatus(record.discoveryStatus)
+            ? record.discoveryStatus
+            : PLANET_DISCOVERY_STATUS.UNDISCOVERED;
+    }
+
+    /**
+     * Set discovery status for a planet. Updates save data and live celestialBodies if loaded.
+     * Status only advances forward: undiscovered → surveyed → active_destination.
+     */
+    setPlanetDiscoveryStatus(planetId, nextStatus) {
+        if (!isValidPlanetDiscoveryStatus(nextStatus)) {
+            console.warn(`Invalid discovery status: ${nextStatus}`);
+            return false;
+        }
+
+        const record = this.getPlanetRecordById(planetId);
+        if (!record) {
+            console.warn(`setPlanetDiscoveryStatus: planet ${planetId} not found in worldState`);
+            return false;
+        }
+
+        const rank = {
+            [PLANET_DISCOVERY_STATUS.UNDISCOVERED]: 0,
+            [PLANET_DISCOVERY_STATUS.SURVEYED]: 1,
+            [PLANET_DISCOVERY_STATUS.ACTIVE_DESTINATION]: 2
+        };
+        const current = this.getPlanetDiscoveryStatus(planetId);
+        if (rank[nextStatus] < rank[current]) {
+            return false;
+        }
+        if (current === nextStatus) return true;
+
+        record.discoveryStatus = nextStatus;
+        this.syncLivePlanetDiscoveryStatus(planetId, nextStatus);
+        this.saveData();
+        console.log(`Planet ${record.name || planetId} discovery → ${nextStatus}`);
+        return true;
+    }
+
+    markPlanetSurveyed(planetId) {
+        return this.setPlanetDiscoveryStatus(planetId, PLANET_DISCOVERY_STATUS.SURVEYED);
+    }
+
+    markPlanetActiveDestination(planetId) {
+        return this.setPlanetDiscoveryStatus(planetId, PLANET_DISCOVERY_STATUS.ACTIVE_DESTINATION);
+    }
+
+    getPlanetsByDiscoveryStatus(status) {
+        const planets = this.data?.worldState?.planets;
+        if (!Array.isArray(planets)) return [];
+        return planets.filter(p => p && this.getPlanetDiscoveryStatus(p.id) === status);
+    }
+
+    syncLivePlanetDiscoveryStatus(planetId, status) {
+        const apply = (body) => {
+            if (body && body.id === planetId) {
+                body.discoveryStatus = status;
+            }
+        };
+        if (typeof planetManager !== 'undefined' && planetManager.celestialBodies) {
+            planetManager.celestialBodies.forEach(apply);
+        }
+        if (typeof celestialBodies !== 'undefined' && Array.isArray(celestialBodies)) {
+            celestialBodies.forEach(apply);
+        }
+    }
+
+    /** Copy discoveryStatus from save onto runtime planet objects after generate/restore. */
+    applyDiscoveryStatusToCelestialBodies(bodies) {
+        if (!Array.isArray(bodies)) return;
+        bodies.forEach(body => {
+            if (!body?.id) return;
+            body.discoveryStatus = this.getPlanetDiscoveryStatus(body.id);
+        });
     }
 
     /** Map legacy display-name shipTypeId values to catalogue keys. */
@@ -596,6 +697,9 @@ class PlayerDataManager {
         this.data.worldState.planets = celestialBodies.map(planet => ({
                 id: planet.id,
                 index: planet.index,
+                discoveryStatus: isValidPlanetDiscoveryStatus(planet.discoveryStatus)
+                    ? planet.discoveryStatus
+                    : this.getPlanetDiscoveryStatus(planet.id),
                 planetTypeId: planet.planetTypeId,
                 name: planet.name,
                 x: planet.x,
