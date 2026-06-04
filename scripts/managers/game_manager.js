@@ -72,12 +72,9 @@ class BackgroundFleetSimulator {
                 worldHeight = canvas.height * 200;
             }
 
-            // Calculate scaled deltaTime for physics (normalize to 16.67ms = 60fps)
-            // Use updateInterval converted to seconds, then normalized to 60fps frame time
-            const physicsDeltaTime = this.updateInterval / 16.67; // Convert to normalized 60fps time
+            const physicsDeltaSec = this.updateInterval / 1000;
 
-            // Update fleet physics
-            fleetManager.updateFleetPhysics(fleet, planets, worldWidth, worldHeight, physicsDeltaTime);
+            fleetManager.updateFleetPhysics(fleet, planets, worldWidth, worldHeight, physicsDeltaSec);
 
             // Subtract one interval from accumulator (carry over remainder for smooth timing)
             this.accumulatedTime -= this.updateInterval;
@@ -92,12 +89,60 @@ const gameManager = {
     fleetDispatchMode: null, // Store fleet dispatch mode
     backgroundFleetSimulator: new BackgroundFleetSimulator(), // Task 8.1.3: Background simulator instance
     _lastLoopTime: 0,
+    _loopBound: null,
+    _hiddenTabIntervalId: null,
+    _gameLoopStarted: false,
 
-    loop() {
-        const currentTime = performance.now();
+    isPilotingInSpaceScene() {
+        return this.activeScene?.name === 'space';
+    },
+
+    startGameLoop() {
+        if (this._gameLoopStarted) return;
+        this._gameLoopStarted = true;
+        this._loopBound = (time) => this.tick(time);
+        document.addEventListener('visibilitychange', () => this._onVisibilityChange());
+        if (document.hidden) {
+            this._startHiddenTabInterval();
+        } else {
+            this._scheduleNextFrame();
+        }
+    },
+
+    _onVisibilityChange() {
+        if (document.hidden) {
+            this._startHiddenTabInterval();
+        } else {
+            this._stopHiddenTabInterval();
+            this._lastLoopTime = 0;
+            this._scheduleNextFrame();
+        }
+    },
+
+    _startHiddenTabInterval() {
+        if (this._hiddenTabIntervalId) return;
+        this._hiddenTabIntervalId = setInterval(() => {
+            this.tick(performance.now());
+        }, HIDDEN_TAB_UPDATE_INTERVAL_MS);
+    },
+
+    _stopHiddenTabInterval() {
+        if (!this._hiddenTabIntervalId) return;
+        clearInterval(this._hiddenTabIntervalId);
+        this._hiddenTabIntervalId = null;
+    },
+
+    _scheduleNextFrame() {
+        if (!document.hidden && this._loopBound) {
+            requestAnimationFrame(this._loopBound);
+        }
+    },
+
+    tick(currentTime) {
         let deltaSec = 0;
         if (this._lastLoopTime > 0) {
             deltaSec = (currentTime - this._lastLoopTime) / 1000;
+            deltaSec = Math.min(deltaSec, GAME_LOOP_MAX_DELTA_SEC);
         }
         this._lastLoopTime = currentTime;
 
@@ -105,9 +150,17 @@ const gameManager = {
 
         if (this.activeScene) {
             this.activeScene.update(deltaSec);
-            this.activeScene.draw();
+            if (!document.hidden) {
+                this.activeScene.draw();
+            }
         }
-        requestAnimationFrame(this.loop.bind(this));
+
+        this._scheduleNextFrame();
+    },
+
+    /** @deprecated Use startGameLoop() — kept for callers that still invoke loop() once */
+    loop() {
+        this.startGameLoop();
     },
 
     switchScene(scene, newSettings = {}) {

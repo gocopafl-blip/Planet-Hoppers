@@ -64,8 +64,17 @@ const FLEET_BACKGROUND_UPDATE_RATE = 12;  // 12 fps for background simulation (w
 const FLEET_ACTIVE_UPDATE_RATE = 60;      // 60 fps when space scene is active
 const FLEET_UPDATE_INTERVAL_MS = 1000 / FLEET_BACKGROUND_UPDATE_RATE;  // ~83ms between updates at 12fps
 
+/** Space scene integrates velocity once per frame at this rate (see ship.js). */
+const SPACE_PHYSICS_FPS = 60;
+
 /** Cap consumables delta (tab backgrounded) so one frame cannot drain a full tank. */
 const CONSUMABLES_MAX_DELTA_SEC = 0.1;
+
+/** Game loop tick while browser tab is hidden (browsers throttle to ~1s minimum). */
+const HIDDEN_TAB_UPDATE_INTERVAL_MS = 1000;
+
+/** Cap scene update delta after tab returns (seconds). */
+const GAME_LOOP_MAX_DELTA_SEC = 0.1;
 
 function degreesToRadians(degrees) {
     return degrees * (Math.PI / 180);

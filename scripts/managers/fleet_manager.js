@@ -308,24 +308,24 @@ class FleetManager {
     // Task 8.1.2: Extract fleet physics logic for background simulation
     // This method updates fleet ship physics working with fleet data from playerDataManager
     // It can be called independently of the space scene for background simulation
-    updateFleetPhysics(fleetShips, celestialBodies, worldWidth, worldHeight, deltaTime) {
-        // Update each fleet ship's physics
-        // fleetShips: Array of fleet ship data objects from playerDataManager.data.fleet
-        // celestialBodies: Array of planet objects
-        // worldWidth/Height: World boundary dimensions
-        // deltaTime: Time elapsed since last update (for future use)
-        
+    updateFleetPhysics(fleetShips, celestialBodies, worldWidth, worldHeight, deltaSec = 1 / SPACE_PHYSICS_FPS) {
+        // fleetShips: playerDataManager fleet entries; deltaSec: elapsed seconds for this tick
+        // Movement matches space_scene / ship.js: position += velocity once per frame at SPACE_PHYSICS_FPS
+
         if (!fleetShips || fleetShips.length === 0) {
             return;
         }
 
+        const frames = deltaSec * SPACE_PHYSICS_FPS;
+
         const activeShipId = playerDataManager.data.activeShipId;
+        const pilotingInSpace = gameManager.activeScene?.name === 'space';
 
         fleetShips.forEach(shipData => {
             if (!shipData || !shipData.location) return;
 
-            // Skip active ship - it's handled by space scene when active
-            if (shipData.id === activeShipId) return;
+            // Skip only while this ship is being piloted in the space scene
+            if (pilotingInSpace && shipData.id === activeShipId) return;
 
             // Skip docked ships - no physics needed
             if (shipData.location.type === 'docked' || shipData.location.isDocked) return;
@@ -358,7 +358,7 @@ class FleetManager {
                 const orbitalSpeed = location.orbitData.lockedOrbitSpeed / location.orbitData.orbitRadius;
                 
                 // Update orbital position (using direction: 1 = CCW, -1 = CW)
-                location.orbitData.orbitAngle += orbitalSpeed * (location.orbitData.orbitDirection || 1) * (deltaTime || 0.016); // Scale by deltaTime
+                location.orbitData.orbitAngle += orbitalSpeed * (location.orbitData.orbitDirection || 1) * frames;
                 
                 // Calculate new position
                 location.x = planet.x + Math.cos(location.orbitData.orbitAngle) * location.orbitData.orbitRadius;
@@ -375,8 +375,8 @@ class FleetManager {
 
             } else if (location.type === 'space') {
                 // Normal physics update for ships in space (not in orbit, not docked)
-                location.x += location.velX * (deltaTime ? deltaTime / 0.016 : 1); // Scale by deltaTime
-                location.y += location.velY * (deltaTime ? deltaTime / 0.016 : 1);
+                location.x += location.velX * frames;
+                location.y += location.velY * frames;
 
                 // Check for automatic orbit entry (Task 7.9.2)
                 for (const planet of celestialBodies) {

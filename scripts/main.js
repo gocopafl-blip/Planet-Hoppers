@@ -403,8 +403,8 @@ function startGame() {
     // The simulator runs continuously from game start, updating fleet physics even when not in space scene
     gameManager.backgroundFleetSimulator.start();
     
-    // Start the main game loop
-    gameManager.loop();
+    // Start the main game loop (rAF when visible; interval when tab hidden)
+    gameManager.startGameLoop();
 }
 
 // --- AUTO-SAVE ON PAGE UNLOAD ---

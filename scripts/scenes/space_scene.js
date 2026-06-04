@@ -145,6 +145,9 @@ class SpaceScene {
 
     stop() {
         if (thrusterSound.isLoaded) thrusterSound.pause();
+        if (this.navScreen?.isOpen) {
+            this.navScreen.hide();
+        }
         //zoomControls.style.display = 'none';
         document.getElementById('access-dock-ui').style.display = 'none';
         document.getElementById('request-tow-ui').style.display = 'none';

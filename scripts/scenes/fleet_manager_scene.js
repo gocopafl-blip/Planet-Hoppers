@@ -1,7 +1,9 @@
 const fleetManagerScene = {
     name: 'menu', // We can reuse the menu music
+    _lastFleetUiRefresh: 0,
 
     start(settings) {
+        this._lastFleetUiRefresh = 0;
         console.log("Starting Fleet Manager Scene...");
         // This scene just shows a background. The fleet manager UI is a separate HTML element.
         canvas.style.display = 'block';
@@ -525,7 +527,14 @@ const fleetManagerScene = {
     },
 
     update() {
-        // This scene is static, so there's nothing to update each frame.
+        const now = performance.now();
+        if (now - this._lastFleetUiRefresh < 2000) return;
+        this._lastFleetUiRefresh = now;
+
+        const fleetManager = document.getElementById('fleet-manager');
+        if (fleetManager && fleetManager.style.display === 'flex') {
+            this.populateFleetList();
+        }
     },
 
     draw() {
