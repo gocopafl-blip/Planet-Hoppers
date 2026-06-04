@@ -91,14 +91,20 @@ const gameManager = {
     spaceScene: null, // Store reference to space scene
     fleetDispatchMode: null, // Store fleet dispatch mode
     backgroundFleetSimulator: new BackgroundFleetSimulator(), // Task 8.1.3: Background simulator instance
+    _lastLoopTime: 0,
 
     loop() {
-        // Task 8.1.4: Update background fleet simulator before scene update
         const currentTime = performance.now();
+        let deltaSec = 0;
+        if (this._lastLoopTime > 0) {
+            deltaSec = (currentTime - this._lastLoopTime) / 1000;
+        }
+        this._lastLoopTime = currentTime;
+
         this.backgroundFleetSimulator.update(currentTime);
 
         if (this.activeScene) {
-            this.activeScene.update();
+            this.activeScene.update(deltaSec);
             this.activeScene.draw();
         }
         requestAnimationFrame(this.loop.bind(this));

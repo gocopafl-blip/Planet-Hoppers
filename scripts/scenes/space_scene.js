@@ -696,7 +696,7 @@ class SpaceScene {
         console.log('Fleet ships saved to localStorage');
     }
 
-    update() {
+    update(deltaSec = 0) {
         if (!this.ship || this.isPaused) return;
 
         if (this.ship.fuel == null) {
@@ -711,7 +711,7 @@ class SpaceScene {
         // This ensures fleet ships continue moving even when active ship is in orbit
         this.updateFleetShips();
 
-        consumablesManager.applyFlightBurn(this.ship);
+        consumablesManager.applyFlightBurn(this.ship, deltaSec);
         consumablesManager.syncSceneShipToFleet(this);
         
         // --- ORBIT LOCK LOGIC ---

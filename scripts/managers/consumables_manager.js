@@ -22,28 +22,30 @@ class ConsumablesManager {
         ship.maxHealth = fleetShip?.maxHealth || shipData.shipMaxHealth || 100;
         ship.health = fleetShip?.currentHealth ?? shipData.shipCurrentHealth ?? ship.maxHealth;
 
-        ship.fuelBurnRate = shipData.shipThrusterBurnRate ?? 0.2;
-        ship.oxygenBurnRate = shipData.shipOxygenBurnRate ?? 0.00165;
-        ship.electricityBurnRate = shipData.shipElectricityBurnRate ?? 0.03;
+        ship.fuelBurnRate = shipData.shipThrusterBurnRate ?? 2.5;
+        ship.oxygenBurnRate = shipData.shipOxygenBurnRate ?? 0.1;
+        ship.electricityBurnRate = shipData.shipElectricityBurnRate ?? 0.4;
     }
 
-    applyFlightBurn(ship) {
-        if (ship.fuel == null) return;
+    applyFlightBurn(ship, deltaSec = 1 / 60) {
+        if (ship.fuel == null || ship.isDocked) return;
+
+        const dt = Math.min(Math.max(deltaSec, 0), CONSUMABLES_MAX_DELTA_SEC);
 
         const usingMainThrust = ship.thrusting || ship.reversing;
         const usingRcs = ship.strafingLeft || ship.strafingRight
             || ship.rotatingLeft || ship.rotatingRight;
 
         if (usingMainThrust) {
-            ship.fuel = Math.max(0, ship.fuel - ship.fuelBurnRate);
+            ship.fuel = Math.max(0, ship.fuel - ship.fuelBurnRate * dt);
         } else if (usingRcs) {
-            ship.fuel = Math.max(0, ship.fuel - ship.fuelBurnRate * 0.35);
+            ship.fuel = Math.max(0, ship.fuel - ship.fuelBurnRate * 0.35 * dt);
         }
 
-        ship.oxygen = Math.max(0, ship.oxygen - ship.oxygenBurnRate);
+        ship.oxygen = Math.max(0, ship.oxygen - ship.oxygenBurnRate * dt);
 
         const elecMultiplier = (usingMainThrust || usingRcs) ? 1.4 : 1;
-        ship.electricity = Math.max(0, ship.electricity - ship.electricityBurnRate * elecMultiplier);
+        ship.electricity = Math.max(0, ship.electricity - ship.electricityBurnRate * elecMultiplier * dt);
     }
 
     canOperateShip(fleetShip) {

@@ -64,6 +64,9 @@ const FLEET_BACKGROUND_UPDATE_RATE = 12;  // 12 fps for background simulation (w
 const FLEET_ACTIVE_UPDATE_RATE = 60;      // 60 fps when space scene is active
 const FLEET_UPDATE_INTERVAL_MS = 1000 / FLEET_BACKGROUND_UPDATE_RATE;  // ~83ms between updates at 12fps
 
+/** Cap consumables delta (tab backgrounded) so one frame cannot drain a full tank. */
+const CONSUMABLES_MAX_DELTA_SEC = 0.1;
+
 function degreesToRadians(degrees) {
     return degrees * (Math.PI / 180);
 }
