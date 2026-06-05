@@ -241,7 +241,7 @@ const missionBoardScene = {
             missionElement.className = 'mission-item';
             missionElement.innerHTML = `
                 <h3>${mission.title}</h3>
-                <p>${mission.description}</p>
+                <p>${missionManager.formatMissionDescription(mission)}</p>
                 <div class="mission-footer">
                     <span class="mission-reward">REWARD: ¢ ${mission.reward.toLocaleString()}</span>
                     <button class="accept-btn" data-mission-id="${mission.id}">Accept</button>

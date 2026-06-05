@@ -22,3 +22,6 @@ const TOW_COST = 1000;
 
 /** Max ledger rows kept in save data (newest first). */
 const FINANCE_LEDGER_MAX_ENTRIES = 250;
+
+/** First-time survey payout when a scan/orbit mission marks a planet surveyed (Phase 1.2). */
+const DISCOVERY_FIRST_SURVEY_BONUS = 250;

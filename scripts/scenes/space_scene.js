@@ -74,6 +74,15 @@ class SpaceScene {
             planetManager.generatePlanets(this.numPlanets, this.WORLD_WIDTH, this.WORLD_HEIGHT, this.spaceDocks);
         }
 
+        const alphaDock = this.spaceDocks[0];
+        if (alphaDock && !playerDataManager.data?.worldState?.hubPosition) {
+            playerDataManager.saveHubPosition(alphaDock.x, alphaDock.y);
+            if (playerDataManager.migrateStarterDiscoveredPlanets()) {
+                playerDataManager.applyDiscoveryStatusToCelestialBodies(planetManager.celestialBodies);
+            }
+            playerDataManager.saveData();
+        }
+
         if (settings.returnFromLander) {
             delete settings.returnFromLander;
             if (!this.restoreState()) {
@@ -1002,6 +1011,7 @@ class SpaceScene {
                     this.ship.orbitDirection = crossProduct >= 0 ? 1 : -1; // 1 = CCW, -1 = CW
                     
                     console.log(`Orbit locked at radius ${this.ship.orbitRadius.toFixed(0)}! Direction: ${this.ship.orbitDirection > 0 ? 'CCW' : 'CW'}`);
+                    missionManager.onOrbitLocked(this, planet);
                 }
             }
 
@@ -1464,8 +1474,11 @@ class SpaceScene {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Draw each planet as a blip on the radar
+        // Draw each planet as a blip on the radar (same visibility rules as NAV)
         for (const planet of celestialBodies) {
+            const navState = playerDataManager.getPlanetNavState(planet);
+            if (navState === 'hidden') continue;
+
             const dx = planet.x - this.ship.x;
             const dy = planet.y - this.ship.y;
             const distance = Math.hypot(dx, dy);
@@ -1473,20 +1486,19 @@ class SpaceScene {
             let blipX, blipY;
 
             if (distance < radarRange) {
-                // Planet is inside radar range, position it proportionally
                 blipX = radarX + dx * radarScale;
                 blipY = radarY + dy * radarScale;
             } else {
-                // Planet is outside range, pin it to the edge of the radar
                 const angle = Math.atan2(dy, dx);
                 blipX = radarX + Math.cos(angle) * radarRadius;
                 blipY = radarY + Math.sin(angle) * radarRadius;
             }
 
-            // Draw the planet's blip
             ctx.beginPath();
-            ctx.arc(blipX, blipY, 4, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
+            ctx.arc(blipX, blipY, navState === 'discovered' ? 4 : 3, 0, Math.PI * 2);
+            ctx.fillStyle = navState === 'discovered'
+                ? 'rgba(0, 255, 0, 0.9)'
+                : 'rgba(80, 160, 255, 0.85)';
             ctx.fill();
         }
         // Draw each dock as a blip on the radar

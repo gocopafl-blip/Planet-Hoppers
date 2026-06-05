@@ -81,7 +81,12 @@ class PlanetManager {
         
         // ENHANCED: Save the generated planet layout for consistency across game sessions
         if (this.celestialBodies.length > 0) {
+            if (spaceDocks[0]) {
+                playerDataManager.saveHubPosition(spaceDocks[0].x, spaceDocks[0].y);
+                this.markStarterPlanetsDiscovered(spaceDocks[0]);
+            }
             playerDataManager.savePlanetData(this.celestialBodies);
+            playerDataManager.saveData();
             console.log(`Generated and saved ${this.celestialBodies.length} planets for persistent world state`);
         }
         
@@ -142,5 +147,23 @@ class PlanetManager {
         playerDataManager.applyDiscoveryStatusToCelestialBodies(this.celestialBodies);
         
         return true;
+    }
+
+    /** Mark the nearest worlds to the station as known at universe creation (Phase 1.3). */
+    markStarterPlanetsDiscovered(dock) {
+        if (!dock || this.celestialBodies.length === 0) return;
+
+        const nearest = [...this.celestialBodies]
+            .sort((a, b) => {
+                const da = Math.hypot(a.x - dock.x, a.y - dock.y);
+                const db = Math.hypot(b.x - dock.x, b.y - dock.y);
+                return da - db;
+            })
+            .slice(0, STARTER_DISCOVERED_PLANET_COUNT);
+
+        nearest.forEach(p => {
+            p.discoveryStatus = PLANET_DISCOVERY_STATUS.SURVEYED;
+        });
+        console.log(`Starter discovery: ${nearest.map(p => p.name).join(', ')}`);
     }
 }

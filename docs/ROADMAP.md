@@ -11,7 +11,7 @@
 2. **First “wow” we’re building toward:** **Discovery** — find something weird (new planet, wreck, alien signal), unlock new work, not just “hard landing.”
 3. **Playtest:** Go Live → `http://127.0.0.1:5500` — see [PLAYTESTING.md](PLAYTESTING.md).
 4. **Next recommended build slice:** **Phase 1 — Discovery loop** (below). Fleet autopilot (old “Phase 2”) is **paused** until core gameplay loop feels fun.
-5. **Key code areas:** missions → `mission_manager.js`, `mission_catalogue.js` · planets → `planet_catalogue.js`, `planet_manager.js` · lander → `lander_scene.js` · dock/money → `player_data_manager.js`, station scenes · fleet → `fleet_manager_scene.js`, `fleet_manager.js`.
+5. **Key code areas:** missions → `mission_manager.js`, `mission_catalogue.js` · planets → `planet_catalogue.js`, `planet_manager.js` · lander → `lander_scene.js` · dock/money → `player_data_manager.js`, station scenes · fleet → `fleet_manager_scene.js`, `fleet_manager.js` · notifications → `notification_manager.js`.
 
 ---
 
@@ -84,8 +84,9 @@ Work **top to bottom** within each phase unless you deliberately skip ahead. Che
 *Goal: first session “wow” = find something new and unlock new work.*
 
 - [x] **1.1 Survey state** — Persist per-planet flags: `undiscovered` → `surveyed` → `active_destination` in `worldState.planets` + live `celestialBodies`. API: `playerDataManager.getPlanetDiscoveryStatus(id)`, `markPlanetSurveyed(id)`, `markPlanetActiveDestination(id)`, `getPlanetsByDiscoveryStatus(status)`.
-- [ ] **1.2 Scan mission payout** — Extend `SCAN_PLANET` / orbit missions so completing scan marks planet surveyed + grants discovery bonus credits.
-- [ ] **1.3 Fog / visibility** — Nav or radar: unsurveyed bodies hidden or vague until scanned (start simple: hide planet name on mission board until surveyed).
+- [x] **1.2 Scan mission payout** — `ORBIT_PLANET` missions complete on orbit lock at the target world; first survey pays `discoveryBonus` + marks planet `surveyed`. Helpers: `missionManager.onOrbitLocked`, `applySurveyDiscovery`.
+- [x] **1.3 Fog / visibility** — Unknown worlds hidden on NAV/radar until an accepted scan mission (`Unknown Signal N` blip, alternates with `?`) or orbit discovery (green dot + name). Two starter worlds near station are pre-surveyed. Fixed-size map blips (no giant rings).
+- [x] **1.3b Organic discovery notification** — Orbit-lock on an unknown world (no scan mission) shows a **click-to-dismiss** discovery banner (`notification_manager.js`). Teaser stats + satirical flavor; foundation for full planet dossier pop-up later.
 - [ ] **1.4 Unlock missions** — Mission board shows **locked** vs **unlocked** jobs; tier-2 jobs require “surveyed [planet type]” or “visited N worlds.”
 - [ ] **1.5 First anomaly (MVP)** — One scripted ping: distant NAV blip → fly there → trigger journal/codex entry + unlock one new contract type (e.g. ice sample run).
 - [ ] **1.6 Discovery journal (light)** — Dock or Fleet UI panel: list discovered planets/anomalies (text list OK for v1).
@@ -155,6 +156,7 @@ Work **top to bottom** within each phase unless you deliberately skip ahead. Che
 - [ ] **6.1 Codex** — Track X/Y planets, routes, anomalies, ships; visible in dock UI.
 - [ ] **6.2 Start screen (10.0)** — Load Game vs New Game + confirm reset (`localStorage` clear).
 - [ ] **6.3 Universal dock UI (9.0)** — Shared holo styles, ESC close, consistent patterns.
+- [ ] **6.3b Unified notification banners** — Replace all browser `alert()` calls with the discovery banner style (`notification_manager.js` + shared CSS variants: success, warning, error, mission payout). Click-to-dismiss by default; optional auto-dismiss for low-priority toasts. Migrate call sites in: `mission_manager.js`, `trade_manager.js`, `fleet_manager.js`, `fleet_manager_scene.js`, `space_scene.js`, `titan_supply_scene.js`, `rescue_manager.js`. Extend discovery card into full planet dossier modal (size, population, gravity, trade, danger, flavor).
 - [ ] **6.4 Post-landing scene** — Surface beat after safe landing (scan, local contact, optional choice).
 - [ ] **6.5 Planet gameplay differentiation** — Ice drift, volcanic jitter, hostile landing, etc. See [LANDER.md](LANDER.md).
 - [ ] **6.6 Drop ship variety** — Multiple equipped landers with different stats.

@@ -43,6 +43,102 @@ class MissionManager {
         console.log("Generated available missions:", this.availableMissions);
         return this.availableMissions;
     }
+
+    getCelestialBodies() {
+        if (typeof celestialBodies !== 'undefined' && Array.isArray(celestialBodies) && celestialBodies.length > 0) {
+            return celestialBodies;
+        }
+        if (typeof planetManager !== 'undefined' && planetManager.celestialBodies?.length) {
+            return planetManager.celestialBodies;
+        }
+        return [];
+    }
+
+    getMissionTargetPlanet(missionData) {
+        if (!missionData) return null;
+        const bodies = this.getCelestialBodies();
+        if (missionData.destinationPlanetId) {
+            return bodies.find(p => p && p.id === missionData.destinationPlanetId) || null;
+        }
+        if (missionData.destinationPlanetIndex != null) {
+            return bodies.find(p => p && p.index === missionData.destinationPlanetIndex)
+                || bodies[missionData.destinationPlanetIndex]
+                || null;
+        }
+        return null;
+    }
+
+    planetMatchesMissionTarget(planet, missionData) {
+        if (!planet || !missionData) return false;
+        const target = this.getMissionTargetPlanet(missionData);
+        if (!target) return false;
+        return planet.id === target.id || planet.index === target.index;
+    }
+
+    formatMissionDescription(mission) {
+        if (!mission) return '';
+        if (mission.type === 'ORBIT_PLANET') {
+            const target = this.getMissionTargetPlanet(mission);
+            const bonus = mission.discoveryBonus ?? DISCOVERY_FIRST_SURVEY_BONUS;
+            let text = mission.description;
+            if (target) {
+                const targetLabel = playerDataManager.isPlanetDiscovered(target.id)
+                    ? target.name
+                    : playerDataManager.getUnknownSignalLabel(target);
+                text += ` Target: ${targetLabel}.`;
+            }
+            text += ` First survey bonus: ¢${bonus.toLocaleString()}.`;
+            return text;
+        }
+        return mission.description;
+    }
+
+    /** First survey of a world during a scan mission — marks surveyed and pays bonus once. */
+    applySurveyDiscovery(planet, missionData) {
+        if (!planet?.id) return 0;
+
+        const wasUndiscovered = playerDataManager.getPlanetDiscoveryStatus(planet.id)
+            === PLANET_DISCOVERY_STATUS.UNDISCOVERED;
+        playerDataManager.markPlanetSurveyed(planet.id);
+
+        if (!wasUndiscovered) return 0;
+
+        const bonus = missionData?.discoveryBonus ?? DISCOVERY_FIRST_SURVEY_BONUS;
+        if (bonus <= 0) return 0;
+
+        playerDataManager.credit(
+            bonus,
+            FINANCE_CATEGORIES.MISSION,
+            `Discovery bonus: ${planet.name}`,
+            { planetId: planet.id, discovery: true, missionId: missionData?.title }
+        );
+        return bonus;
+    }
+
+    /** Called when the active ship locks orbit — completes scan missions or catalogues a new world. */
+    onOrbitLocked(scene, planet) {
+        if (!scene || scene.name !== 'space' || !scene.ship?.isOrbitLocked || !planet) return;
+
+        const activeShip = typeof playerDataManager.getActiveShip === 'function'
+            ? playerDataManager.getActiveShip()
+            : null;
+        const missionId = activeShip?.assignedMissionId;
+        const missionData = missionId ? missionCatalogue[missionId] : null;
+        const isScanMission = missionData?.type === 'ORBIT_PLANET'
+            && this.planetMatchesMissionTarget(planet, missionData);
+
+        if (isScanMission) {
+            this.completeMission(scene);
+        } else if (!playerDataManager.isPlanetDiscovered(planet.id)) {
+            if (playerDataManager.markPlanetSurveyed(planet.id)) {
+                console.log(`World catalogued from orbit: ${planet.name}`);
+                if (typeof notificationManager !== 'undefined') {
+                    notificationManager.showPlanetDiscovery(planet);
+                }
+            }
+        }
+    }
+
     acceptMission(missionId, shipId = null) {
         // Check if the mission we're trying to accept is actually available.
         const missionExists = this.availableMissions.some(m => m.id === missionId);
@@ -154,10 +250,8 @@ class MissionManager {
                 break;
 
             case 'ORBIT_PLANET':
-                // For this type, completion happens when orbiting the correct planet.
-                //const targetPlanet = celestialBodies[missionData.destinationPlanetIndex];
-                if (scene.name === 'space' && scene.ship && scene.ship.isOrbitLocked && scene.ship.orbitingPlanet) {
-                    isCompleted = true;
+                if (scene.name === 'space' && scene.ship?.isOrbitLocked && scene.ship.orbitingPlanet) {
+                    isCompleted = this.planetMatchesMissionTarget(scene.ship.orbitingPlanet, missionData);
                 }
                 break;
 
@@ -194,6 +288,11 @@ class MissionManager {
 
         // If any of the conditions above were met, finalize the mission.
         if (isCompleted) {
+            let discoveryBonusPaid = 0;
+            if (missionData.type === 'ORBIT_PLANET' && scene.ship?.orbitingPlanet) {
+                discoveryBonusPaid = this.applySurveyDiscovery(scene.ship.orbitingPlanet, missionData);
+            }
+
             playerDataManager.credit(
                 missionData.reward,
                 FINANCE_CATEGORIES.MISSION,
@@ -228,8 +327,13 @@ class MissionManager {
             }
             console.log(`Mission "${missionData.title}" completed! Player earned ${missionData.reward} credits.`);
 
-            // We'll use a simple alert for now to notify the player.
-            alert(`Mission Complete: ${missionData.title}\n\nReward: ¢ ${missionData.reward.toLocaleString()}`);
+            let alertMessage = `Mission Complete: ${missionData.title}\n\nContract reward: ¢ ${missionData.reward.toLocaleString()}`;
+            if (discoveryBonusPaid > 0) {
+                alertMessage += `\nDiscovery bonus: ¢ ${discoveryBonusPaid.toLocaleString()}`;
+                const planetName = scene.ship?.orbitingPlanet?.name || 'Unknown world';
+                alertMessage += `\n\n${planetName} is now surveyed.`;
+            }
+            alert(alertMessage);
         }
 
         // In the future, you could add checks here, like:

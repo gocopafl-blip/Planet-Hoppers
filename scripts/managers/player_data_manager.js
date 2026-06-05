@@ -52,6 +52,7 @@ class PlayerDataManager {
         });
 
         if (this.migratePlanetDiscoveryData()) changed = true;
+        if (this.migrateStarterDiscoveredPlanets()) changed = true;
 
         if (changed) {
             console.log('Player save migrated to current schema.');
@@ -135,6 +136,98 @@ class PlayerDataManager {
         const planets = this.data?.worldState?.planets;
         if (!Array.isArray(planets)) return [];
         return planets.filter(p => p && this.getPlanetDiscoveryStatus(p.id) === status);
+    }
+
+    /** One-time migration: if no worlds are known yet, survey the two nearest to the saved hub. */
+    migrateStarterDiscoveredPlanets() {
+        const planets = this.data?.worldState?.planets;
+        const hub = this.data?.worldState?.hubPosition;
+        if (!Array.isArray(planets) || planets.length === 0 || !hub) return false;
+
+        const anyKnown = planets.some(p => p && this.isPlanetDiscovered(p.id));
+        if (anyKnown) return false;
+
+        const nearest = [...planets]
+            .filter(p => p && p.id)
+            .sort((a, b) => {
+                const da = Math.hypot(a.x - hub.x, a.y - hub.y);
+                const db = Math.hypot(b.x - hub.x, b.y - hub.y);
+                return da - db;
+            })
+            .slice(0, STARTER_DISCOVERED_PLANET_COUNT);
+
+        let changed = false;
+        nearest.forEach(p => {
+            if (this.setPlanetDiscoveryStatus(p.id, PLANET_DISCOVERY_STATUS.SURVEYED)) {
+                changed = true;
+            }
+        });
+        if (changed) {
+            console.log(`Discovery migration: marked ${nearest.length} hub-near worlds as surveyed.`);
+        }
+        return changed;
+    }
+
+    saveHubPosition(x, y) {
+        if (!this.data) return;
+        if (!this.data.worldState) {
+            this.data.worldState = { planets: null, lastGenerated: null, hubPosition: null };
+        }
+        this.data.worldState.hubPosition = { x, y };
+    }
+
+    /** Stable label for unsurveyed worlds — must match mission board and NAV (Phase 1.3). */
+    getUnknownSignalLabel(planet) {
+        if (!planet) return 'Unknown Signal';
+        return `Unknown Signal ${(planet.index ?? 0) + 1}`;
+    }
+
+    /** Planet IDs targeted by an accepted ORBIT_PLANET / scan contract on any fleet ship. */
+    getActiveSurveyTargetPlanetIds() {
+        const ids = new Set();
+        const addTarget = (missionId) => {
+            if (!missionId || !missionCatalogue[missionId]) return;
+            const mission = missionCatalogue[missionId];
+            if (mission.type !== 'ORBIT_PLANET') return;
+            const index = mission.destinationPlanetIndex;
+            if (index == null) return;
+            const record = this.data?.worldState?.planets?.find(p => p && p.index === index);
+            if (record?.id) ids.add(record.id);
+            const live = typeof celestialBodies !== 'undefined'
+                ? celestialBodies.find(p => p && p.index === index)
+                : null;
+            if (live?.id) ids.add(live.id);
+        };
+
+        (this.data?.fleet || []).forEach(ship => addTarget(ship?.assignedMissionId));
+        addTarget(this.getActiveMissionId());
+        return ids;
+    }
+
+    /** True once a world is surveyed or unlocked as a cargo destination. */
+    isPlanetDiscovered(planetId) {
+        return this.getPlanetDiscoveryStatus(planetId) !== PLANET_DISCOVERY_STATUS.UNDISCOVERED;
+    }
+
+    /** Nav / radar visibility: hidden | survey_target | discovered */
+    getPlanetNavState(planet) {
+        if (!planet?.id) return 'hidden';
+        if (this.isPlanetDiscovered(planet.id)) return 'discovered';
+        if (this.getActiveSurveyTargetPlanetIds().has(planet.id)) return 'survey_target';
+        return 'hidden';
+    }
+
+    getPlanetNavLabel(planet) {
+        if (!planet) return '';
+        const state = this.getPlanetNavState(planet);
+        if (state === 'discovered') return planet.name;
+        if (state === 'survey_target') return this.getUnknownSignalLabel(planet);
+        return '';
+    }
+
+    /** @deprecated Use getPlanetNavLabel for map UI */
+    getPlanetDisplayName(planet) {
+        return this.getPlanetNavLabel(planet) || this.getUnknownSignalLabel(planet);
     }
 
     syncLivePlanetDiscoveryStatus(planetId, status) {

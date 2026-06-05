@@ -12,9 +12,9 @@ function getNewPlayerData() {
 
         // World State - planets and environment (ADDED for planet persistence)
         worldState: {
-            planets: null, // Will store generated planet data to maintain consistency
-            lastGenerated: null // Timestamp of when planets were generated
-            // Each planet entry may include discoveryStatus: undiscovered | surveyed | active_destination
+            planets: null,
+            lastGenerated: null,
+            hubPosition: null // { x, y } — station anchor for starter discovery migration
         },
 
         // Player's Fleet

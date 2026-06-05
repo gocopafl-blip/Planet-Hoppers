@@ -80,6 +80,14 @@ function isValidPlanetDiscoveryStatus(status) {
     return PLANET_DISCOVERY_STATUSES.includes(status);
 }
 
+/** Nav map blip sizes in world units (not planet physics radius). */
+const NAV_MAP_BLIP_RADIUS = 2200;
+const NAV_MAP_WAYPOINT_RING_RADIUS = 1000;
+const NAV_MAP_BLIP_HIT_RADIUS = 3500;
+
+/** Nearest worlds to the station marked surveyed on new universe generation. */
+const STARTER_DISCOVERED_PLANET_COUNT = 2;
+
 /** Cap consumables delta (tab backgrounded) so one frame cannot drain a full tank. */
 const CONSUMABLES_MAX_DELTA_SEC = 0.1;
 

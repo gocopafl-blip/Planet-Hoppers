@@ -37,10 +37,11 @@ const missionCatalogue = {
 
     "SCAN_PLANET_01": {
         title: "Scan Gas Giant",
-        description: "Travel to the gas giant designated Planet Zero and perform a full orbital scan.",
+        description: "Establish orbit and perform a full planetary scan.",
         reward: 750,
-        type: 'ORBIT_PLANET', // Our new mission type!
-        destinationPlanetIndex: 0, // The target is the first planet created (index 0).
+        type: 'ORBIT_PLANET',
+        destinationPlanetIndex: 0,
+        discoveryBonus: 250,
     },
 
     "LAND_ON_PLANET_01": {
