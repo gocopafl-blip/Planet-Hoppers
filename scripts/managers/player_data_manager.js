@@ -138,6 +138,26 @@ class PlayerDataManager {
         return planets.filter(p => p && this.getPlanetDiscoveryStatus(p.id) === status);
     }
 
+    /** Count of worlds in surveyed or active_destination state (Phase 1.4 unlock checks). */
+    getSurveyedWorldCount() {
+        const planets = this.data?.worldState?.planets;
+        if (!Array.isArray(planets)) return 0;
+        return planets.filter(p => p?.id && this.isPlanetDiscovered(p.id)).length;
+    }
+
+    /** Set of planetTypeId values among discovered worlds. */
+    getSurveyedPlanetTypeIds() {
+        const planets = this.data?.worldState?.planets;
+        const types = new Set();
+        if (!Array.isArray(planets)) return types;
+        planets.forEach(p => {
+            if (p?.planetTypeId && this.isPlanetDiscovered(p.id)) {
+                types.add(p.planetTypeId);
+            }
+        });
+        return types;
+    }
+
     /** One-time migration: if no worlds are known yet, survey the two nearest to the saved hub. */
     migrateStarterDiscoveredPlanets() {
         const planets = this.data?.worldState?.planets;

@@ -6,42 +6,63 @@ class MissionManager {
         this.availableMissions = [];
     }
 
-    // This is the main function to generate a new list of missions.
-    // In the future, this could get very complex (e.g., based on player level or location).
-    // For now, it will just pick a few random missions from our catalogue.
-    generateAvailableMissions(count = 5) {
-        // Clear the old list
-        this.availableMissions = [];
-
-        // Get a list of all possible mission IDs from our catalogue file.
-        const allMissionIds = Object.keys(missionCatalogue);
-
-        // Make sure we don't try to pick more missions than exist.
-        const numToGenerate = Math.min(count, allMissionIds.length);
-
-        while (this.availableMissions.length < numToGenerate) {
-            // Pick a random mission ID from the list.
-            const randomIndex = Math.floor(Math.random() * allMissionIds.length);
-            const randomMissionId = allMissionIds[randomIndex];
-
-            // --- Important Check! ---
-            // This ensures we don't add the same mission to the list twice.
-            const isAlreadyAdded = this.availableMissions.some(mission => mission.id === randomMissionId);
-
-            if (!isAlreadyAdded) {
-                // Find the full mission data from the catalogue.
-                const missionData = missionCatalogue[randomMissionId];
-
-                // Create a new object for our available list, including the unique ID.
-                this.availableMissions.push({
-                    id: randomMissionId,
-                    ...missionData // This copies all properties (title, reward, etc.)
-                });
-            }
-        }
+    // Lists every catalogue mission with locked/unlocked state (Phase 1.4).
+    generateAvailableMissions() {
+        this.availableMissions = Object.keys(missionCatalogue).map(missionId => {
+            const missionData = missionCatalogue[missionId];
+            const mission = { id: missionId, ...missionData };
+            const unlock = this.getMissionUnlockStatus(mission);
+            return {
+                ...mission,
+                unlocked: unlock.unlocked,
+                unlockHint: unlock.hint
+            };
+        }).sort((a, b) => {
+            if (a.unlocked !== b.unlocked) return a.unlocked ? -1 : 1;
+            return (a.reward || 0) - (b.reward || 0);
+        });
 
         console.log("Generated available missions:", this.availableMissions);
         return this.availableMissions;
+    }
+
+    formatPlanetType(planetTypeId) {
+        return PLANET_TYPE_LABELS[planetTypeId]
+            || String(planetTypeId || 'Unknown').replace(/_/g, ' ');
+    }
+
+    /** Returns { unlocked, hint } for mission board display and accept guards. */
+    getMissionUnlockStatus(mission) {
+        const req = mission?.requires;
+        if (!req) return { unlocked: true, hint: '' };
+
+        const missing = [];
+
+        if (req.minSurveyedWorlds != null) {
+            const count = playerDataManager.getSurveyedWorldCount();
+            if (count < req.minSurveyedWorlds) {
+                missing.push(
+                    `Survey ${req.minSurveyedWorlds} worlds (${count}/${req.minSurveyedWorlds} catalogued)`
+                );
+            }
+        }
+
+        if (Array.isArray(req.surveyedPlanetTypes) && req.surveyedPlanetTypes.length > 0) {
+            const surveyedTypes = playerDataManager.getSurveyedPlanetTypeIds();
+            const hasMatch = req.surveyedPlanetTypes.some(typeId => surveyedTypes.has(typeId));
+            if (!hasMatch) {
+                const labels = req.surveyedPlanetTypes.map(t => this.formatPlanetType(t));
+                const typeList = labels.length <= 2
+                    ? labels.join(' or ')
+                    : `${labels.slice(0, -1).join(', ')}, or ${labels[labels.length - 1]}`;
+                missing.push(`Survey a solid-surface world (${typeList})`);
+            }
+        }
+
+        return {
+            unlocked: missing.length === 0,
+            hint: missing.join(' · ')
+        };
     }
 
     getCelestialBodies() {
@@ -140,6 +161,18 @@ class MissionManager {
     }
 
     acceptMission(missionId, shipId = null) {
+        const catalogueEntry = missionCatalogue[missionId];
+        if (!catalogueEntry) {
+            console.error(`Attempted to accept unknown mission: ${missionId}`);
+            return;
+        }
+
+        const unlock = this.getMissionUnlockStatus({ id: missionId, ...catalogueEntry });
+        if (!unlock.unlocked) {
+            console.warn(`Cannot accept locked mission: ${missionId} — ${unlock.hint}`);
+            return;
+        }
+
         // Check if the mission we're trying to accept is actually available.
         const missionExists = this.availableMissions.some(m => m.id === missionId);
         if (!missionExists) {

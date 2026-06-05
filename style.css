@@ -592,6 +592,39 @@ button:hover {
     padding: 15px;
     margin-bottom: 10px;
     border-radius: 5px;
+    position: relative;
+}
+
+.mission-item.mission-locked {
+    background-color: rgba(8, 16, 24, 0.88);
+    border-color: #3a4550;
+    opacity: 0.92;
+}
+
+.mission-item.mission-locked h3,
+.mission-item.mission-locked p {
+    color: #9aa8b8;
+}
+
+.mission-lock-badge {
+    display: inline-block;
+    font-size: 0.65em;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: #1a1a1a;
+    background: #888;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.mission-unlock-hint {
+    color: #ffb347 !important;
+    font-size: 0.9em;
+    font-style: italic;
+    border-left: 3px solid #ffb347;
+    padding-left: 10px;
+    margin-top: 4px !important;
 }
 
 .mission-item h3 {

@@ -2,15 +2,7 @@
 //
 // Lightweight toast / banner notifications. Planet discovery uses showPlanetDiscovery()
 // — later this can evolve into a full dossier modal without changing call sites.
-
-const PLANET_TYPE_LABELS = {
-    gas_giant: 'Gas Giant',
-    terran_world: 'Terran World',
-    water_world: 'Water World',
-    ice_world: 'Ice World',
-    city_world: 'City World',
-    volcanic_world: 'Volcanic World'
-};
+// Planet type labels: PLANET_TYPE_LABELS in constants.js
 
 /** Satirical one-liners keyed by planetTypeId — teaser for future dossier pop-ups. */
 const PLANET_DISCOVERY_FLAVOR = {

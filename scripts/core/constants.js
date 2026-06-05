@@ -88,6 +88,16 @@ const NAV_MAP_BLIP_HIT_RADIUS = 3500;
 /** Nearest worlds to the station marked surveyed on new universe generation. */
 const STARTER_DISCOVERED_PLANET_COUNT = 2;
 
+/** Human-readable planet type labels for mission unlock hints. */
+const PLANET_TYPE_LABELS = {
+    gas_giant: 'Gas Giant',
+    terran_world: 'Terran World',
+    water_world: 'Water World',
+    ice_world: 'Ice World',
+    city_world: 'City World',
+    volcanic_world: 'Volcanic World'
+};
+
 /** Cap consumables delta (tab backgrounded) so one frame cannot drain a full tank. */
 const CONSUMABLES_MAX_DELTA_SEC = 0.1;
 
