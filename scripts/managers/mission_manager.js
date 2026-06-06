@@ -152,6 +152,64 @@ class MissionManager {
         return planet.id === target.id || planet.index === target.index;
     }
 
+    missionHasExplicitPlanetTarget(missionData) {
+        return missionData.hubPlanetRank != null
+            || missionData.firstUndiscoveredRank != null
+            || missionData.destinationPlanetIndex != null
+            || !!missionData.destinationPlanetId;
+    }
+
+    planetTypeQualifies(planet, missionData) {
+        if (!planet) return false;
+        if (missionData.requiredPlanetTypeId) {
+            return planet.planetTypeId === missionData.requiredPlanetTypeId;
+        }
+        if (missionData.type === 'PICK_UP_CARGO' && missionData.requires?.surveyedPlanetTypes?.length) {
+            return missionData.requires.surveyedPlanetTypes.includes(planet.planetTypeId);
+        }
+        return true;
+    }
+
+    /** Landing site must be a surveyed world (or explicit mission target) with optional type filter. */
+    landerPlanetQualifies(planet, missionData) {
+        if (!planet?.id) return false;
+        if (this.missionHasExplicitPlanetTarget(missionData)) {
+            if (!this.planetMatchesMissionTarget(planet, missionData)) return false;
+        } else if (!playerDataManager.isPlanetDiscovered(planet.id)) {
+            return false;
+        }
+        return this.planetTypeQualifies(planet, missionData);
+    }
+
+    padQualifies(padId, missionData) {
+        if (missionData.requiredPadId == null) return true;
+        return padId === missionData.requiredPadId;
+    }
+
+    landerLandingQualifies(scene, missionData) {
+        if (!scene || scene.gameState !== 'landed') return false;
+        if (!this.landerPlanetQualifies(scene.planet, missionData)) return false;
+        return this.padQualifies(scene.landedPadId, missionData);
+    }
+
+    getMissionRequirementTags(mission) {
+        const tags = [];
+        const target = this.getMissionTargetPlanet(mission);
+        if (target?.planetTypeId) {
+            tags.push(this.formatPlanetType(target.planetTypeId));
+        } else if (mission.requiredPlanetTypeId) {
+            tags.push(this.formatPlanetType(mission.requiredPlanetTypeId));
+        }
+        if (target?.dangerLevel != null) {
+            tags.push(`Hazard ${target.dangerLevel}/10`);
+        }
+        if (mission.requiredPadId != null) {
+            const isGas = (target?.planetTypeId || mission.requiredPlanetTypeId) === 'gas_giant';
+            tags.push(isGas ? `Cloud Port ${mission.requiredPadId}` : `Pad ${mission.requiredPadId}`);
+        }
+        return tags;
+    }
+
     formatMissionDescription(mission) {
         if (!mission) return '';
 
@@ -182,6 +240,11 @@ class MissionManager {
         if (mission.timeLimitSec) {
             const mins = Math.round(mission.timeLimitSec / 60);
             parts.push(`Time limit: ${mins} min from accept.`);
+        }
+
+        if (mission.requiredPadId != null) {
+            const isGas = mission.requiredPlanetTypeId === 'gas_giant';
+            parts.push(`Required: ${isGas ? 'Cloud Port' : 'Pad'} ${mission.requiredPadId}.`);
         }
 
         return parts.filter(Boolean).join(' ');
@@ -308,6 +371,123 @@ class MissionManager {
         this.notifyCargoAcquired(missionData);
     }
 
+    onLanderTouchdown(scene) {
+        if (!scene || scene.gameState !== 'landed') return;
+
+        const activeShip = playerDataManager.getActiveShip?.();
+        if (!activeShip?.assignedMissionId) return;
+
+        const missionData = missionCatalogue[activeShip.assignedMissionId];
+        if (!missionData) return;
+
+        const landTypes = ['LAND_ON_PLANET', 'PICK_UP_CARGO'];
+        const isFetchLand = missionData.type === 'FETCH_AND_DELIVER' && missionData.pickupAt === 'land';
+        if (!landTypes.includes(missionData.type) && !isFetchLand) return;
+
+        if (!this.landerPlanetQualifies(scene.planet, missionData)) {
+            this.notifyLanderMismatch('Wrong world — this contract targets a different planet.');
+            return;
+        }
+        if (!this.padQualifies(scene.landedPadId, missionData)) {
+            const padLabel = missionData.requiredPadId;
+            this.notifyLanderMismatch(`Wrong landing pad — contract requires Pad ${padLabel}.`);
+        }
+    }
+
+    notifyLanderMismatch(message) {
+        if (typeof notificationManager !== 'undefined') {
+            notificationManager.show({
+                title: 'Contract Mismatch',
+                bodyHtml: `<p>${this.escapeHtml(message)}</p><p>Safe landing, but payout waits until requirements are met.</p>`,
+                variant: 'discovery',
+                durationMs: 8000,
+                dismissible: true
+            });
+        } else {
+            alert(message);
+        }
+    }
+
+    /** True when a lander crash should void the ship's active contract. */
+    landerCrashVoidsMission(missionData, missionState) {
+        if (!missionData) return false;
+        switch (missionData.type) {
+            case 'LAND_ON_PLANET':
+                return true;
+            case 'PICK_UP_CARGO':
+                return true;
+            case 'FETCH_AND_DELIVER':
+                return missionData.pickupAt === 'land' && !missionState?.hasPickedUpCargo;
+            default:
+                return false;
+        }
+    }
+
+    getCrashContractFailureLine(missionData, missionState) {
+        if (!missionData) return '';
+        const title = this.escapeHtml(missionData.title);
+        if (missionState?.hasPickedUpCargo) {
+            return ` Contract <strong>${title}</strong> failed — cargo lost in the crash.`;
+        }
+        switch (missionData.type) {
+            case 'FETCH_AND_DELIVER':
+            case 'PICK_UP_CARGO':
+                return ` Contract <strong>${title}</strong> failed — surface pickup incomplete.`;
+            case 'LAND_ON_PLANET':
+                return ` Contract <strong>${title}</strong> failed — designated landing not completed.`;
+            default:
+                return '';
+        }
+    }
+
+    handleLanderCrash(scene) {
+        const activeShip = playerDataManager.getActiveShip?.();
+        const missionId = activeShip?.assignedMissionId;
+        const missionData = missionId ? missionCatalogue[missionId] : null;
+        const missionState = activeShip?.missionState || {};
+
+        const paid = playerDataManager.spend(
+            DROP_SHIP_REPLACEMENT_COST,
+            FINANCE_CATEGORIES.REPAIR,
+            'Drop ship replacement after crash',
+            { crash: true, shipId: activeShip?.id ?? null }
+        );
+
+        if (activeShip?.equippedDropShips?.[0]) {
+            activeShip.equippedDropShips[0].state = 'operational';
+        }
+
+        const voidsMission = this.landerCrashVoidsMission(missionData, missionState);
+        if (voidsMission && missionId && activeShip) {
+            playerDataManager.clearShipMission(activeShip.id);
+        } else {
+            playerDataManager.saveData();
+        }
+
+        let bodyHtml = '<p>Drop ship destroyed.';
+        if (paid) {
+            bodyHtml += ` Replacement billed: ¢${DROP_SHIP_REPLACEMENT_COST.toLocaleString()}.`;
+        } else {
+            bodyHtml += ' Insufficient balance for replacement — station will invoice you.';
+        }
+        if (voidsMission) {
+            bodyHtml += this.getCrashContractFailureLine(missionData, missionState);
+        }
+        bodyHtml += '</p><p>You are returning to mothership orbit.</p>';
+
+        if (typeof notificationManager !== 'undefined') {
+            notificationManager.show({
+                title: 'Crash — Drop Ship Lost',
+                bodyHtml,
+                variant: 'discovery',
+                durationMs: 0,
+                dismissible: true
+            });
+        } else {
+            alert(bodyHtml.replace(/<[^>]+>/g, ' '));
+        }
+    }
+
     getMissionTypeLabel(mission) {
         if (!mission?.type) return '';
         const labels = {
@@ -429,43 +609,20 @@ class MissionManager {
     }
     // Checks for and completes the player's active mission.
     completeMission(scene) {
-        // --- Diagnostic Safeguard ---
         if (!scene) {
             console.warn("completeMission was called without a valid scene. Ignoring.");
             return;
         }
 
-        // Diagnostic: Print full fleet and their mission assignments
-        if (typeof playerDataManager.getFleet === 'function') {
-            const fleet = playerDataManager.getFleet();
-            if (Array.isArray(fleet)) {
-                console.log('[MissionManager] Fleet mission assignments:', fleet.map(ship => ({
-                    id: ship.id,
-                    name: ship.name,
-                    assignedMissionId: ship.assignedMissionId,
-                    missionState: ship.missionState
-                })));
-            }
-        }
-
-        // Prefer per-ship assigned mission (new flow). Fallback to legacy active mission.
         const activeShip = typeof playerDataManager.getActiveShip === 'function' ? playerDataManager.getActiveShip() : null;
         const shipMissionId = activeShip && activeShip.assignedMissionId ? activeShip.assignedMissionId : null;
         const usingPerShip = !!shipMissionId;
-        const activeMissionId = shipMissionId || playerDataManager.getActiveMissionId();
-        // GUARD: If per-ship, and assignedMissionId is already null, do not proceed (prevents repeated completion)
         if (usingPerShip && (!activeShip || !activeShip.assignedMissionId)) {
-            // Already cleared, do not repeat completion
             return;
         }
+
+        const activeMissionId = shipMissionId || playerDataManager.getActiveMissionId();
         if (!activeMissionId) return;
-        console.log('[MissionManager] completeMission start', {
-            scene: scene.name,
-            usingPerShip,
-            activeShipId: activeShip ? activeShip.id : null,
-            shipMissionId,
-            globalActiveMissionId: playerDataManager.getActiveMissionId ? playerDataManager.getActiveMissionId() : null
-        });
 
         // 2. Find the mission's data in our master catalogue.
         const missionData = missionCatalogue[activeMissionId];
@@ -510,7 +667,7 @@ class MissionManager {
                 break;
 
             case 'LAND_ON_PLANET':
-                if (scene.name === 'lander' && scene.gameState === 'landed') {
+                if (this.landerLandingQualifies(scene, missionData)) {
                     isCompleted = true;
                 }
                 break;
@@ -519,13 +676,11 @@ class MissionManager {
                 let fetchState = getMissionState();
                 if (scene.name === 'lander' && scene.gameState === 'landed'
                     && missionData.pickupAt === 'land'
-                    && !fetchState.hasPickedUpCargo) {
-                    const landPlanet = scene.planet;
-                    if (landPlanet && this.planetMatchesMissionTarget(landPlanet, missionData)) {
-                        updateMissionState({ hasPickedUpCargo: true });
-                        this.notifyCargoAcquired(missionData);
-                        fetchState = getMissionState();
-                    }
+                    && !fetchState.hasPickedUpCargo
+                    && this.landerLandingQualifies(scene, missionData)) {
+                    updateMissionState({ hasPickedUpCargo: true });
+                    this.notifyCargoAcquired(missionData);
+                    fetchState = getMissionState();
                 }
                 if (scene.name === 'space' && fetchState.hasPickedUpCargo && scene.ship?.isDocked) {
                     isCompleted = true;
@@ -535,7 +690,8 @@ class MissionManager {
 
             case 'PICK_UP_CARGO': {
                 let cargoState = getMissionState();
-                if (scene.name === 'lander' && scene.gameState === 'landed' && !cargoState.hasPickedUpCargo) {
+                if (scene.name === 'lander' && scene.gameState === 'landed' && !cargoState.hasPickedUpCargo
+                    && this.landerLandingQualifies(scene, missionData)) {
                     updateMissionState({ hasPickedUpCargo: true });
                     this.notifyCargoAcquired({
                         pickupLine: 'Survey sample secured. Return to the station and dock to collect payout.'
@@ -568,28 +724,15 @@ class MissionManager {
             );
             if (usingPerShip && activeShip) {
                 if (typeof playerDataManager.clearShipMission === 'function') {
-                    console.log('[MissionManager] Clearing per-ship mission', { shipId: activeShip.id, missionId: activeShip.assignedMissionId });
                     playerDataManager.clearShipMission(activeShip.id);
-                    const postClearShip = typeof playerDataManager.getShipById === 'function' ? playerDataManager.getShipById(activeShip.id) : null;
-                    if (postClearShip) {
-                        console.log('[MissionManager] Post-clear ship state', { assignedMissionId: postClearShip.assignedMissionId });
-                        if (!postClearShip.assignedMissionId) {
-                            console.log('[MissionManager] Mission successfully cleared for ship', postClearShip.id);
-                        } else {
-                            console.warn('[MissionManager] Mission NOT cleared for ship', postClearShip.id, postClearShip.assignedMissionId);
-                        }
-                    }
                 } else {
-                    // Fallback if helper isn't present
                     activeShip.assignedMissionId = null;
                     activeShip.missionState = null;
                     if (typeof playerDataManager.saveData === 'function') playerDataManager.saveData();
                 }
             } else {
-                console.log('[MissionManager] Clearing legacy global active mission');
                 playerDataManager.setActiveMissionId(null);
             }
-            console.log(`Mission "${missionData.title}" completed! Player earned ${missionData.reward} credits.`);
 
             if (missionData.oneTime) {
                 playerDataManager.markMissionCompleted(activeMissionId);

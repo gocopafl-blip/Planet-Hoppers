@@ -10,7 +10,7 @@
 1. **Game type:** Progression cargo explorer — start small, grow ships & gear, discover worlds, unlock routes & surprises, eventually chart the whole sector (including alien trade).
 2. **First “wow” we’re building toward:** **Discovery** — find something weird (new planet, wreck, alien signal), unlock new work, not just “hard landing.”
 3. **Playtest:** Go Live → `http://127.0.0.1:5500` — see [PLAYTESTING.md](PLAYTESTING.md).
-4. **Next recommended build slice:** **Phase 1B.3** — lander stakes (designated pads, planet-type cargo, crash flow). Partial **2.4** mission board meta (danger/pad hints) can trail with 1B.3.
+4. **Next recommended build slice:** **Phase 1B.4** — UI coherence (unified mission-complete banners, station subtitles) or **Phase 2.6** Era 2 mission pack.
 5. **Key code areas:** missions → `mission_manager.js`, `mission_catalogue.js` · planets → `planet_catalogue.js`, `planet_manager.js` · lander → `lander_scene.js` · dock/money → `player_data_manager.js`, station scenes · fleet → `fleet_manager_scene.js`, `fleet_manager.js` · notifications → `notification_manager.js` · onboarding → `index.html`, `main.js`, start/menu scenes.
 
 ---
@@ -119,10 +119,11 @@ Build in this order (each slice is playable before the next):
 
 *Pull forward from Phase 2 — this is what makes Era 1 missions feel like a game, not a menu.*
 
-- [ ] **2.1 Designated pad missions** — Mission requires specific pad id; any pad no longer auto-wins.
-- [ ] **2.2 Planet-type cargo** — Jobs tied to `water_world`, `ice_world`, `volcanic_world`, etc.
-- [ ] **2.3 Lander failure flow** — Crash → return to **orbiting mothership**; drop ship replacement cost + cargo penalty.
-- [ ] **2.4 Mission board UX** — Payout, issuer, planet type, pad requirement, danger hint, locked progress (extends 1.4).
+- [x] **2.1 Designated pad missions** — `requiredPadId` on land contracts; wrong pad = safe landing but no payout + mismatch banner.
+- [x] **2.2 Planet-type cargo** — `requiredPlanetTypeId` / `requires.surveyedPlanetTypes` gate sample and land missions by world type.
+- [x] **2.3 Lander failure flow** — Crash → return to **orbiting mothership** (not dock); `DROP_SHIP_REPLACEMENT_COST` + contract failed.
+- [x] **2.3b Crash contract rules** — Only lander-relevant contracts void on crash; cargo loss copy when cargo was aboard; scan/orbit jobs survive an unrelated drop-ship crash.
+- [x] **2.4 Mission board UX** — Requirement tags: planet type, hazard, pad id on mission cards.
 
 #### 1B.4 UI coherence (light touch)
 

@@ -790,6 +790,18 @@ button:hover {
     padding: 2px 8px;
 }
 
+.mission-req-tag {
+    display: inline-block;
+    font-size: 0.65em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #ffd4a0;
+    border: 1px solid rgba(255, 179, 71, 0.4);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-left: 4px;
+}
+
 .mission-briefing {
     line-height: 1.45;
     color: #d0e8f8 !important;

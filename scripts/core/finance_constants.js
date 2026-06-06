@@ -25,3 +25,6 @@ const FINANCE_LEDGER_MAX_ENTRIES = 250;
 
 /** First-time survey payout when a scan/orbit mission marks a planet surveyed (Phase 1.2). */
 const DISCOVERY_FIRST_SURVEY_BONUS = 250;
+
+/** Billed when a drop ship is destroyed on landing (Phase 1B.3). */
+const DROP_SHIP_REPLACEMENT_COST = 750;

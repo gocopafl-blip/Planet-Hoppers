@@ -258,6 +258,9 @@ const missionBoardScene = {
             const briefing = mm.escapeHtml(mm.formatMissionDescription(mission));
             const typeLabel = mm.escapeHtml(mission.flavorTag || mm.getMissionTypeLabel(mission));
             const unlockHint = mm.escapeHtml(mission.unlockHint || '');
+            const reqTags = mm.getMissionRequirementTags(mission)
+                .map(t => `<span class="mission-req-tag">${mm.escapeHtml(t)}</span>`)
+                .join('');
 
             const missionElement = document.createElement('div');
             missionElement.className = mission.unlocked ? 'mission-item' : 'mission-item mission-locked';
@@ -265,7 +268,10 @@ const missionBoardScene = {
                 ${mission.unlocked ? '' : '<span class="mission-lock-badge">LOCKED</span>'}
                 <p class="mission-issuer">${issuer}</p>
                 <h3>${title}</h3>
-                <div class="mission-tags"><span class="mission-type-tag">${typeLabel}</span></div>
+                <div class="mission-tags">
+                    <span class="mission-type-tag">${typeLabel}</span>
+                    ${reqTags}
+                </div>
                 <p class="mission-briefing">${briefing}</p>
                 ${mission.unlocked ? '' : `<p class="mission-unlock-hint">Unlock: ${unlockHint}</p>`}
                 <div class="mission-footer">

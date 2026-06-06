@@ -262,14 +262,20 @@ class PlayerDataManager {
             if (!missionId || !missionCatalogue[missionId]) return;
             const mission = missionCatalogue[missionId];
             if (mission.type !== 'ORBIT_PLANET') return;
-            const index = mission.destinationPlanetIndex;
-            if (index == null) return;
-            const record = this.data?.worldState?.planets?.find(p => p && p.index === index);
-            if (record?.id) ids.add(record.id);
-            const live = typeof celestialBodies !== 'undefined'
-                ? celestialBodies.find(p => p && p.index === index)
-                : null;
-            if (live?.id) ids.add(live.id);
+
+            let planet = null;
+            if (typeof missionManager !== 'undefined'
+                && typeof missionManager.getMissionTargetPlanet === 'function') {
+                planet = missionManager.getMissionTargetPlanet(mission);
+            } else if (mission.destinationPlanetIndex != null) {
+                const index = mission.destinationPlanetIndex;
+                planet = (typeof celestialBodies !== 'undefined'
+                    ? celestialBodies.find(p => p && p.index === index)
+                    : null)
+                    || this.data?.worldState?.planets?.find(p => p && p.index === index)
+                    || null;
+            }
+            if (planet?.id) ids.add(planet.id);
         };
 
         (this.data?.fleet || []).forEach(ship => addTarget(ship?.assignedMissionId));

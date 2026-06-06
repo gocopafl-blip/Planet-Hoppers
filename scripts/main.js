@@ -421,9 +421,11 @@ function setupEventListeners() {
                 delete settings.dispatchMode;
                 gameManager.switchScene(gameManager.getSpaceScene(), { returnFromLander: true });
             } else {
-                // CRASHED: Return to spacedock scene (no state preservation needed)
-                console.log('Lander mission failed, returning to spacedock');
-                gameManager.switchScene(spaceDockScene);
+                console.log('Lander crash — returning to mothership orbit');
+                missionManager.handleLanderCrash(landerScene);
+                delete settings.fromFleetManager;
+                delete settings.dispatchMode;
+                gameManager.switchScene(gameManager.getSpaceScene(), { returnFromLander: true });
             }
         }
     });

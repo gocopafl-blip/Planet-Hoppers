@@ -251,17 +251,28 @@ const landerScene = {
     },
 
     isOnAnyPad() {
-        if (!this.lander || !this.terrain?.pads) return false;
+        return this.getPadUnderLander() != null;
+    },
+
+    getPadUnderLander() {
+        if (!this.lander || !this.terrain) return null;
         const bottom = this.lander.y + this.lander.height / 2;
-        if (this.terrain.mode === 'gas') {
-            return this.terrain.floatingPads.some(pad =>
-                this.lander.x >= pad.x && this.lander.x <= pad.x + pad.width &&
-                bottom >= pad.y - 4 && bottom <= pad.y + pad.height + 10
-            );
+        if (this.terrain.mode === 'gas' && this.terrain.floatingPads) {
+            for (const pad of this.terrain.floatingPads) {
+                if (this.lander.x >= pad.x && this.lander.x <= pad.x + pad.width
+                    && bottom >= pad.y - 4 && bottom <= pad.y + pad.height + 10) {
+                    return pad.id;
+                }
+            }
+            return null;
         }
-        return this.terrain.pads.some(pad =>
-            this.lander.x > pad.padStart && this.lander.x < pad.padEnd
-        );
+        if (!this.terrain.pads) return null;
+        for (const pad of this.terrain.pads) {
+            if (this.lander.x > pad.padStart && this.lander.x < pad.padEnd) {
+                return pad.id;
+            }
+        }
+        return null;
     },
     triggerCrash() {
         if (!this.lander.crashed) {
@@ -389,7 +400,7 @@ const landerScene = {
         if (this.gameState === 'landed' || this.gameState === 'crashed') {
             ctx.font = '20px "Consolas", "Courier New", "Monaco", monospace';
             ctx.fillStyle = '#fff';
-            const returnText = this.gameState === 'landed' ? 'Click to return to ship' : 'Click to return to menu';
+            const returnText = this.gameState === 'landed' ? 'Click to return to ship' : 'Click to return to mothership';
             ctx.fillText(returnText, canvas.width / 2, canvas.height / 2 + 40);
         }
     },
@@ -464,7 +475,9 @@ const landerScene = {
                 const upright = Math.abs(this.lander.angle - (-Math.PI / 2)) < 0.2;
                 if (onPad && safeSpeed && upright) {
                     this.gameState = 'landed';
+                    this.landedPadId = this.getPadUnderLander();
                     if (typeof thrusterSound !== 'undefined' && thrusterSound && thrusterSound.isLoaded) thrusterSound.pause();
+                    missionManager.onLanderTouchdown(this);
                 } else { this.triggerCrash(); }
             }
             /*const zoomOutZone = { left: this.terrain.padStart - canvas.width * 0.2, right: this.terrain.padEnd + canvas.width * 0.2 };
@@ -529,6 +542,7 @@ const landerScene = {
         }
         
         this.planet = settings.planet || null;
+        this.landedPadId = null;
         this.windPhase = Math.random() * Math.PI * 2;
         this.windStreaks = [];
         this.windSignHistory = [];

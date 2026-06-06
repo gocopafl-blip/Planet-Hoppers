@@ -138,12 +138,13 @@ const missionCatalogue = {
         sortOrder: 70,
         issuer: "Geological Survey Office",
         title: "Insured Survey Gear Drop",
-        briefing: "GSO will not insure drop-ship deliveries until you've catalogued enough nearby worlds. Once cleared: launch, land at any surveyed outpost pad, and offload the seismic kit.",
+        briefing: "GSO will not insure drop-ship deliveries until you've catalogued enough nearby worlds. Launch, land at Survey Outpost Pad 1 on any catalogued solid world, and offload the seismic kit.",
         flavorTag: "Surface drop",
         reward: 1500,
         type: 'LAND_ON_PLANET',
+        requiredPadId: 1,
         requires: { minSurveyedWorlds: 3 },
-        completionLine: "GSO confirms gear on surface. Lander ops billable from here on.",
+        completionLine: "GSO confirms gear on Pad 1. Lander ops billable from here on.",
     },
 
     "PICK_UP_CARGO_01": {
