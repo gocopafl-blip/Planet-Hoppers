@@ -148,6 +148,8 @@ class SpaceScene {
         // TASK 6.1: Load all fleet ships for visualization
         this.loadFleetShips();
 
+        missionManager.onActiveShipEnterSpace(this);
+
         canvas.style.display = 'block';
         //zoomControls.style.display = 'flex';
     }
@@ -162,6 +164,8 @@ class SpaceScene {
         document.getElementById('request-tow-ui').style.display = 'none';
         document.getElementById('launch-ui').style.display = 'none';
         document.getElementById('player-hud').style.display = 'none';
+        const missionTimer = document.getElementById('mission-timer');
+        if (missionTimer) missionTimer.style.display = 'none';
     }
 
     handleFleetDispatch(dispatchMode) {
@@ -857,6 +861,7 @@ class SpaceScene {
         const wantsToMove = this.ship.thrusting || this.ship.reversing || this.ship.strafingLeft || this.ship.strafingRight;
         if (this.ship.isDocked && wantsToMove) {
             this.ship.isDocked = false;
+            missionManager.onShipUndocked(this);
         }
 
         this.ship.update();
@@ -928,6 +933,8 @@ class SpaceScene {
 
         this.camera.update();
         this.navScreen.update();
+        missionManager.updateMissionTimer(this);
+        missionManager.updateMissionTimerHUD();
 
         /*    if (this.ship.isDocked) {
                  this.orbitData = null;

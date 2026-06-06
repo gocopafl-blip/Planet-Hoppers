@@ -10,7 +10,7 @@
 1. **Game type:** Progression cargo explorer — start small, grow ships & gear, discover worlds, unlock routes & surprises, eventually chart the whole sector (including alien trade).
 2. **First “wow” we’re building toward:** **Discovery** — find something weird (new planet, wreck, alien signal), unlock new work, not just “hard landing.”
 3. **Playtest:** Go Live → `http://127.0.0.1:5500` — see [PLAYTESTING.md](PLAYTESTING.md).
-4. **Next recommended build slice:** **Phase 1B — Story, missions & game feel** (below). Phase 1 discovery mechanics are shipped; anomalies (1.5) deferred until they can be *special* (derelict, exotic world, black hole, alien mothership).
+4. **Next recommended build slice:** **Phase 1B.3** — lander stakes (designated pads, planet-type cargo, crash flow). Partial **2.4** mission board meta (danger/pad hints) can trail with 1B.3.
 5. **Key code areas:** missions → `mission_manager.js`, `mission_catalogue.js` · planets → `planet_catalogue.js`, `planet_manager.js` · lander → `lander_scene.js` · dock/money → `player_data_manager.js`, station scenes · fleet → `fleet_manager_scene.js`, `fleet_manager.js` · notifications → `notification_manager.js` · onboarding → `index.html`, `main.js`, start/menu scenes.
 
 ---
@@ -107,18 +107,13 @@ Build in this order (each slice is playable before the next):
 
 #### 1B.1 Narrative frame (intro & continuity)
 
-- [ ] **Intro / backstory screen** — Before first dock: short holo briefing. Communicate: you’re a **contract hauler** in an under-charted sector; the **StarHopper** (or starter ship) is company-issue / repo salvage; the station needs runners; **your job is to survey, deliver, and expand reach** — discovery is the path to better contracts. One screen + “Begin contract” (not a wall of text).
-- [ ] **Load Game vs New Game** — Pull forward from 6.2: continue save or fresh universe with confirm reset.
-- [ ] **Issuer voice on missions** — Catalogue fields: `issuer` (Orbital Cargo Solutions, Titan Supply, etc.), `briefing` (1–2 sentences), optional `completionLine`. Mission board shows issuer + briefing, not just title/description.
-
-#### 1B.2 Era 1 mission pack (content)
-
-*Replace test missions with ~8–12 Era 1 contracts. Same mission *types*; richer copy and clear purpose.*
-
-- [ ] **Tier 0 — Always open** — 3–4 dock jobs (maintenance, med, comms relay parts) with stakes tied to station NPCs/services.
-- [ ] **Tier 1 — Discovery** — Scan + first survey bonus jobs framed as charting work (not “go to planet 0”).
-- [ ] **Tier 2 — Locked** — Lander/sample jobs gated by survey count; copy explains *why* (e.g. “Geological Survey Office won’t insure drops until you’ve catalogued N worlds”).
-- [ ] **Catalogue schema** — Add `era: 1`, `issuer`, `briefing`, `flavorTag` (optional); keep `requires` for unlocks. Group missions by era in `mission_catalogue.js` comments.
+- [x] **Intro / backstory screen** — Holo contractor briefing before first dock: hauler in under-charted K-14, repo **Stardust Drifter**, **StarHopper Cargo** fronted costs, survey to unlock board work. `intro_screen.js` + click-to-continue.
+- [x] **Load Game vs New Game** — Start screen: **Continue Contract** / **New Contract** (confirm + save wipe) for returning players; **Begin Contract** + intro for first session.
+- [x] **Issuer voice on missions** — Catalogue fields: `issuer`, `briefing`, `flavorTag`, `completionLine`. Mission board shows issuer, type tag, and briefing.
+- [x] **Tier 0 — Tutorial chain** — One-time cert + fetch missions: `DOCK_CERT` (launch & re-dock), `FETCH_AND_DELIVER` (orbit/land at **starter worlds** → return to station). Timed contracts with HUD countdown; `completedMissionIds` + mission chain unlocks.
+- [x] **Tier 1 — Discovery** — Scan **unknown signals** via `firstUndiscoveredRank`; gated after tutorial chain.
+- [x] **Tier 2 — Locked** — GSO lander drop + core sample; copy explains insurance / catalog requirements.
+- [x] **Catalogue schema** — `era`, `tier`, `sortOrder`, `issuer`, `briefing`, `flavorTag`, `completionLine`; grouped in `mission_catalogue.js`.
 
 #### 1B.3 Mechanics that make missions matter (Phase 2 core)
 

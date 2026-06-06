@@ -16,6 +16,7 @@
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div id="player-hud" style="display: none;">
+            <div id="mission-timer" style="display: none;"></div>
             <div id="hud-company-name"></div>
             <div id="hud-bank-balance"></div>
             <button id="terminateRemoteCommandBtn"
@@ -116,7 +117,22 @@
 
         <div id="start-screen" style="display: none;">
             <h1>PLANET HOPPERS</h1>
-            <button id="startBtn">Activate Holo</button>
+            <p class="start-tagline">Chart the sector. Fly the contract.</p>
+            <div id="start-screen-actions">
+                <button id="continueContractBtn" type="button" style="display: none;">Continue Contract</button>
+                <button id="newContractBtn" type="button" style="display: none;">New Contract</button>
+                <button id="startBtn" type="button">Begin Contract</button>
+            </div>
+        </div>
+
+        <div id="intro-briefing" style="display: none;" role="dialog" aria-labelledby="intro-briefing-title">
+            <div class="intro-briefing-panel">
+                <span class="intro-badge">ORIENTATION</span>
+                <h2 id="intro-briefing-title">Contractor Briefing</h2>
+                <p class="intro-subtitle">Orbital Cargo Solutions — Sector K-14</p>
+                <div id="intro-briefing-body" class="intro-briefing-body"></div>
+                <button id="introContinueBtn" type="button">Report to Station</button>
+            </div>
         </div>
 
         <div id="menu" style="display: none;">
@@ -185,6 +201,7 @@
     <script src="scripts/scenes/lander_scene.js"></script>
     <script src="scripts/scenes/space_dock_scene.js"></script>
     <script src="scripts/ui/notification_manager.js"></script>
+    <script src="scripts/ui/intro_screen.js"></script>
     <script src="scripts/ui/nav_screen.js"></script>
     <script src="scripts/main.js"></script>
 </body>

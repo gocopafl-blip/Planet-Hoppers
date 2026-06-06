@@ -98,6 +98,7 @@ function init() {
 
             // Setup event listeners
             setupEventListeners();
+            configureStartScreen();
 
             // Initialize the game
             landerScene.createStars();
@@ -147,6 +148,51 @@ function init() {
     );
 
     waitForFonts();
+}
+
+function configureStartScreen() {
+    const continueBtn = document.getElementById('continueContractBtn');
+    const newBtn = document.getElementById('newContractBtn');
+    const beginBtn = document.getElementById('startBtn');
+    if (!continueBtn || !newBtn || !beginBtn) return;
+
+    if (playerDataManager.hasSeenIntro()) {
+        continueBtn.style.display = 'inline-block';
+        newBtn.style.display = 'inline-block';
+        beginBtn.style.display = 'none';
+    } else {
+        continueBtn.style.display = 'none';
+        newBtn.style.display = 'none';
+        beginBtn.style.display = 'inline-block';
+    }
+}
+
+function goToDock() {
+    startScreen.style.display = 'none';
+    if (typeof introScreen !== 'undefined') introScreen.hide();
+    gameManager.switchScene(spaceDockScene);
+}
+
+function beginWithIntro() {
+    startScreen.style.display = 'none';
+    if (typeof introScreen !== 'undefined') {
+        introScreen.show(() => {
+            playerDataManager.markIntroSeen();
+            goToDock();
+        });
+    } else {
+        playerDataManager.markIntroSeen();
+        goToDock();
+    }
+}
+
+function startNewContract() {
+    const confirmed = window.confirm(
+        'Start a new contract?\n\nThis clears your fleet, chart progress, missions, and account balance.'
+    );
+    if (!confirmed) return;
+    localStorage.removeItem(playerDataManager.SAVE_KEY);
+    window.location.reload();
 }
 
 // --- EVENT LISTENERS SETUP ---
@@ -246,10 +292,18 @@ function setupEventListeners() {
     });
     */
     // ADD THIS NEW EVENT LISTENER
-    document.getElementById('startBtn').addEventListener('click', () => {
-        startScreen.style.display = 'none'; // Hide the start screen
-        gameManager.switchScene(spaceDockScene); // Start with the Space Dock scene
-    });
+    document.getElementById('startBtn').addEventListener('click', beginWithIntro);
+
+    const continueBtn = document.getElementById('continueContractBtn');
+    if (continueBtn) continueBtn.addEventListener('click', goToDock);
+
+    const newContractBtn = document.getElementById('newContractBtn');
+    if (newContractBtn) newContractBtn.addEventListener('click', startNewContract);
+
+    const introContinueBtn = document.getElementById('introContinueBtn');
+    if (introContinueBtn) {
+        introContinueBtn.addEventListener('click', () => introScreen.handleContinue());
+    }
 /*
     document.getElementById('departBtn').addEventListener('click', () => {
         gameManager.switchScene(spaceScene, { difficulty: 'easy' }); // For now, it will always be 'easy'

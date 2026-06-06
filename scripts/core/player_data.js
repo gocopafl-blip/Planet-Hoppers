@@ -2,6 +2,9 @@
 
 function getNewPlayerData() {
     return {
+        hasSeenIntro: false,
+        completedMissionIds: [],
+
         // Player Profile
         cargoCoName: "StarHopper Cargo",
         playerBankBalance: 2500,

@@ -320,6 +320,24 @@ button:hover {
     /* A light, icy blue */
     text-shadow: 6px 6px 6px #000000;
     /* A more pronounced shadow */
+    margin: 0;
+}
+
+.start-tagline {
+    font-family: "Orbitron", sans-serif;
+    font-size: 1em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(160, 224, 255, 0.85);
+    margin: 0;
+    text-shadow: 2px 2px 4px #000;
+}
+
+#start-screen-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
 }
 
 #start-screen button {
@@ -341,6 +359,97 @@ button:hover {
 #start-screen button:hover {
     background-color: #f1f7f163;
     color: #0c0606;
+}
+
+/* Phase 1B.1 — contractor intro briefing */
+#intro-briefing {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 8, 16, 0.88);
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+
+#intro-briefing.intro-visible {
+    opacity: 1;
+}
+
+.intro-briefing-panel {
+    width: min(92vw, 560px);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: linear-gradient(145deg, rgba(0, 28, 24, 0.97), rgba(0, 12, 32, 0.97));
+    border: 2px solid rgba(0, 255, 136, 0.6);
+    border-radius: 14px;
+    padding: 24px 26px 22px;
+    color: #e8fff4;
+    font-family: "Orbitron", sans-serif;
+    box-shadow: 0 0 32px rgba(0, 255, 136, 0.25);
+}
+
+.intro-badge {
+    display: inline-block;
+    font-size: 0.65em;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    color: #003820;
+    background: #00ff88;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.intro-briefing-panel h2 {
+    margin: 10px 0 4px;
+    font-size: 1.35em;
+    color: #7dffc4;
+    letter-spacing: 0.05em;
+}
+
+.intro-subtitle {
+    margin: 0 0 16px;
+    font-size: 0.72em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #a0e0ff;
+}
+
+.intro-briefing-body {
+    font-size: 0.82em;
+    line-height: 1.55;
+    color: #d8f5e8;
+    margin-bottom: 20px;
+}
+
+.intro-briefing-body p {
+    margin: 0 0 12px;
+}
+
+.intro-briefing-body strong {
+    color: #ffffff;
+}
+
+#introContinueBtn {
+    width: 100%;
+    background: rgba(0, 255, 136, 0.15);
+    color: #7dffc4;
+    border: 2px solid #00ff88;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.95em;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+#introContinueBtn:hover {
+    background: rgba(0, 255, 136, 0.3);
+    color: #ffffff;
 }
 
 #descent-ui {
@@ -551,6 +660,33 @@ button:hover {
     margin-bottom: 5px;
 }
 
+#mission-timer {
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    color: #7dffc4;
+    border: 1px solid rgba(0, 255, 136, 0.45);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+#mission-timer.mission-timer-urgent {
+    color: #ffb347;
+    border-color: rgba(255, 179, 71, 0.65);
+}
+
+#mission-timer.mission-timer-critical {
+    color: #ff6666;
+    border-color: rgba(255, 102, 102, 0.75);
+    animation: missionTimerPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes missionTimerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.65; }
+}
+
 /* Mission Board Styles */
 #mission-board {
     position: absolute;
@@ -627,8 +763,44 @@ button:hover {
     margin-top: 4px !important;
 }
 
+.mission-issuer {
+    margin: 0 0 4px 0 !important;
+    font-size: 0.72em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #2ef8ff !important;
+}
+
+.mission-item.mission-locked .mission-issuer {
+    color: #6a8898 !important;
+}
+
+.mission-tags {
+    margin-bottom: 8px;
+}
+
+.mission-type-tag {
+    display: inline-block;
+    font-size: 0.65em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #b8e8ff;
+    border: 1px solid rgba(160, 224, 255, 0.35);
+    border-radius: 4px;
+    padding: 2px 8px;
+}
+
+.mission-briefing {
+    line-height: 1.45;
+    color: #d0e8f8 !important;
+}
+
+.mission-item.mission-locked .mission-briefing {
+    color: #9aa8b8 !important;
+}
+
 .mission-item h3 {
-    margin: 0 0 10px 0;
+    margin: 0 0 6px 0;
     color: #fff;
 }
 

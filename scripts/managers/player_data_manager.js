@@ -53,6 +53,8 @@ class PlayerDataManager {
 
         if (this.migratePlanetDiscoveryData()) changed = true;
         if (this.migrateStarterDiscoveredPlanets()) changed = true;
+        if (this.migrateIntroFlag()) changed = true;
+        if (this.migrateCompletedMissions()) changed = true;
 
         if (changed) {
             console.log('Player save migrated to current schema.');
@@ -186,6 +188,57 @@ class PlayerDataManager {
             console.log(`Discovery migration: marked ${nearest.length} hub-near worlds as surveyed.`);
         }
         return changed;
+    }
+
+    /** Existing saves skip the intro; new saves see the briefing once (Phase 1B.1). */
+    migrateIntroFlag() {
+        if (!this.data || this.data.hasSeenIntro !== undefined) return false;
+
+        const hasProgress = (Array.isArray(this.data.worldState?.planets) && this.data.worldState.planets.length > 0)
+            || (Array.isArray(this.data.transactionLedger) && this.data.transactionLedger.length > 0)
+            || this.data.hasSeenIntro === true;
+
+        this.data.hasSeenIntro = !!hasProgress;
+        return true;
+    }
+
+    hasSeenIntro() {
+        return !!this.data?.hasSeenIntro;
+    }
+
+    markIntroSeen() {
+        if (!this.data) return;
+        if (this.data.hasSeenIntro) return;
+        this.data.hasSeenIntro = true;
+        this.saveData();
+    }
+
+    migrateCompletedMissions() {
+        if (!this.data) return false;
+        if (Array.isArray(this.data.completedMissionIds)) return false;
+        this.data.completedMissionIds = [];
+        return true;
+    }
+
+    hasCompletedMission(missionId) {
+        return Array.isArray(this.data?.completedMissionIds)
+            && this.data.completedMissionIds.includes(missionId);
+    }
+
+    markMissionCompleted(missionId) {
+        if (!this.data || !missionId) return;
+        if (!Array.isArray(this.data.completedMissionIds)) {
+            this.data.completedMissionIds = [];
+        }
+        if (!this.data.completedMissionIds.includes(missionId)) {
+            this.data.completedMissionIds.push(missionId);
+            this.saveData();
+        }
+    }
+
+    getStarterShipName() {
+        const ship = this.data?.fleet?.[0];
+        return ship?.name || 'Stardust Drifter';
     }
 
     saveHubPosition(x, y) {
@@ -743,7 +796,10 @@ class PlayerDataManager {
         const ship = this.getShipById(shipId);
         if (ship) {
             ship.assignedMissionId = missionId;
-            ship.missionState = missionState;
+            ship.missionState = {
+                acceptedAt: Date.now(),
+                ...(missionState || {})
+            };
             console.log(`Assigned mission ${missionId} to ship ${shipId}`);
             this.saveData();
         }

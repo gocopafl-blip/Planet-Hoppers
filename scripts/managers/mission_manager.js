@@ -8,7 +8,15 @@ class MissionManager {
 
     // Lists every catalogue mission with locked/unlocked state (Phase 1.4).
     generateAvailableMissions() {
-        this.availableMissions = Object.keys(missionCatalogue).map(missionId => {
+        this.availableMissions = Object.keys(missionCatalogue)
+            .filter(missionId => {
+                const missionData = missionCatalogue[missionId];
+                if (missionData.oneTime && playerDataManager.hasCompletedMission(missionId)) {
+                    return false;
+                }
+                return true;
+            })
+            .map(missionId => {
             const missionData = missionCatalogue[missionId];
             const mission = { id: missionId, ...missionData };
             const unlock = this.getMissionUnlockStatus(mission);
@@ -19,7 +27,9 @@ class MissionManager {
             };
         }).sort((a, b) => {
             if (a.unlocked !== b.unlocked) return a.unlocked ? -1 : 1;
-            return (a.reward || 0) - (b.reward || 0);
+            const orderA = a.sortOrder ?? a.reward ?? 0;
+            const orderB = b.sortOrder ?? b.reward ?? 0;
+            return orderA - orderB;
         });
 
         console.log("Generated available missions:", this.availableMissions);
@@ -37,6 +47,16 @@ class MissionManager {
         if (!req) return { unlocked: true, hint: '' };
 
         const missing = [];
+
+        if (Array.isArray(req.completedMissions) && req.completedMissions.length > 0) {
+            const incomplete = req.completedMissions.filter(id => !playerDataManager.hasCompletedMission(id));
+            if (incomplete.length > 0) {
+                const labels = incomplete
+                    .map(id => missionCatalogue[id]?.title || id)
+                    .join(', ');
+                missing.push(`Complete first: ${labels}`);
+            }
+        }
 
         if (req.minSurveyedWorlds != null) {
             const count = playerDataManager.getSurveyedWorldCount();
@@ -75,9 +95,45 @@ class MissionManager {
         return [];
     }
 
+    getHubPosition() {
+        return playerDataManager.data?.worldState?.hubPosition || null;
+    }
+
+    getPlanetsSortedByHubDistance() {
+        const bodies = this.getCelestialBodies();
+        const hub = this.getHubPosition();
+        if (!hub || !bodies.length) return [];
+        return [...bodies].sort((a, b) => {
+            const da = Math.hypot(a.x - hub.x, a.y - hub.y);
+            const db = Math.hypot(b.x - hub.x, b.y - hub.y);
+            return da - db;
+        });
+    }
+
+    getStarterPlanetByRank(rank) {
+        const sorted = this.getPlanetsSortedByHubDistance();
+        return sorted[rank] || null;
+    }
+
+    getUndiscoveredPlanets() {
+        return this.getCelestialBodies().filter(p => p?.id && !playerDataManager.isPlanetDiscovered(p.id));
+    }
+
+    getUndiscoveredPlanetByRank(rank) {
+        const undiscovered = this.getUndiscoveredPlanets();
+        return undiscovered[rank] || null;
+    }
+
     getMissionTargetPlanet(missionData) {
         if (!missionData) return null;
         const bodies = this.getCelestialBodies();
+
+        if (missionData.hubPlanetRank != null) {
+            return this.getStarterPlanetByRank(missionData.hubPlanetRank);
+        }
+        if (missionData.firstUndiscoveredRank != null) {
+            return this.getUndiscoveredPlanetByRank(missionData.firstUndiscoveredRank);
+        }
         if (missionData.destinationPlanetId) {
             return bodies.find(p => p && p.id === missionData.destinationPlanetId) || null;
         }
@@ -98,20 +154,183 @@ class MissionManager {
 
     formatMissionDescription(mission) {
         if (!mission) return '';
-        if (mission.type === 'ORBIT_PLANET') {
+
+        const parts = [mission.briefing || mission.description || ''];
+
+        if (mission.type === 'ORBIT_PLANET' || mission.type === 'FETCH_AND_DELIVER') {
             const target = this.getMissionTargetPlanet(mission);
-            const bonus = mission.discoveryBonus ?? DISCOVERY_FIRST_SURVEY_BONUS;
-            let text = mission.description;
             if (target) {
                 const targetLabel = playerDataManager.isPlanetDiscovered(target.id)
                     ? target.name
                     : playerDataManager.getUnknownSignalLabel(target);
-                text += ` Target: ${targetLabel}.`;
+                const verb = mission.type === 'FETCH_AND_DELIVER'
+                    ? (mission.pickupAt === 'land' ? 'Land at' : 'Orbit')
+                    : 'Chart target';
+                parts.push(`${verb}: ${targetLabel}.`);
             }
-            text += ` First survey bonus: ¢${bonus.toLocaleString()}.`;
-            return text;
         }
-        return mission.description;
+
+        if (mission.type === 'ORBIT_PLANET') {
+            const bonus = mission.discoveryBonus ?? DISCOVERY_FIRST_SURVEY_BONUS;
+            parts.push(`First-survey bonus: ¢${bonus.toLocaleString()}.`);
+        }
+
+        if (mission.type === 'FETCH_AND_DELIVER') {
+            parts.push('Return to the station dock to deliver.');
+        }
+
+        if (mission.timeLimitSec) {
+            const mins = Math.round(mission.timeLimitSec / 60);
+            parts.push(`Time limit: ${mins} min from accept.`);
+        }
+
+        return parts.filter(Boolean).join(' ');
+    }
+
+    formatTimeRemaining(seconds) {
+        if (seconds == null || seconds < 0) return '0:00';
+        const s = Math.floor(seconds);
+        const m = Math.floor(s / 60);
+        const r = s % 60;
+        return `${m}:${r.toString().padStart(2, '0')}`;
+    }
+
+    getMissionTimeRemainingSec(ship) {
+        if (!ship?.assignedMissionId || !ship.missionState?.acceptedAt) return null;
+        const mission = missionCatalogue[ship.assignedMissionId];
+        if (!mission?.timeLimitSec) return null;
+        const elapsed = (Date.now() - ship.missionState.acceptedAt) / 1000;
+        return mission.timeLimitSec - elapsed;
+    }
+
+    onActiveShipEnterSpace(scene) {
+        const activeShip = playerDataManager.getActiveShip?.();
+        if (!activeShip?.assignedMissionId || !scene?.ship) return;
+
+        const mission = missionCatalogue[activeShip.assignedMissionId];
+        if (mission?.type !== 'DOCK_CERT') return;
+
+        if (!scene.ship.isDocked) {
+            activeShip.missionState = Object.assign(activeShip.missionState || {}, { hasLaunched: true });
+            playerDataManager.saveData();
+        }
+    }
+
+    /** Fail timed contracts when the clock runs out (space scene). */
+    updateMissionTimer(scene) {
+        if (!scene || scene.name !== 'space') return;
+
+        const activeShip = playerDataManager.getActiveShip?.();
+        if (!activeShip?.assignedMissionId) return;
+
+        const remaining = this.getMissionTimeRemainingSec(activeShip);
+        if (remaining == null) return;
+
+        if (remaining > 0) return;
+
+        const mission = missionCatalogue[activeShip.assignedMissionId];
+        const title = mission?.title || 'Contract';
+        playerDataManager.clearShipMission(activeShip.id);
+
+        if (typeof notificationManager !== 'undefined') {
+            notificationManager.show({
+                title: 'Contract Expired',
+                bodyHtml: `<p class="notification-planet-name">${this.escapeHtml(title)}</p><p>Deadline passed — contract void. Return to the mission board for new work.</p>`,
+                variant: 'discovery',
+                durationMs: 0,
+                dismissible: true
+            });
+        } else {
+            alert(`Contract expired: ${title}`);
+        }
+    }
+
+    updateMissionTimerHUD() {
+        const el = document.getElementById('mission-timer');
+        if (!el) return;
+
+        const activeShip = playerDataManager.getActiveShip?.();
+        const remaining = activeShip ? this.getMissionTimeRemainingSec(activeShip) : null;
+
+        if (remaining == null || !gameManager.activeScene || gameManager.activeScene.name !== 'space') {
+            el.style.display = 'none';
+            return;
+        }
+
+        el.style.display = 'block';
+        el.textContent = `CONTRACT TIME: ${this.formatTimeRemaining(remaining)}`;
+        el.classList.toggle('mission-timer-urgent', remaining <= 120);
+        el.classList.toggle('mission-timer-critical', remaining <= 30);
+    }
+
+    notifyCargoAcquired(missionData) {
+        const line = missionData?.pickupLine || 'Cargo loaded. Return to the station and dock to deliver.';
+        if (typeof notificationManager !== 'undefined') {
+            notificationManager.show({
+                title: 'Cargo Aboard',
+                bodyHtml: `<p>${this.escapeHtml(line)}</p>`,
+                variant: 'discovery',
+                durationMs: 6000,
+                dismissible: true
+            });
+        } else {
+            alert(line);
+        }
+    }
+
+    onShipUndocked(scene) {
+        if (!scene || scene.name !== 'space' || !scene.ship) return;
+
+        const activeShip = playerDataManager.getActiveShip?.();
+        if (!activeShip?.assignedMissionId) return;
+
+        const missionData = missionCatalogue[activeShip.assignedMissionId];
+        if (missionData?.type !== 'DOCK_CERT') return;
+
+        activeShip.missionState = Object.assign(activeShip.missionState || {}, { hasLaunched: true });
+        playerDataManager.saveData();
+        console.log('[MissionManager] Dock cert: ship launched clear of station.');
+    }
+
+    tryOrbitFetchPickup(scene, planet) {
+        const activeShip = playerDataManager.getActiveShip?.();
+        if (!activeShip?.assignedMissionId) return;
+
+        const missionData = missionCatalogue[activeShip.assignedMissionId];
+        if (missionData?.type !== 'FETCH_AND_DELIVER' || missionData.pickupAt !== 'orbit') return;
+        if (!this.planetMatchesMissionTarget(planet, missionData)) return;
+
+        const state = activeShip.missionState || {};
+        if (state.hasPickedUpCargo) return;
+
+        activeShip.missionState = { ...state, hasPickedUpCargo: true };
+        playerDataManager.saveData();
+        this.notifyCargoAcquired(missionData);
+    }
+
+    getMissionTypeLabel(mission) {
+        if (!mission?.type) return '';
+        const labels = {
+            DELIVER_TO_DOCK: 'Dock delivery',
+            DOCK_CERT: 'Certification',
+            FETCH_AND_DELIVER: 'Fetch & deliver',
+            ORBIT_PLANET: 'Orbital survey',
+            LAND_ON_PLANET: 'Surface drop',
+            PICK_UP_CARGO: 'Sample run'
+        };
+        return labels[mission.type] || mission.type.replace(/_/g, ' ').toLowerCase();
+    }
+
+    getMissionIssuer(mission) {
+        return mission?.issuer || 'Orbital Cargo Solutions';
+    }
+
+    escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
     /** First survey of a world during a scan mission — marks surveyed and pays bonus once. */
@@ -150,11 +369,14 @@ class MissionManager {
 
         if (isScanMission) {
             this.completeMission(scene);
-        } else if (!playerDataManager.isPlanetDiscovered(planet.id)) {
-            if (playerDataManager.markPlanetSurveyed(planet.id)) {
-                console.log(`World catalogued from orbit: ${planet.name}`);
-                if (typeof notificationManager !== 'undefined') {
-                    notificationManager.showPlanetDiscovery(planet);
+        } else {
+            this.tryOrbitFetchPickup(scene, planet);
+            if (!playerDataManager.isPlanetDiscovered(planet.id)) {
+                if (playerDataManager.markPlanetSurveyed(planet.id)) {
+                    console.log(`World catalogued from orbit: ${planet.name}`);
+                    if (typeof notificationManager !== 'undefined') {
+                        notificationManager.showPlanetDiscovery(planet);
+                    }
                 }
             }
         }
@@ -270,14 +492,13 @@ class MissionManager {
 
         switch (missionData.type) {
             case 'DELIVER_TO_DOCK':
-                // Diagnostic: Log scene and ship docking state
-                console.log('[MissionManager][DELIVER_TO_DOCK] Check:', {
-                    sceneName: scene.name,
-                    hasShip: !!scene.ship,
-                    isDocked: scene.ship ? scene.ship.isDocked : undefined
-                });
-                // This check is specific to the space scene and is complete when the ship is docked.
-                if (scene.name === 'space' && scene.ship && scene.ship.isDocked) {
+                if (scene.name === 'space' && scene.ship?.isDocked) {
+                    isCompleted = true;
+                }
+                break;
+
+            case 'DOCK_CERT':
+                if (scene.name === 'space' && scene.ship?.isDocked && getMissionState().hasLaunched) {
                     isCompleted = true;
                 }
                 break;
@@ -289,33 +510,43 @@ class MissionManager {
                 break;
 
             case 'LAND_ON_PLANET':
-                // This check is specific to the lander scene
                 if (scene.name === 'lander' && scene.gameState === 'landed') {
                     isCompleted = true;
                 }
                 break;
-            //
-            case 'PICK_UP_CARGO':
-                // Get the current state of this mission (per-ship or legacy)
-                const missionState = getMissionState();
 
-                // STEP 1: Check if we need to pick up the cargo.
-                // We check this in the lander scene.
-                if (scene.name === 'lander' && scene.gameState === 'landed' && !missionState.hasPickedUpCargo) {
-                    // Update the mission state to remember the cargo is collected.
-                    updateMissionState({ hasPickedUpCargo: true });
-
-                    // Show a confirmation to the player, but the mission is NOT complete yet.
-                    alert("Survey Sample Taken: You have retrieved the survey sample. Now, return to the station to collect your contract payout.");
+            case 'FETCH_AND_DELIVER': {
+                let fetchState = getMissionState();
+                if (scene.name === 'lander' && scene.gameState === 'landed'
+                    && missionData.pickupAt === 'land'
+                    && !fetchState.hasPickedUpCargo) {
+                    const landPlanet = scene.planet;
+                    if (landPlanet && this.planetMatchesMissionTarget(landPlanet, missionData)) {
+                        updateMissionState({ hasPickedUpCargo: true });
+                        this.notifyCargoAcquired(missionData);
+                        fetchState = getMissionState();
+                    }
                 }
-
-                // STEP 2: Check if we have the cargo and are at the dock to deliver it.
-                // We check this in the space scene.
-                if (scene.name === 'space' && missionState.hasPickedUpCargo && scene.ship.isDocked) {
-                    // If both conditions are true, the mission is fully completed.
+                if (scene.name === 'space' && fetchState.hasPickedUpCargo && scene.ship?.isDocked) {
                     isCompleted = true;
                 }
                 break;
+            }
+
+            case 'PICK_UP_CARGO': {
+                let cargoState = getMissionState();
+                if (scene.name === 'lander' && scene.gameState === 'landed' && !cargoState.hasPickedUpCargo) {
+                    updateMissionState({ hasPickedUpCargo: true });
+                    this.notifyCargoAcquired({
+                        pickupLine: 'Survey sample secured. Return to the station and dock to collect payout.'
+                    });
+                    cargoState = getMissionState();
+                }
+                if (scene.name === 'space' && cargoState.hasPickedUpCargo && scene.ship?.isDocked) {
+                    isCompleted = true;
+                }
+                break;
+            }
 
         }
 
@@ -360,7 +591,13 @@ class MissionManager {
             }
             console.log(`Mission "${missionData.title}" completed! Player earned ${missionData.reward} credits.`);
 
-            let alertMessage = `Mission Complete: ${missionData.title}\n\nContract reward: ¢ ${missionData.reward.toLocaleString()}`;
+            if (missionData.oneTime) {
+                playerDataManager.markMissionCompleted(activeMissionId);
+            }
+
+            let alertMessage = missionData.completionLine
+                ? `${missionData.completionLine}\n\nContract reward: ¢ ${missionData.reward.toLocaleString()}`
+                : `Mission Complete: ${missionData.title}\n\nContract reward: ¢ ${missionData.reward.toLocaleString()}`;
             if (discoveryBonusPaid > 0) {
                 alertMessage += `\nDiscovery bonus: ¢ ${discoveryBonusPaid.toLocaleString()}`;
                 const planetName = scene.ship?.orbitingPlanet?.name || 'Unknown world';

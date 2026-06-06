@@ -244,17 +244,30 @@ const missionBoardScene = {
         const missionBoard = document.getElementById('mission-board');
         const missionList = document.getElementById('mission-list');
 
+        if (!planetManager.celestialBodies?.length && playerDataManager.hasSavedPlanetData()) {
+            planetManager.restoreSavedPlanets();
+        }
+
         const missions = missionManager.generateAvailableMissions();
         missionList.innerHTML = '';
 
         missions.forEach(mission => {
+            const mm = missionManager;
+            const issuer = mm.escapeHtml(mm.getMissionIssuer(mission));
+            const title = mm.escapeHtml(mission.title);
+            const briefing = mm.escapeHtml(mm.formatMissionDescription(mission));
+            const typeLabel = mm.escapeHtml(mission.flavorTag || mm.getMissionTypeLabel(mission));
+            const unlockHint = mm.escapeHtml(mission.unlockHint || '');
+
             const missionElement = document.createElement('div');
             missionElement.className = mission.unlocked ? 'mission-item' : 'mission-item mission-locked';
             missionElement.innerHTML = `
                 ${mission.unlocked ? '' : '<span class="mission-lock-badge">LOCKED</span>'}
-                <h3>${mission.title}</h3>
-                <p>${missionManager.formatMissionDescription(mission)}</p>
-                ${mission.unlocked ? '' : `<p class="mission-unlock-hint">Unlock: ${mission.unlockHint}</p>`}
+                <p class="mission-issuer">${issuer}</p>
+                <h3>${title}</h3>
+                <div class="mission-tags"><span class="mission-type-tag">${typeLabel}</span></div>
+                <p class="mission-briefing">${briefing}</p>
+                ${mission.unlocked ? '' : `<p class="mission-unlock-hint">Unlock: ${unlockHint}</p>`}
                 <div class="mission-footer">
                     <span class="mission-reward">REWARD: ¢ ${mission.reward.toLocaleString()}</span>
                     <button class="accept-btn" data-mission-id="${mission.id}" ${mission.unlocked ? '' : 'disabled'}>${mission.unlocked ? 'Accept' : 'Locked'}</button>
