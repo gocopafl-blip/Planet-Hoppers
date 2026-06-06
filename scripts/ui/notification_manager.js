@@ -23,6 +23,15 @@ const PLANET_DISCOVERY_STATS = {
     volcanic_world: { population: '900K heat-resistant optimists', trade: 'Obsidian, geothermal credits, burn cream' }
 };
 
+const NOTIFICATION_VARIANT_BADGES = {
+    discovery: 'DISCOVERY',
+    mission: 'CONTRACT',
+    success: 'CONFIRMED',
+    warning: 'WARNING',
+    error: 'ALERT',
+    info: 'NOTICE'
+};
+
 class NotificationManager {
     constructor() {
         this.stackEl = null;
@@ -46,6 +55,12 @@ class NotificationManager {
         if (!this.active) this._showNext();
     }
 
+    /** Plain-text toast — drop-in replacement for alert(). */
+    showSimple({ title, message = '', variant = 'info', durationMs = 6000, dismissible = true }) {
+        const bodyHtml = message ? `<p>${this.escapeHtml(message)}</p>` : '';
+        this.show({ title, bodyHtml, variant, durationMs, dismissible });
+    }
+
     /** Organic orbit discovery — call after markPlanetSurveyed succeeds. */
     showPlanetDiscovery(planet) {
         if (!planet) return;
@@ -57,6 +72,35 @@ class NotificationManager {
             durationMs: 0,
             dismissible: true
         });
+    }
+
+    /** Mission payout banner — replaces browser alert on contract completion. */
+    showMissionComplete({ title, completionLine, reward, discoveryBonus = 0, planetName = null }) {
+        const parts = [];
+        if (completionLine) {
+            parts.push(`<p class="notification-flavor">${this.escapeHtml(completionLine)}</p>`);
+        }
+        const payoutRows = [
+            `<div><dt>Contract pay</dt><dd>¢ ${Number(reward || 0).toLocaleString()}</dd></div>`
+        ];
+        if (discoveryBonus > 0) {
+            payoutRows.push(`<div><dt>Discovery bonus</dt><dd>¢ ${Number(discoveryBonus).toLocaleString()}</dd></div>`);
+        }
+        parts.push(`<dl class="notification-stats notification-payout">${payoutRows.join('')}</dl>`);
+        if (discoveryBonus > 0 && planetName) {
+            parts.push(`<p class="notification-subline">${this.escapeHtml(planetName)} is now surveyed.</p>`);
+        }
+        this.show({
+            title: title || 'Contract Complete',
+            bodyHtml: parts.join(''),
+            variant: 'mission',
+            durationMs: 0,
+            dismissible: true
+        });
+    }
+
+    getVariantBadge(variant) {
+        return NOTIFICATION_VARIANT_BADGES[variant] || NOTIFICATION_VARIANT_BADGES.info;
     }
 
     /** Shared markup builder — reuse when upgrading to a full dossier modal. */
@@ -116,12 +160,13 @@ class NotificationManager {
         }
 
         this.active = next;
+        const badge = this.getVariantBadge(next.variant);
         const card = document.createElement('div');
         card.className = `notification-card notification-${next.variant}`;
         card.innerHTML = `
             <div class="notification-scan-line" aria-hidden="true"></div>
             <div class="notification-header">
-                <span class="notification-badge">DISCOVERY</span>
+                <span class="notification-badge">${this.escapeHtml(badge)}</span>
                 <h3 class="notification-title">${this.escapeHtml(next.title)}</h3>
             </div>
             <div class="notification-body">${next.bodyHtml}</div>

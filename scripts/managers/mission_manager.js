@@ -148,8 +148,14 @@ class MissionManager {
     planetMatchesMissionTarget(planet, missionData) {
         if (!planet || !missionData) return false;
         const target = this.getMissionTargetPlanet(missionData);
-        if (!target) return false;
-        return planet.id === target.id || planet.index === target.index;
+        if (target) {
+            return planet.id === target.id || planet.index === target.index;
+        }
+        if (missionData.requiredPlanetTypeId) {
+            return playerDataManager.isPlanetDiscovered(planet.id)
+                && planet.planetTypeId === missionData.requiredPlanetTypeId;
+        }
+        return false;
     }
 
     missionHasExplicitPlanetTarget(missionData) {
@@ -299,12 +305,12 @@ class MissionManager {
             notificationManager.show({
                 title: 'Contract Expired',
                 bodyHtml: `<p class="notification-planet-name">${this.escapeHtml(title)}</p><p>Deadline passed — contract void. Return to the mission board for new work.</p>`,
-                variant: 'discovery',
+                variant: 'warning',
                 durationMs: 0,
                 dismissible: true
             });
         } else {
-            alert(`Contract expired: ${title}`);
+            uiNotify({ title: 'Contract Expired', message: title, variant: 'warning', durationMs: 0, dismissible: true });
         }
     }
 
@@ -332,12 +338,12 @@ class MissionManager {
             notificationManager.show({
                 title: 'Cargo Aboard',
                 bodyHtml: `<p>${this.escapeHtml(line)}</p>`,
-                variant: 'discovery',
+                variant: 'success',
                 durationMs: 6000,
                 dismissible: true
             });
         } else {
-            alert(line);
+            uiNotify({ title: 'Cargo Aboard', message: line, variant: 'success', durationMs: 6000 });
         }
     }
 
@@ -399,12 +405,12 @@ class MissionManager {
             notificationManager.show({
                 title: 'Contract Mismatch',
                 bodyHtml: `<p>${this.escapeHtml(message)}</p><p>Safe landing, but payout waits until requirements are met.</p>`,
-                variant: 'discovery',
+                variant: 'warning',
                 durationMs: 8000,
                 dismissible: true
             });
         } else {
-            alert(message);
+            uiNotify({ title: 'Contract Mismatch', message, variant: 'warning', durationMs: 8000 });
         }
     }
 
@@ -479,12 +485,18 @@ class MissionManager {
             notificationManager.show({
                 title: 'Crash — Drop Ship Lost',
                 bodyHtml,
-                variant: 'discovery',
+                variant: 'error',
                 durationMs: 0,
                 dismissible: true
             });
         } else {
-            alert(bodyHtml.replace(/<[^>]+>/g, ' '));
+            uiNotify({
+                title: 'Crash — Drop Ship Lost',
+                message: bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+                variant: 'error',
+                durationMs: 0,
+                dismissible: true
+            });
         }
     }
 
@@ -738,15 +750,27 @@ class MissionManager {
                 playerDataManager.markMissionCompleted(activeMissionId);
             }
 
-            let alertMessage = missionData.completionLine
-                ? `${missionData.completionLine}\n\nContract reward: ¢ ${missionData.reward.toLocaleString()}`
-                : `Mission Complete: ${missionData.title}\n\nContract reward: ¢ ${missionData.reward.toLocaleString()}`;
-            if (discoveryBonusPaid > 0) {
-                alertMessage += `\nDiscovery bonus: ¢ ${discoveryBonusPaid.toLocaleString()}`;
-                const planetName = scene.ship?.orbitingPlanet?.name || 'Unknown world';
-                alertMessage += `\n\n${planetName} is now surveyed.`;
+            if (typeof notificationManager !== 'undefined' && notificationManager.showMissionComplete) {
+                notificationManager.showMissionComplete({
+                    title: missionData.title,
+                    completionLine: missionData.completionLine || null,
+                    reward: missionData.reward,
+                    discoveryBonus: discoveryBonusPaid,
+                    planetName: discoveryBonusPaid > 0
+                        ? (scene.ship?.orbitingPlanet?.name || null)
+                        : null
+                });
+            } else {
+                let msg = missionData.completionLine
+                    ? `${missionData.completionLine}\n\nContract reward: ¢ ${missionData.reward.toLocaleString()}`
+                    : `Contract reward: ¢ ${missionData.reward.toLocaleString()}`;
+                if (discoveryBonusPaid > 0) {
+                    msg += `\nDiscovery bonus: ¢ ${discoveryBonusPaid.toLocaleString()}`;
+                    const planetName = scene.ship?.orbitingPlanet?.name || 'Unknown world';
+                    msg += `\n\n${planetName} is now surveyed.`;
+                }
+                uiNotify({ title: missionData.title, message: msg, variant: 'mission', durationMs: 0, dismissible: true });
             }
-            alert(alertMessage);
         }
 
         // In the future, you could add checks here, like:

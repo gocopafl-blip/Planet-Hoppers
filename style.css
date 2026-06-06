@@ -30,8 +30,8 @@
     border: 3px solid #2ef8ff;
     border-radius: 30px;
     box-shadow: 0 0 30px rgba(46, 248, 255, 0.5);
-    width: 95vw;
-    max-width: 600px;
+    width: min(92vw, 780px);
+    max-width: 780px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
@@ -51,7 +51,7 @@
 
 #ship-assignment-list {
     width: 100%;
-    max-height: 320px;
+    max-height: min(52vh, 480px);
     overflow-y: auto;
     margin-bottom: 18px;
     display: flex;
@@ -519,14 +519,31 @@ button:hover {
 
 /* Styling for each button in the list */
 #dock-menu li {
-    padding: 15px;
+    padding: 12px 15px;
     color: #a0e0ff;
     border-bottom: 1px solid #f1f7f163;
-    /* Dark green line between items */
     cursor: pointer;
-    /* Makes the mouse a pointer, like a link */
     transition: all 0.2s ease-in-out;
-    /* Smooth transition for hover effect */
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dock-station-name {
+    font-size: 0.95em;
+    letter-spacing: 0.04em;
+}
+
+.dock-station-sub {
+    font-size: 0.68em;
+    letter-spacing: 0.03em;
+    color: rgba(160, 224, 255, 0.62);
+    line-height: 1.35;
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+
+#dock-menu li:hover .dock-station-sub {
+    color: rgba(12, 6, 6, 0.72);
 }
 
 /* Removes the line from the very last item */
@@ -687,48 +704,167 @@ button:hover {
     50% { opacity: 0.65; }
 }
 
-/* Mission Board Styles */
-#mission-board {
-    position: absolute;
-    top: 50%;
+/* === Station terminal panels (mission board, trade hub) === */
+.station-panel {
+    position: fixed;
     left: 50%;
+    top: 50%;
     transform: translate(-50%, 100vh);
-    /* NEW: Default position is off-screen at the bottom */
-    width: 600px;
-    max-height: 80vh;
-    background-color: rgba(0, 20, 40, 0.243);
-    border: 2px solid #a0e0ff;
-    border-radius: 10px;
-    color: #a0e0ff;
-    padding: 20px;
+    width: min(94vw, 1120px);
+    height: min(88vh, 860px);
     z-index: 1100;
-    /* Make sure it's on top of other UI */
-    font-family: 'Consolas', 'Courier New', monospace;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    color: #d8f0ff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    border-radius: 14px;
+    border: 2px solid rgba(160, 224, 255, 0.75);
+    background: linear-gradient(165deg, rgba(4, 18, 38, 0.98) 0%, rgba(8, 28, 52, 0.96) 48%, rgba(2, 12, 28, 0.99) 100%);
+    box-shadow:
+        0 0 48px rgba(46, 148, 255, 0.2),
+        0 28px 72px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(160, 224, 255, 0.12);
 }
 
-#mission-board h2 {
-    text-align: center;
-    margin-top: 0;
-    font-family: "Orbitron", sans-serif;
+.station-panel--trade {
+    border-color: rgba(255, 214, 120, 0.65);
+    box-shadow:
+        0 0 48px rgba(255, 190, 80, 0.16),
+        0 28px 72px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 220, 140, 0.1);
+}
+
+.station-panel-header {
+    flex-shrink: 0;
+    padding: 26px 72px 18px 32px;
+    border-bottom: 1px solid rgba(160, 224, 255, 0.18);
+    background: linear-gradient(180deg, rgba(46, 120, 200, 0.14), transparent);
+}
+
+.station-panel--trade .station-panel-header {
+    border-bottom-color: rgba(255, 214, 120, 0.2);
+    background: linear-gradient(180deg, rgba(180, 120, 40, 0.12), transparent);
+}
+
+.station-panel-eyebrow {
+    margin: 0 0 6px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #2ef8ff;
+}
+
+.station-panel--trade .station-panel-eyebrow {
+    color: #ffd666;
+}
+
+.station-panel-header h2 {
+    margin: 0 0 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.45rem, 2.4vw, 2rem);
+    color: #fff;
+    letter-spacing: 0.05em;
+    text-align: left;
+}
+
+.station-panel-subtitle {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: rgba(200, 228, 255, 0.82);
+    max-width: 52em;
+}
+
+.station-panel-meta {
+    margin: 12px 0 0;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    color: #7dff96;
+}
+
+.station-panel--trade .station-panel-meta {
+    color: #ffd666;
+}
+
+.station-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 28px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(160, 224, 255, 0.35) transparent;
+}
+
+.station-panel-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.station-panel-body::-webkit-scrollbar-thumb {
+    background: rgba(160, 224, 255, 0.28);
+    border-radius: 4px;
+}
+
+.station-panel-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    bottom: auto;
+    left: auto;
+    width: 44px;
+    height: 44px;
+    z-index: 2;
+}
+
+#closeFleetManagerBtn,
+#closeTitanSupplyBtn {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    top: auto;
+    right: auto;
+    width: 40px;
+    height: 40px;
+    z-index: 2;
+}
+
+#mission-board.slide-in,
+#trade-hub.slide-in,
+.station-panel.slide-in {
+    animation: slideInFromBottom 0.5s ease-out forwards;
+}
+
+#mission-board.slide-out,
+#trade-hub.slide-out,
+.station-panel.slide-out {
+    animation: slideOutToBottom 0.5s ease-in forwards;
+}
+
+/* Mission Board Styles */
+#mission-board {
+    /* inherits .station-panel */
 }
 
 #mission-list {
-    flex-grow: 1;
-    overflow-y: auto;
-    /* Add scrollbar if list is long */
-    padding-right: 10px;
-    /* Space for the scrollbar */
+    /* inherits .station-panel-body */
 }
 
 .mission-item {
-    background-color: rgba(10, 30, 50, 0.8);
-    border: 1px solid #507090;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 5px;
+    background: linear-gradient(135deg, rgba(10, 34, 58, 0.92), rgba(6, 22, 40, 0.88));
+    border: 1px solid rgba(120, 180, 220, 0.45);
+    padding: 20px 22px;
+    border-radius: 10px;
     position: relative;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mission-item:not(.mission-locked):hover {
+    border-color: rgba(160, 224, 255, 0.65);
+    box-shadow: 0 0 20px rgba(46, 148, 255, 0.12);
 }
 
 .mission-item.mission-locked {
@@ -803,7 +939,8 @@ button:hover {
 }
 
 .mission-briefing {
-    line-height: 1.45;
+    line-height: 1.55;
+    font-size: 0.95rem;
     color: #d0e8f8 !important;
 }
 
@@ -812,8 +949,11 @@ button:hover {
 }
 
 .mission-item h3 {
-    margin: 0 0 6px 0;
+    margin: 0 0 8px 0;
     color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.12rem;
+    letter-spacing: 0.03em;
 }
 
 .mission-item p {
@@ -828,35 +968,36 @@ button:hover {
 
 .mission-reward {
     font-weight: bold;
-    color: #00ff00;
-    /* Green for money */
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    color: #7dff96;
+}
+
+.mission-footer .accept-btn {
+    min-width: 120px;
+    padding: 10px 22px;
+    font-size: 0.95rem;
 }
 
 .close-button {
-    position: absolute;
-    /* Position it relative to the #mission-board container */
-    bottom: 10px;
-    left: 10px;
-    width: 40px;
-    height: 40px;
     border-radius: 50%;
-    /* This makes the button a perfect circle */
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.55);
     color: #a0e0ff;
     border: 1px solid #a0e0ff;
-    font-size: 1.2em;
+    font-size: 1.4em;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 0;
-    transition: background-color 0.2s, color 0.2s;
+    transition: background-color 0.2s, color 0.2s, transform 0.15s;
 }
 
 .close-button:hover {
     background-color: #a0e0ff;
     color: #000;
+    transform: scale(1.05);
 }
 
 @keyframes slideInFromBottom {
@@ -885,14 +1026,7 @@ button:hover {
 }
 
 /* We will add this class with JavaScript to trigger the fly-in */
-#mission-board.slide-in {
-    animation: slideInFromBottom 0.5s ease-out forwards;
-}
-
-/* We will add this class with JavaScript to trigger the fly-out */
-#mission-board.slide-out {
-    animation: slideOutToBottom 0.5s ease-in forwards;
-}
+/* slide-in/out for station panels defined above with .station-panel */
 
 #nav-screen {
     position: absolute;
@@ -941,102 +1075,167 @@ h2 {
 }
 
 #trade-hub {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 90vw;
-    max-width: 800px;
-    height: 80vh;
-    z-index: 10;
-    background: rgba(20, 20, 40, 0.75);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 1px;
-    overflow: hidden;
+    /* inherits .station-panel .station-panel--trade */
 }
 
 #trade-list {
-    width: 90vw;
-    max-width: 100%;
-    max-height: 70vh;
-    overflow-y: auto;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    /* inherits .station-panel-body */
 }
 
 .trade-item {
-    background: #222a;
+    background: linear-gradient(135deg, rgba(18, 24, 38, 0.95), rgba(10, 16, 28, 0.92));
+    border: 1px solid rgba(255, 214, 120, 0.28);
     border-radius: 12px;
-    box-shadow: 0 2px 8px #0008;
-    padding: 20px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    padding: 24px 26px;
     color: #fff;
-    font-family: 'Orbitron', Arial, sans-serif;
-
-    /* --- NEW FLEXBOX STYLES --- */
+    font-family: 'Consolas', 'Courier New', monospace;
     display: flex;
-    /* ✨ This is the magic! It tells the container to arrange its children in a row. */
     flex-direction: row;
-    /* Explicitly set the direction to a row (side-by-side). */
-    align-items: center;
-    /* Vertically aligns the image and the text block to their center. */
-    gap: 20px;
-    /* Adds a 20px gap between the image and the text block. */
+    align-items: stretch;
+    gap: 28px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* New style for the image */
+.trade-item:hover {
+    border-color: rgba(255, 214, 120, 0.5);
+    box-shadow: 0 0 28px rgba(255, 190, 80, 0.1);
+}
+
 .trade-item-image {
-    width: 150px;
-    /* Give the image a fixed width. */
-    height: 150px;
-    /* Give it a fixed height. */
+    width: min(240px, 32vw);
+    height: 168px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 10px;
     flex-shrink: 0;
-    /* Prevents the image from shrinking if the text is long. */
+    border: 1px solid rgba(255, 214, 120, 0.25);
+    background: #0a1020;
 }
 
 .trade-item-info {
     display: flex;
     flex-direction: column;
-    /* Stack the text items vertically inside their own container. */
-    width: 100%;
-    /* Allow this container to fill the remaining space. */
+    flex: 1;
+    min-width: 0;
+}
+
+.trade-item-info h3 {
+    margin: 0 0 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.04em;
+    color: #ffd666;
+}
+
+.trade-description {
+    margin: 0 0 12px;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    color: rgba(220, 230, 245, 0.88);
+}
+
+.trade-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 20px;
+    margin: 0;
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.trade-stats-grid div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.trade-stats-grid dt {
+    margin: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(200, 210, 230, 0.65);
+}
+
+.trade-stats-grid dd {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #e8f0ff;
 }
 
 .trade-footer {
-    margin-top: 10px;
+    margin-top: auto;
+    padding-top: 16px;
     display: flex;
-    gap: 20px;
+    justify-content: space-between;
     align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.trade-price {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #7dff96;
+    letter-spacing: 0.04em;
+}
+
+.trade-buy-btn {
+    background: linear-gradient(180deg, #3a9eff, #2568c8);
+    border: 1px solid rgba(120, 190, 255, 0.6);
+    padding: 11px 24px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+}
+
+.trade-buy-btn:hover {
+    background: linear-gradient(180deg, #5cb4ff, #3078d8);
 }
 
 .accept-btn {
-    background: #2e8bff;
+    background: linear-gradient(180deg, #3a9eff, #2568c8);
     color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 18px;
-    font-size: 1rem;
+    border: 1px solid rgba(120, 190, 255, 0.5);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.04em;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.15s;
 }
 
-.accept-btn:hover {
-    background: #1a5bb8;
+.accept-btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, #5cb4ff, #3078d8);
+    transform: translateY(-1px);
 }
 
-#trade-hub.slide-in {
-    animation: slideInFromBottom 0.5s ease-out forwards;
-}
+@media (max-width: 820px) {
+    .station-panel-header {
+        padding: 22px 56px 16px 20px;
+    }
 
-/* We will add this class with JavaScript to trigger the fly-out */
-#trade-hub.slide-out {
-    animation: slideOutToBottom 0.5s ease-in forwards;
+    .station-panel-body {
+        padding: 16px 18px 22px;
+    }
+
+    .trade-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .trade-item-image {
+        width: 100%;
+        height: 180px;
+    }
+
+    .trade-stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 #titan-supply {
@@ -1730,4 +1929,103 @@ h2 {
     text-transform: uppercase;
     color: rgba(125, 255, 196, 0.55);
     text-align: center;
+}
+
+.notification-subline {
+    margin: 10px 0 0;
+    font-size: 0.78em;
+    color: rgba(200, 240, 255, 0.85);
+    line-height: 1.4;
+}
+
+.notification-payout {
+    margin-top: 4px;
+}
+
+/* Notification variants */
+.notification-card.notification-discovery {
+    animation: notificationPulseGlow 2.4s ease-in-out infinite;
+}
+
+.notification-card.notification-mission {
+    border-color: rgba(255, 214, 102, 0.75);
+    animation: notificationPulseGlowMission 2.4s ease-in-out infinite;
+}
+
+.notification-card.notification-mission .notification-badge {
+    background: #ffd666;
+    color: #3a2800;
+}
+
+.notification-card.notification-mission .notification-scan-line {
+    background: linear-gradient(180deg, transparent, rgba(255, 214, 102, 0.14), transparent);
+}
+
+.notification-card.notification-mission .notification-dismiss-hint {
+    color: rgba(255, 220, 140, 0.55);
+}
+
+.notification-card.notification-success {
+    border-color: rgba(100, 220, 180, 0.7);
+    animation: none;
+    box-shadow: 0 0 20px rgba(100, 220, 180, 0.25), 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.notification-card.notification-success .notification-badge {
+    background: #64dcb4;
+    color: #002818;
+}
+
+.notification-card.notification-warning {
+    border-color: rgba(255, 179, 71, 0.75);
+    animation: notificationPulseGlowWarning 2.6s ease-in-out infinite;
+}
+
+.notification-card.notification-warning .notification-badge {
+    background: #ffb347;
+    color: #3a1a00;
+}
+
+.notification-card.notification-warning .notification-scan-line {
+    background: linear-gradient(180deg, transparent, rgba(255, 179, 71, 0.12), transparent);
+}
+
+.notification-card.notification-error {
+    border-color: rgba(255, 90, 90, 0.8);
+    animation: notificationPulseGlowError 2.2s ease-in-out infinite;
+}
+
+.notification-card.notification-error .notification-badge {
+    background: #ff5a5a;
+    color: #3a0000;
+}
+
+.notification-card.notification-error .notification-scan-line {
+    background: linear-gradient(180deg, transparent, rgba(255, 90, 90, 0.12), transparent);
+}
+
+.notification-card.notification-info {
+    border-color: rgba(120, 180, 255, 0.65);
+    animation: none;
+    box-shadow: 0 0 20px rgba(120, 180, 255, 0.2), 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.notification-card.notification-info .notification-badge {
+    background: #78b4ff;
+    color: #001830;
+}
+
+@keyframes notificationPulseGlowMission {
+    0%, 100% { box-shadow: 0 0 24px rgba(255, 214, 102, 0.35), 0 8px 32px rgba(0, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 36px rgba(255, 214, 102, 0.55), 0 8px 32px rgba(0, 0, 0, 0.5); }
+}
+
+@keyframes notificationPulseGlowWarning {
+    0%, 100% { box-shadow: 0 0 24px rgba(255, 179, 71, 0.35), 0 8px 32px rgba(0, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 36px rgba(255, 179, 71, 0.5), 0 8px 32px rgba(0, 0, 0, 0.5); }
+}
+
+@keyframes notificationPulseGlowError {
+    0%, 100% { box-shadow: 0 0 24px rgba(255, 90, 90, 0.35), 0 8px 32px rgba(0, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 36px rgba(255, 90, 90, 0.55), 0 8px 32px rgba(0, 0, 0, 0.5); }
 }

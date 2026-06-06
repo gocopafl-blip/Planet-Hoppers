@@ -344,8 +344,11 @@ const fleetManagerScene = {
                 this.jumpToShip(ship);
                 break;
             case 'disabled':
-                // Ship is disabled, show repair message
-                alert('This ship requires repairs before it can be operated.');
+                uiNotify({
+                    title: 'Ship Disabled',
+                    message: 'This ship requires repairs before it can be operated.',
+                    variant: 'warning'
+                });
                 break;
             default:
                 console.warn(`Unknown action: ${action}`);
@@ -355,7 +358,11 @@ const fleetManagerScene = {
     dispatchShip(ship) {
         // Check if ship can be dispatched
         if (ship.currentHealth <= 0) {
-            alert('Cannot dispatch a disabled ship. Repairs are required.');
+            uiNotify({
+                title: 'Repairs Required',
+                message: 'Cannot dispatch a disabled ship. Visit Apex Outfitting when repair is available.',
+                variant: 'warning'
+            });
             return;
         }
 
@@ -388,7 +395,11 @@ const fleetManagerScene = {
     jumpToShip(ship) {
         // Check if ship can be controlled
         if (ship.currentHealth <= 0) {
-            alert('Cannot control a disabled ship. Repairs are required.');
+            uiNotify({
+                title: 'Repairs Required',
+                message: 'Cannot control a disabled ship. Visit Apex Outfitting when repair is available.',
+                variant: 'warning'
+            });
             return;
         }
 

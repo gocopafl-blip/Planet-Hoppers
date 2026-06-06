@@ -83,6 +83,11 @@ const galacticTradeHubScene = {
     showTradeHub() {
         const tradeHub = document.getElementById('trade-hub');
         const tradeList = document.getElementById('trade-list');
+        const balanceEl = document.getElementById('trade-hub-balance');
+
+        if (balanceEl && typeof playerDataManager.getBalance === 'function') {
+            balanceEl.textContent = `Account balance: ¢ ${playerDataManager.getBalance().toLocaleString()}`;
+        }
 
         // Get all ships from the ship catalogue
         const ships = Object.entries(shipCatalogue); // [ [id, shipData], ... ]
@@ -94,19 +99,21 @@ const galacticTradeHubScene = {
             tradeElement.className = 'trade-item';
             const glamShotImage = assetManager.getImage(ship.shipGlamShot);
             const imageSrc = glamShotImage ? glamShotImage.src : '';
+            const buyPrice = ship.shipBuyValue ? ship.shipBuyValue.toLocaleString() : 'N/A';
 
             tradeElement.innerHTML = `
                 <img class="trade-item-image" src="${imageSrc}" alt="${ship.shipID}">
-                
                 <div class="trade-item-info">
                     <h3>${ship.shipID}</h3>
-                    <p>${ship.shipDescription || ''}</p>
+                    <p class="trade-description">${ship.shipDescription || ''}</p>
+                    <dl class="trade-stats-grid">
+                        <div><dt>Max speed</dt><dd>${ship.shipMaxSpeed ? ship.shipMaxSpeed.toLocaleString() : 'N/A'} %c</dd></div>
+                        <div><dt>Acceleration</dt><dd>${ship.shipThrustPower || 0} %c</dd></div>
+                        <div><dt>Cargo</dt><dd>${ship.shipCargoCapacity || 0} m³</dd></div>
+                    </dl>
                     <div class="trade-footer">
-                        <span class="trade-reward">Max Speed: ${ship.shipMaxSpeed ? ship.shipMaxSpeed.toLocaleString() : 'N/A'} %LightSpeed</span>
-                        <span class="trade-cargo">Cargo Capacity: ${ship.shipCargoCapacity || 0} m<sup>3</sup></span>
-                        <span class="trade-thrust">Acceleration: ${ship.shipThrustPower || 0} %LightSpeed</span>
-                        <span class="trade-reward">BUY: ¢ ${ship.shipBuyValue ? ship.shipBuyValue.toLocaleString() : 'N/A'}</span>
-                        <button class="accept-btn" data-ship-id="${shipKey}">Buy</button>
+                        <span class="trade-price">¢ ${buyPrice}</span>
+                        <button class="accept-btn trade-buy-btn" data-ship-id="${shipKey}">Purchase Hull</button>
                     </div>
                 </div>
             `;

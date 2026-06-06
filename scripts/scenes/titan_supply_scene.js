@@ -58,7 +58,12 @@ const titanSupplyScene = {
         }
 
         if (result.message) {
-            alert(result.message);
+            uiNotify({
+                title: result.ok ? 'Resupply Complete' : 'Resupply Failed',
+                message: result.message,
+                variant: result.ok ? 'success' : 'warning',
+                durationMs: result.ok ? 5000 : 8000
+            });
         }
         if (result.ok) {
             this.populateSupplyList();

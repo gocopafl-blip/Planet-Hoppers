@@ -165,4 +165,107 @@ const missionCatalogue = {
         completionLine: "Sample logged. GSO transfers contract funds to your account.",
     },
 
+    // ── Era 2 — System opens (planet-type routes) ─────────────────────────
+
+    "SCAN_PLANET_03": {
+        era: 2,
+        tier: 3,
+        sortOrder: 85,
+        issuer: "Orbital Cargo Solutions",
+        title: "Rim Signal Triage Scan",
+        briefing: "Chart office wants the next unknown on the rim logged before type-specific routes go wide. Establish orbit and run a full sweep.",
+        flavorTag: "Orbital survey",
+        reward: 1100,
+        type: 'ORBIT_PLANET',
+        firstUndiscoveredRank: 0,
+        discoveryBonus: 300,
+        timeLimitSec: 2100,
+        requires: {
+            completedMissions: ['SCAN_PLANET_02'],
+            minSurveyedWorlds: 5
+        },
+        completionLine: "Rim contact catalogued. Type-route contracts are clearing dispatch.",
+    },
+
+    "ERA2_ICE_COOLANT_01": {
+        era: 2,
+        tier: 3,
+        sortOrder: 90,
+        issuer: "Station Operations",
+        title: "Cryogenic Coolant Orbital Load",
+        briefing: "Thermal systems need H₂ slurry from your charted ice world. Lock orbit at the ice body, load the pallet, and return to dock before it sublimates.",
+        flavorTag: "Type-route fetch",
+        reward: 2800,
+        type: 'FETCH_AND_DELIVER',
+        pickupAt: 'orbit',
+        requiredPlanetTypeId: 'ice_world',
+        timeLimitSec: 1800,
+        requires: {
+            completedMissions: ['PICK_UP_CARGO_01'],
+            surveyedPlanetTypes: ['ice_world']
+        },
+        pickupLine: 'Coolant pallet secured in cargo lock. Return to Alpha Station and dock.',
+        completionLine: "Ops confirms coolant delivery. Dock thermal margins are back in spec.",
+    },
+
+    "ERA2_WATER_SAMPLE_01": {
+        era: 2,
+        tier: 3,
+        sortOrder: 100,
+        oneTime: true,
+        issuer: "K-14 Hydrographics Bureau",
+        title: "Pelagic Microbe Tray",
+        briefing: "Hydrographics needs a live microbe tray from brine pools on your surveyed ocean world. Land at Pad 1, collect the tray, return to mothership, then dock for payout.",
+        flavorTag: "Type-specific sample",
+        reward: 3200,
+        type: 'PICK_UP_CARGO',
+        requiredPlanetTypeId: 'water_world',
+        requiredPadId: 1,
+        requires: {
+            minSurveyedWorlds: 5,
+            surveyedPlanetTypes: ['water_world']
+        },
+        completionLine: "Tray logged. Open-ocean bioscience contracts are now on the board.",
+    },
+
+    "ERA2_VOLCANIC_LOGGER_01": {
+        era: 2,
+        tier: 3,
+        sortOrder: 110,
+        issuer: "Geological Survey Office",
+        title: "Mantle Vent Logger Drop",
+        briefing: "Only Pad 2 on a surveyed volcanic world is rated for vent proximity. Offload the logger package — land, deploy, and do not linger.",
+        flavorTag: "Surface drop",
+        reward: 3400,
+        type: 'LAND_ON_PLANET',
+        requiredPlanetTypeId: 'volcanic_world',
+        requiredPadId: 2,
+        requires: {
+            minSurveyedWorlds: 5,
+            surveyedPlanetTypes: ['volcanic_world']
+        },
+        completionLine: "Logger transmitting. GSO adds vent monitoring to your contractor file.",
+    },
+
+    "ERA2_CITY_MANIFEST_01": {
+        era: 2,
+        tier: 3,
+        sortOrder: 120,
+        issuer: "Orbital Cargo Solutions",
+        title: "Urban Customs Seal Run",
+        briefing: "Customs on your charted city world will not release bonded freight without a physical seal collected on the ground. Land, pick up the seal, return to dock.",
+        flavorTag: "Type-route fetch",
+        reward: 3100,
+        type: 'FETCH_AND_DELIVER',
+        pickupAt: 'land',
+        requiredPlanetTypeId: 'city_world',
+        timeLimitSec: 2000,
+        requires: {
+            surveyedPlanetTypes: ['city_world'],
+            completedMissions: ['ERA2_ICE_COOLANT_01']
+        },
+        pickupLine: 'Customs seal secured. Return to Alpha Station and dock.',
+        completionLine: "Bonded freight cleared. Urban route certification noted.",
+    },
+
 };

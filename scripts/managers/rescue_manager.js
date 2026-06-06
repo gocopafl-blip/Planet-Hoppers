@@ -32,7 +32,11 @@ class RescueManager {
             { shipId: activeShip.id }
         );
         if (!paid) {
-            alert('Insufficient credits for emergency tow.');
+            uiNotify({
+                title: 'Insufficient Credits',
+                message: 'Insufficient credits for emergency tow.',
+                variant: 'warning'
+            });
             return { ok: false, message: 'Insufficient credits.' };
         }
 

@@ -173,7 +173,11 @@ class SpaceScene {
         const activeShip = playerDataManager.getActiveShip();
         if (!activeShip) {
             console.error('No active ship found for fleet dispatch');
-            alert('Error: No active ship selected. Returning to fleet manager.');
+            uiNotify({
+                title: 'Dispatch Error',
+                message: 'No active ship selected. Returning to fleet manager.',
+                variant: 'error'
+            });
             gameManager.switchScene(fleetManagerScene);
             return;
         }
@@ -181,7 +185,11 @@ class SpaceScene {
         const startingShipData = fleetManager.getActiveShipData();
         if (!startingShipData) {
             console.error('No ship data found for active ship:', activeShip.shipTypeId);
-            alert('Error: Ship configuration not found. Please check your ship setup.');
+            uiNotify({
+                title: 'Ship Configuration Error',
+                message: 'Ship configuration not found. Check your fleet setup.',
+                variant: 'error'
+            });
             gameManager.switchScene(fleetManagerScene);
             return;
         }

@@ -186,7 +186,11 @@ class FleetManager {
 
         // Check if the player has enough currency to buy the ship
         if (playerDataManager.getBalance() < shipData.shipBuyValue) {
-            alert(`Not enough credits to buy ${shipData.shipID}.`);
+            uiNotify({
+                title: 'Insufficient Credits',
+                message: `Not enough credits to purchase ${shipData.shipID}.`,
+                variant: 'warning'
+            });
             return;
         }
         const playerGivenName = prompt(`Enter a name for your new ${shipData.shipID}:`);
@@ -201,7 +205,11 @@ class FleetManager {
             { shipTypeId: shipCatalogueKey, shipName: playerGivenName || shipData.shipID }
         );
         if (!paid) {
-            alert(`Not enough credits to buy ${shipData.shipID}.`);
+            uiNotify({
+                title: 'Insufficient Credits',
+                message: `Not enough credits to purchase ${shipData.shipID}.`,
+                variant: 'warning'
+            });
             return;
         }
 
@@ -265,7 +273,12 @@ class FleetManager {
         // This will save the current ship's state (if any) and switch to the new ship
         this.setActiveShip(newShip.id);
 
-        alert(`Bought ship: ${shipData.shipID}`);
+        uiNotify({
+            title: 'Hull Purchased',
+            message: `${shipData.shipID} added to your fleet as "${playerGivenName || shipData.shipID}".`,
+            variant: 'success',
+            durationMs: 8000
+        });
         // NOTE: No need to call playerDataManager.saveData() here because
         // both addShipToFleet() and setActiveShip() already save the data
     }
@@ -300,7 +313,12 @@ class FleetManager {
             );
             
             console.log(`Sold ship: ${removedShip.name} for ${refundAmount} credits`);
-            alert(`Sold ${removedShip.name} for ${refundAmount} credits`);
+            uiNotify({
+                title: 'Hull Sold',
+                message: `${removedShip.name} sold for ¢ ${refundAmount.toLocaleString()}.`,
+                variant: 'success',
+                durationMs: 8000
+            });
         }
         // NOTE: PlayerDataManager methods automatically save data, so no manual save needed
     }

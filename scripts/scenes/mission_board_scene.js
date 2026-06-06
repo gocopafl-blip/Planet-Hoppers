@@ -243,6 +243,7 @@ const missionBoardScene = {
     showMissionBoard() {
         const missionBoard = document.getElementById('mission-board');
         const missionList = document.getElementById('mission-list');
+        const metaEl = document.getElementById('mission-board-meta');
 
         if (!planetManager.celestialBodies?.length && playerDataManager.hasSavedPlanetData()) {
             planetManager.restoreSavedPlanets();
@@ -250,6 +251,11 @@ const missionBoardScene = {
 
         const missions = missionManager.generateAvailableMissions();
         missionList.innerHTML = '';
+
+        const unlockedCount = missions.filter(m => m.unlocked).length;
+        if (metaEl) {
+            metaEl.textContent = `${unlockedCount} contract${unlockedCount === 1 ? '' : 's'} available · ${missions.length} listed`;
+        }
 
         missions.forEach(mission => {
             const mm = missionManager;
