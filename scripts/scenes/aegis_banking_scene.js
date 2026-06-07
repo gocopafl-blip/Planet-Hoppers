@@ -14,6 +14,7 @@ const aegisBankingScene = {
         setTimeout(() => {
             panel.style.display = 'flex';
             panel.classList.add('slide-in');
+            bankingManager.refreshMarketLenderRotation();
             this.refreshPanel();
         }, 500);
 
@@ -229,10 +230,11 @@ const aegisBankingScene = {
         const grid = document.getElementById('aegis-market-grid');
         if (!header || !grid) return;
 
-        const market = bankingManager.getMarketOffers();
+        const market = bankingManager.getMarketComparisonGrid();
         const bm = bankingManager;
 
         if (!market.unlocked) {
+            header.style.display = '';
             const remaining = Math.max(0, market.unlockThreshold - market.lifetimeEarnings);
             header.innerHTML = `
                 <p class="aegis-market-lock-title">Loan market locked</p>
@@ -242,42 +244,90 @@ const aegisBankingScene = {
                 </p>
             `;
         } else {
-            header.innerHTML = `
-                <p class="aegis-market-unlock-title">K-14 Trust Index: ${market.creditScore} · ${market.creditGrade}</p>
-                <p class="aegis-market-unlock-desc">Browse lenders below. Headline rates hide the fine print — read before you draw.</p>
-            `;
+            header.innerHTML = '';
+            header.style.display = 'none';
         }
 
-        if (!market.offers.length) {
+        if (!market.lenders.length || !market.amounts.length) {
             grid.innerHTML = '<p class="aegis-empty">No loan products in catalogue.</p>';
             return;
         }
 
-        grid.innerHTML = market.offers.map(offer => {
-            const locked = !offer.eligible;
-            const lockClass = locked ? 'aegis-market-card--locked' : '';
-            const drawDisabled = locked ? 'disabled' : '';
+        const lenderHeaders = market.lenders.map(lender => {
+            const ribbon = lender.ribbon
+                ? `<span class="aegis-market-ribbon aegis-market-ribbon--${bm.escapeHtml(lender.ribbon)}">${bm.escapeHtml(bm.getMarketRibbonLabel(lender.ribbon))}</span>`
+                : '';
+            const logo = lender.logoPath
+                ? `<img class="aegis-market-lender-logo" src="${bm.escapeHtml(lender.logoPath)}" alt="" width="40" height="40">`
+                : '';
             return `
-                <article class="aegis-market-card ${lockClass}" data-lender-id="${bm.escapeHtml(offer.lenderId)}" data-product-id="${bm.escapeHtml(offer.productId)}">
-                    <header class="aegis-market-card-header">
-                        <h3 class="aegis-market-lender">${bm.escapeHtml(offer.lenderName)}</h3>
-                        <span class="aegis-market-rate">${offer.headlineRatePct}% income</span>
-                    </header>
-                    <p class="aegis-market-tagline">${bm.escapeHtml(offer.lenderTagline)}</p>
-                    <p class="aegis-market-product">${bm.escapeHtml(offer.productName)} · ${bm.escapeHtml(bm.formatCredits(offer.principal))}</p>
-                    <dl class="aegis-market-stats">
-                        <div><dt>Net draw</dt><dd>${bm.escapeHtml(bm.formatCredits(offer.netDraw))}</dd></div>
-                        <div><dt>Min K-14</dt><dd>${offer.minCreditScore}</dd></div>
-                    </dl>
-                    <p class="aegis-market-terms">${bm.escapeHtml(offer.termsSummary)}</p>
-                    <p class="aegis-market-fineprint">${bm.escapeHtml(offer.finePrint)}</p>
-                    ${locked
-                        ? `<p class="aegis-market-lock-reason">${bm.escapeHtml(offer.lockReason)}</p>`
-                        : `<button type="button" class="aegis-market-draw-btn" data-lender-id="${bm.escapeHtml(offer.lenderId)}" data-product-id="${bm.escapeHtml(offer.productId)}" ${drawDisabled}>Draw loan</button>`
-                    }
-                </article>
+                <th class="aegis-market-col-head" style="--lender-brand: ${bm.escapeHtml(lender.brandColor)}">
+                    ${ribbon}
+                    ${logo}
+                    <span class="aegis-market-col-name">${bm.escapeHtml(lender.name)}</span>
+                    <span class="aegis-market-col-channel">${bm.escapeHtml(lender.channelLabel)}</span>
+                </th>
             `;
         }).join('');
+
+        const amountRows = market.amounts.map(amount => {
+            const rowCells = market.lenders.map(lender => {
+                const offer = market.offerByKey[`${amount}:${lender.id}`];
+                if (!offer) {
+                    return '<td class="aegis-market-cell aegis-market-cell--empty" aria-hidden="true"><span class="aegis-market-empty">—</span></td>';
+                }
+
+                const locked = !offer.eligible;
+                const lockClass = locked ? 'aegis-market-cell--locked' : '';
+                const origLine = offer.originationFee > 0
+                    ? `<span class="aegis-market-cell-fee">(¢${offer.originationFee.toLocaleString()} origination)</span>`
+                    : '<span class="aegis-market-cell-fee aegis-market-cell-fee--none">No upfront fee</span>';
+                const action = locked
+                    ? `<p class="aegis-market-lock-reason" title="${bm.escapeHtml(offer.lockReason || '')}">${bm.escapeHtml(offer.lockReason || 'Unavailable')}</p>`
+                    : `<button type="button" class="aegis-market-draw-btn" data-lender-id="${bm.escapeHtml(offer.lenderId)}" data-product-id="${bm.escapeHtml(offer.productId)}">Draw</button>`;
+
+                return `
+                    <td class="aegis-market-cell aegis-market-cell--filled ${lockClass}"
+                        style="--lender-brand: ${bm.escapeHtml(lender.brandColor)}"
+                        data-lender-id="${bm.escapeHtml(offer.lenderId)}"
+                        data-product-id="${bm.escapeHtml(offer.productId)}">
+                        <span class="aegis-market-cell-rate">${offer.headlineRatePct}%</span>
+                        ${origLine}
+                        <span class="aegis-market-cell-total">Net draw: ${bm.escapeHtml(bm.formatCredits(offer.netDraw))}</span>
+                        <span class="aegis-market-cell-product">${bm.escapeHtml(offer.productName)}</span>
+                        ${action}
+                    </td>
+                `;
+            }).join('');
+
+            const amountLabel = bm.formatCredits(amount).replace('¢ ', '¢');
+            return `
+                <tr>
+                    <th class="aegis-market-row-head" scope="row">
+                        <img class="aegis-market-amount-icon" src="${bm.escapeHtml(market.amountIconPath)}" alt="" width="36" height="36">
+                        <span class="aegis-market-amount-label">${bm.escapeHtml(amountLabel)}</span>
+                        <span class="aegis-market-amount-sub">Cash loan</span>
+                    </th>
+                    ${rowCells}
+                </tr>
+            `;
+        }).join('');
+
+        grid.innerHTML = `
+            <div class="aegis-market-compare-scroll">
+                <table class="aegis-market-compare" role="grid" aria-label="Loan market comparison">
+                    <thead>
+                        <tr>
+                            <th class="aegis-market-corner" scope="col">Loan amount</th>
+                            ${lenderHeaders}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${amountRows}
+                    </tbody>
+                </table>
+            </div>
+        `;
     },
 
     async handleMarketClick(event) {

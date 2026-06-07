@@ -7,6 +7,10 @@ const LENDER_CATALOGUE = [
         id: 'kestrel_micro',
         name: 'Kestrel Microcredit',
         tagline: 'Small draws for contractors with thin files.',
+        logoKey: 'lender_kestrel_micro',
+        brandColor: '#3dff8a',
+        channelLabel: 'Dock Terminal Kiosks',
+        ribbon: 'lowest_fee',
         minCreditScore: 380,
         products: [
             {
@@ -28,6 +32,10 @@ const LENDER_CATALOGUE = [
         id: 'rust_belt',
         name: 'Rust Belt Lending Co.',
         tagline: 'Bridge cash until the next contract lands.',
+        logoKey: 'lender_rust_belt',
+        brandColor: '#e8924a',
+        channelLabel: 'In-Station & Relay Net',
+        ribbon: 'great_value',
         minCreditScore: 480,
         products: [
             {
@@ -50,6 +58,10 @@ const LENDER_CATALOGUE = [
         id: 'dockside_hustle',
         name: 'Dockside Hustle Loans',
         tagline: 'Friendly rates* — *friendship sold separately.',
+        logoKey: 'lender_dockside_hustle',
+        brandColor: '#c8e632',
+        channelLabel: 'Dockside Booths',
+        ribbon: null,
         minCreditScore: 440,
         products: [
             {
@@ -74,6 +86,10 @@ const LENDER_CATALOGUE = [
         id: 'parallax_pawn',
         name: 'Parallax Pawn & Lend',
         tagline: 'We remember every favor. And every default.',
+        logoKey: 'lender_parallax_pawn',
+        brandColor: '#b48cff',
+        channelLabel: 'Collateral Desk',
+        ribbon: null,
         minCreditScore: 500,
         products: [
             {
@@ -96,6 +112,10 @@ const LENDER_CATALOGUE = [
         id: 'orbital_factors',
         name: 'Orbital Factors Union',
         tagline: 'Respectable paper for established haulers.',
+        logoKey: 'lender_orbital_factors',
+        brandColor: '#4db8ff',
+        channelLabel: 'Union Direct Deposit',
+        ribbon: null,
         minCreditScore: 560,
         products: [
             {
@@ -117,6 +137,10 @@ const LENDER_CATALOGUE = [
         id: 'voidway',
         name: 'Voidway Finance',
         tagline: 'Gap coverage for when the rim eats your margin.',
+        logoKey: 'lender_voidway',
+        brandColor: '#ff5c6a',
+        channelLabel: 'Rim Relay — 24/7',
+        ribbon: 'fast_funding',
         minCreditScore: 520,
         products: [
             {
@@ -139,6 +163,10 @@ const LENDER_CATALOGUE = [
         id: 'nova_spindle',
         name: 'Nova Spindle Capital',
         tagline: 'Premium credit for operators who look good on paper.',
+        logoKey: 'lender_nova_spindle',
+        brandColor: '#ffd24a',
+        channelLabel: 'Private Banking Tier',
+        ribbon: 'best_rate',
         minCreditScore: 640,
         products: [
             {
@@ -160,6 +188,10 @@ const LENDER_CATALOGUE = [
         id: 'redshift',
         name: 'Redshift Receivables',
         tagline: 'When you need it yesterday and don\'t ask about tomorrow.',
+        logoKey: 'lender_redshift',
+        brandColor: '#ff3b3b',
+        channelLabel: 'Emergency Wire — No Questions',
+        ribbon: 'fast_funding',
         minCreditScore: 360,
         products: [
             {

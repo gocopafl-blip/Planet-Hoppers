@@ -331,6 +331,71 @@ class BankingManager {
         };
     }
 
+    /** Comparison grid: amounts as rows, lenders as columns (Phase A loan market UI). */
+    refreshMarketLenderRotation() {
+        const ids = LENDER_CATALOGUE.map(lender => lender.id);
+        for (let i = ids.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [ids[i], ids[j]] = [ids[j], ids[i]];
+        }
+        this._visibleMarketLenderIds = ids.slice(0, LOAN_MARKET_VISIBLE_LENDER_COUNT);
+    }
+
+    getVisibleMarketLenderIds() {
+        if (!this._visibleMarketLenderIds?.length) {
+            this.refreshMarketLenderRotation();
+        }
+        return this._visibleMarketLenderIds;
+    }
+
+    getMarketComparisonGrid() {
+        const market = this.getMarketOffers();
+        const visibleIds = new Set(this.getVisibleMarketLenderIds());
+        const lenders = LENDER_CATALOGUE
+            .filter(lender => visibleIds.has(lender.id))
+            .map(lender => ({
+                id: lender.id,
+                name: lender.name,
+                tagline: lender.tagline,
+                logoKey: lender.logoKey,
+                logoPath: lender.logoKey ? assetCatalogue.images[lender.logoKey] : null,
+                brandColor: lender.brandColor || '#6ec8ff',
+                channelLabel: lender.channelLabel || '',
+                ribbon: lender.ribbon || null
+            }));
+
+        const offerByKey = {};
+        market.offers.forEach(offer => {
+            if (!visibleIds.has(offer.lenderId)) return;
+            offerByKey[`${offer.principal}:${offer.lenderId}`] = offer;
+        });
+
+        const amountSet = new Set();
+        Object.keys(offerByKey).forEach(key => {
+            amountSet.add(Number(key.split(':')[0]));
+        });
+        const amounts = [...amountSet].sort((a, b) => a - b);
+
+        return {
+            ...market,
+            lenders,
+            amounts,
+            offerByKey,
+            amountIconPath: assetCatalogue.images.loan_amount_icon
+        };
+    }
+
+    getMarketRibbonLabel(ribbon) {
+        const labels = {
+            best_rate: 'Best rate!',
+            lowest_fee: 'Lowest fee',
+            fast_funding: 'Fast funding!',
+            great_value: 'Great value!',
+            no_upfront_fee: 'No upfront fee'
+        };
+        return labels[ribbon] || null;
+    }
+
     /**
      * Draw a market loan — disburse principal, charge origination fee, add active lien.
      * @returns {{ ok: boolean, message: string, loan?: object }}

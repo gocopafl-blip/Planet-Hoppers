@@ -76,6 +76,17 @@ const assetCatalogue = {
         "aegis_banking_bg": "assets/images/dock_backgrounds/Aegis Banking Systems.png",
         "fleet_manager": "assets/images/dock_backgrounds/Fleet_Management_Services.jpg",
 
+        // Aegis loan market lender logos (menu_assets)
+        "lender_kestrel_micro": "assets/images/dock_backgrounds/menu_assets/lender_kestrel_micro.png",
+        "lender_rust_belt": "assets/images/dock_backgrounds/menu_assets/lender_rust_belt.png",
+        "lender_dockside_hustle": "assets/images/dock_backgrounds/menu_assets/lender_dockside_hustle.png",
+        "lender_parallax_pawn": "assets/images/dock_backgrounds/menu_assets/lender_parallax_pawn.png",
+        "lender_orbital_factors": "assets/images/dock_backgrounds/menu_assets/lender_orbital_factors.png",
+        "lender_voidway": "assets/images/dock_backgrounds/menu_assets/lender_voidway.png",
+        "lender_nova_spindle": "assets/images/dock_backgrounds/menu_assets/lender_nova_spindle.png",
+        "lender_redshift": "assets/images/dock_backgrounds/menu_assets/lender_redshift.png",
+        "loan_amount_icon": "assets/images/dock_backgrounds/menu_assets/loan_amount_icon.png",
+
         //Scene Overlays
         "holodesk_overlay": "assets/images/dock_backgrounds/overlays/holodesk.png"
 

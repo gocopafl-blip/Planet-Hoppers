@@ -950,100 +950,200 @@ button:hover {
     color: #ffd666;
 }
 
-.station-panel--finance {
-    border-color: rgba(100, 220, 180, 0.65);
+/* === Aegis finance terminal — wealth-dashboard visual skin (Phase A) === */
+#aegis-banking.station-panel--finance {
+    --aegis-bg: #060a14;
+    --aegis-grid: rgba(56, 140, 220, 0.06);
+    --aegis-glass: rgba(12, 22, 42, 0.72);
+    --aegis-glass-border: rgba(100, 180, 255, 0.22);
+    background-color: var(--aegis-bg);
+    background-image:
+        linear-gradient(var(--aegis-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--aegis-grid) 1px, transparent 1px),
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(46, 120, 220, 0.18), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(80, 60, 200, 0.08), transparent 50%),
+        linear-gradient(168deg, rgba(8, 14, 28, 0.97) 0%, rgba(4, 8, 18, 0.99) 100%);
+    background-size: 40px 40px, 40px 40px, 100% 100%, 100% 100%, 100% 100%;
+    border: 1px solid rgba(80, 190, 255, 0.38);
     box-shadow:
-        0 0 48px rgba(60, 200, 160, 0.16),
-        0 28px 72px rgba(0, 0, 0, 0.55),
-        inset 0 1px 0 rgba(140, 240, 200, 0.1);
+        0 0 80px rgba(46, 148, 255, 0.22),
+        0 0 2px rgba(120, 200, 255, 0.6),
+        0 32px 80px rgba(0, 0, 0, 0.65),
+        inset 0 1px 0 rgba(180, 220, 255, 0.12);
+    backdrop-filter: blur(14px);
 }
 
 .station-panel--finance .station-panel-header {
-    border-bottom-color: rgba(100, 220, 180, 0.22);
-    background: linear-gradient(180deg, rgba(40, 140, 110, 0.14), transparent);
+    border-bottom: 1px solid rgba(80, 160, 230, 0.2);
+    background: linear-gradient(180deg, rgba(30, 60, 110, 0.2), transparent);
+}
+
+.station-panel--finance .station-panel-header h2 {
+    text-shadow: 0 0 28px rgba(100, 180, 255, 0.55);
+    letter-spacing: 0.14em;
 }
 
 .station-panel--finance .station-panel-eyebrow {
-    color: #5dffc8;
+    color: #6ec8ff;
+    text-shadow: 0 0 16px rgba(100, 180, 255, 0.45);
 }
 
 .station-panel--finance .station-panel-meta {
-    color: #7dff96;
+    color: #8ae8ff;
+}
+
+#aegis-banking .station-panel-body {
+    background: rgba(4, 8, 18, 0.45);
+    scrollbar-color: rgba(80, 180, 255, 0.35) transparent;
+}
+
+#aegis-banking .station-panel-body::-webkit-scrollbar-thumb {
+    background: rgba(80, 180, 255, 0.32);
 }
 
 .aegis-dashboard {
     flex-shrink: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    padding: 16px 28px 8px;
-    border-bottom: 1px solid rgba(100, 220, 180, 0.15);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px 28px 14px;
+    border-bottom: 1px solid rgba(80, 160, 230, 0.15);
+}
+
+@media (max-width: 900px) {
+    .aegis-dashboard {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
 }
 
 .aegis-stat-card {
-    background: linear-gradient(135deg, rgba(8, 32, 28, 0.92), rgba(4, 18, 22, 0.88));
-    border: 1px solid rgba(100, 220, 180, 0.28);
-    border-radius: 10px;
-    padding: 12px 14px;
+    position: relative;
+    border-radius: 12px;
+    padding: 11px 13px 10px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
+    background: linear-gradient(155deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+    border: 1px solid var(--aegis-card-border, rgba(100, 180, 255, 0.25));
+    box-shadow:
+        0 0 28px var(--aegis-card-glow, rgba(80, 160, 255, 0.12)),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+}
+
+.aegis-stat-card::before {
+    content: var(--aegis-card-icon, '◆');
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.62rem;
+    line-height: 24px;
+    text-align: center;
+    color: var(--aegis-card-accent, #6ec8ff);
+    background: var(--aegis-card-icon-bg, rgba(80, 160, 255, 0.12));
+    border: 1px solid var(--aegis-card-border, rgba(100, 180, 255, 0.3));
+    box-shadow: 0 0 14px var(--aegis-card-glow, rgba(80, 160, 255, 0.2));
+}
+
+.aegis-stat-balance {
+    --aegis-card-accent: #3dff8a;
+    --aegis-card-border: rgba(61, 255, 138, 0.35);
+    --aegis-card-glow: rgba(61, 255, 138, 0.18);
+    --aegis-card-icon-bg: rgba(61, 255, 138, 0.1);
+    --aegis-card-icon: '¢';
+}
+
+.aegis-stat-liability {
+    --aegis-card-accent: #ff5c6a;
+    --aegis-card-border: rgba(255, 92, 106, 0.35);
+    --aegis-card-glow: rgba(255, 92, 106, 0.18);
+    --aegis-card-icon-bg: rgba(255, 92, 106, 0.1);
+    --aegis-card-icon: '!';
+}
+
+.aegis-stat-credit {
+    --aegis-card-accent: #ffd24a;
+    --aegis-card-border: rgba(255, 210, 74, 0.35);
+    --aegis-card-glow: rgba(255, 210, 74, 0.18);
+    --aegis-card-icon-bg: rgba(255, 210, 74, 0.1);
+    --aegis-card-icon: 'K';
+}
+
+.aegis-stat-earnings {
+    --aegis-card-accent: #4db8ff;
+    --aegis-card-border: rgba(77, 184, 255, 0.35);
+    --aegis-card-glow: rgba(77, 184, 255, 0.18);
+    --aegis-card-icon-bg: rgba(77, 184, 255, 0.1);
+    --aegis-card-icon: '↑';
+}
+
+.aegis-stat-committed {
+    --aegis-card-accent: #ffb347;
+    --aegis-card-border: rgba(255, 179, 71, 0.35);
+    --aegis-card-glow: rgba(255, 179, 71, 0.18);
+    --aegis-card-icon-bg: rgba(255, 179, 71, 0.1);
+    --aegis-card-icon: '%';
 }
 
 .aegis-stat-label {
-    font-size: 0.68rem;
+    font-size: 0.58rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(140, 220, 190, 0.75);
+    color: rgba(160, 200, 230, 0.7);
+    padding-right: 28px;
 }
 
 .aegis-stat-value {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(0.95rem, 1.6vw, 1.15rem);
-    color: #b8ffe8;
-    letter-spacing: 0.04em;
-}
-
-.aegis-stat-balance .aegis-stat-value {
-    color: #7dff96;
-}
-
-.aegis-stat-liability .aegis-stat-value {
-    color: #ff9a7a;
+    font-size: clamp(0.85rem, 1.45vw, 1.08rem);
+    font-weight: 700;
+    color: var(--aegis-card-accent, #b8ffe8);
+    letter-spacing: 0.03em;
+    text-shadow: 0 0 20px var(--aegis-card-glow, rgba(80, 160, 255, 0.3));
 }
 
 .aegis-tabs {
     flex-shrink: 0;
-    display: flex;
+    display: inline-flex;
     gap: 4px;
-    padding: 12px 28px 0;
-    border-bottom: 1px solid rgba(100, 220, 180, 0.12);
+    margin: 0 28px 16px;
+    padding: 5px;
+    border-radius: 12px;
+    background: rgba(6, 12, 26, 0.88);
+    border: 1px solid rgba(80, 160, 230, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .aegis-tab-btn {
     font-family: 'Orbitron', sans-serif;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 10px 18px;
-    border: 1px solid rgba(100, 220, 180, 0.25);
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    background: rgba(6, 24, 22, 0.6);
-    color: rgba(160, 220, 200, 0.7);
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(140, 180, 220, 0.65);
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
 .aegis-tab-btn:hover:not(:disabled) {
-    color: #b8ffe8;
-    background: rgba(20, 48, 42, 0.8);
+    color: #b8e4ff;
+    background: rgba(40, 80, 130, 0.25);
 }
 
 .aegis-tab-btn.aegis-tab-active {
-    color: #5dffc8;
-    background: rgba(12, 40, 36, 0.95);
-    border-color: rgba(100, 220, 180, 0.45);
+    color: #e8f4ff;
+    background: linear-gradient(180deg, rgba(46, 120, 220, 0.45), rgba(30, 80, 160, 0.25));
+    box-shadow: 0 0 20px rgba(46, 148, 255, 0.35);
 }
 
 .aegis-tab-btn:disabled {
@@ -1066,10 +1166,17 @@ button:hover {
     justify-content: space-between;
     align-items: flex-start;
     gap: 16px;
-    padding: 12px 14px;
-    border-radius: 8px;
-    border: 1px solid rgba(100, 220, 180, 0.18);
-    background: rgba(6, 22, 20, 0.65);
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(80, 160, 230, 0.15);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+    backdrop-filter: blur(6px);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.aegis-statement-row:hover {
+    border-color: rgba(80, 160, 230, 0.28);
+    box-shadow: 0 0 16px rgba(46, 148, 255, 0.08);
 }
 
 .aegis-statement-main {
@@ -1090,7 +1197,7 @@ button:hover {
     font-size: 0.68rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #5dffc8;
+    color: #6ec8ff;
 }
 
 .aegis-statement-desc {
@@ -1113,11 +1220,13 @@ button:hover {
 }
 
 .aegis-amount-credit {
-    color: #7dff96;
+    color: #3dff8a;
+    text-shadow: 0 0 12px rgba(61, 255, 138, 0.35);
 }
 
 .aegis-amount-debit {
-    color: #ff9a7a;
+    color: #ff5c6a;
+    text-shadow: 0 0 12px rgba(255, 92, 106, 0.35);
 }
 
 .aegis-statement-balance {
@@ -1141,10 +1250,12 @@ button:hover {
 }
 
 .aegis-lien-card {
-    padding: 16px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(100, 220, 180, 0.28);
-    background: linear-gradient(135deg, rgba(8, 32, 28, 0.92), rgba(4, 18, 22, 0.88));
+    padding: 18px 20px;
+    border-radius: 14px;
+    border: 1px solid rgba(80, 160, 230, 0.22);
+    background: linear-gradient(155deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+    box-shadow: 0 0 24px rgba(46, 148, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px);
 }
 
 .aegis-lien-header {
@@ -1159,14 +1270,15 @@ button:hover {
     font-family: 'Orbitron', sans-serif;
     font-size: 0.85rem;
     letter-spacing: 0.06em;
-    color: #5dffc8;
+    color: #8ae8ff;
+    text-shadow: 0 0 14px rgba(100, 180, 255, 0.35);
 }
 
 .aegis-lien-skim {
     font-size: 0.72rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #ff9a7a;
+    color: #ffb347;
 }
 
 .aegis-lien-balance {
@@ -1176,34 +1288,57 @@ button:hover {
     gap: 8px;
     margin-bottom: 10px;
     font-size: 0.88rem;
-    color: rgba(180, 230, 210, 0.85);
-}
-
-.aegis-lien-balance strong {
-    font-family: 'Orbitron', sans-serif;
-    color: #ff9a7a;
-    font-size: 1rem;
+    color: rgba(180, 220, 240, 0.85);
 }
 
 .aegis-lien-original {
     font-size: 0.78rem;
-    color: rgba(140, 200, 180, 0.55);
+    color: rgba(140, 180, 210, 0.55);
+}
+
+#aegis-banking .station-panel-close {
+    border-color: rgba(80, 160, 230, 0.4);
+    color: #8ae8ff;
+    box-shadow: 0 0 16px rgba(46, 148, 255, 0.2);
+}
+
+.aegis-lien-balance strong {
+    font-family: 'Orbitron', sans-serif;
+    color: #ff5c6a;
+    font-size: 1.05rem;
+    text-shadow: 0 0 16px rgba(255, 92, 106, 0.35);
 }
 
 .aegis-lien-progress {
-    height: 8px;
-    border-radius: 4px;
-    background: rgba(4, 18, 16, 0.9);
-    border: 1px solid rgba(100, 220, 180, 0.2);
-    overflow: hidden;
-    margin-bottom: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background: rgba(4, 10, 22, 0.9);
+    border: 1px solid rgba(80, 160, 230, 0.2);
+    overflow: visible;
+    margin-bottom: 12px;
+    position: relative;
 }
 
 .aegis-lien-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #2a9a78, #5dffc8);
-    border-radius: 3px;
-    transition: width 0.3s ease;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #2a7aff, #4db8ff, #6ec8ff);
+    box-shadow: 0 0 14px rgba(77, 184, 255, 0.65);
+    transition: width 0.35s ease;
+    position: relative;
+}
+
+.aegis-lien-progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #e8f4ff;
+    box-shadow: 0 0 10px rgba(120, 200, 255, 0.9);
 }
 
 .aegis-lien-terms {
@@ -1240,22 +1375,26 @@ button:hover {
     font-size: 0.65rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 8px 14px;
-    border-radius: 6px;
-    border: 1px solid rgba(100, 220, 180, 0.4);
-    background: rgba(12, 40, 34, 0.9);
-    color: #5dffc8;
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(80, 160, 230, 0.35);
+    background: linear-gradient(180deg, rgba(40, 80, 140, 0.5), rgba(20, 40, 80, 0.4));
+    color: #8ae8ff;
     cursor: pointer;
+    box-shadow: 0 0 12px rgba(46, 148, 255, 0.15);
+    transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .aegis-lien-pay-btn:hover {
-    background: rgba(24, 58, 48, 0.95);
-    border-color: rgba(100, 220, 180, 0.65);
+    border-color: rgba(100, 180, 255, 0.55);
+    box-shadow: 0 0 20px rgba(46, 148, 255, 0.3);
 }
 
 .aegis-lien-pay-btn--full {
-    border-color: rgba(255, 154, 122, 0.45);
-    color: #ff9a7a;
+    border-color: rgba(255, 179, 71, 0.45);
+    color: #ffd24a;
+    background: linear-gradient(180deg, rgba(180, 120, 40, 0.35), rgba(100, 60, 20, 0.3));
+    box-shadow: 0 0 12px rgba(255, 179, 71, 0.2);
 }
 
 .aegis-lien-payoff-hint {
@@ -1274,9 +1413,11 @@ button:hover {
 
 .aegis-market-header {
     flex-shrink: 0;
-    margin-bottom: 14px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(100, 220, 180, 0.15);
+    margin-bottom: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(80, 160, 230, 0.18);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
 }
 
 .aegis-market-lock-title,
@@ -1285,7 +1426,8 @@ button:hover {
     font-family: 'Orbitron', sans-serif;
     font-size: 0.82rem;
     letter-spacing: 0.08em;
-    color: #5dffc8;
+    color: #8ae8ff;
+    text-shadow: 0 0 14px rgba(100, 180, 255, 0.35);
 }
 
 .aegis-market-lock-desc,
@@ -1297,132 +1439,250 @@ button:hover {
 }
 
 .aegis-market-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 14px;
-}
-
-.aegis-market-card {
-    padding: 16px 18px;
-    border-radius: 10px;
-    border: 1px solid rgba(100, 220, 180, 0.3);
-    background: linear-gradient(145deg, rgba(8, 30, 26, 0.94), rgba(4, 16, 20, 0.9));
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
-.aegis-market-card--locked {
-    opacity: 0.72;
-    border-color: rgba(100, 140, 130, 0.25);
+.aegis-market-compare-scroll {
+    flex: 1;
+    overflow: auto;
+    border-radius: 12px;
+    border: 1px solid rgba(80, 160, 230, 0.18);
+    background: rgba(4, 8, 18, 0.55);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(80, 180, 255, 0.35) transparent;
 }
 
-.aegis-market-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 10px;
+.aegis-market-compare {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
 }
 
-.aegis-market-lender {
-    margin: 0;
+.aegis-market-compare th,
+.aegis-market-compare td {
+    border: 1px solid rgba(80, 160, 230, 0.12);
+    vertical-align: middle;
+    text-align: center;
+}
+
+.aegis-market-corner {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    width: 148px;
+    min-width: 148px;
+    padding: 14px 12px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(140, 190, 230, 0.75);
+    background: rgba(8, 16, 32, 0.98);
+    text-align: left;
+}
+
+.aegis-market-col-head {
+    position: relative;
+    padding: 10px 8px 12px;
+    min-width: 108px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--lender-brand, #6ec8ff) 14%, transparent), rgba(8, 14, 28, 0.95));
+    border-top: 3px solid var(--lender-brand, #6ec8ff);
+}
+
+.aegis-market-lender-logo {
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 6px;
+    border-radius: 10px;
+    object-fit: cover;
+    box-shadow: 0 0 16px color-mix(in srgb, var(--lender-brand, #6ec8ff) 35%, transparent);
+    border: 1px solid color-mix(in srgb, var(--lender-brand, #6ec8ff) 40%, transparent);
+}
+
+.aegis-market-col-name {
+    display: block;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.62rem;
+    line-height: 1.35;
+    letter-spacing: 0.04em;
+    color: #e8f4ff;
+}
+
+.aegis-market-col-channel {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.62rem;
+    line-height: 1.3;
+    color: color-mix(in srgb, var(--lender-brand, #6ec8ff) 70%, #8899aa);
+    font-style: italic;
+}
+
+.aegis-market-ribbon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 3px 8px 4px 10px;
+    font-size: 0.52rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 8px 100%);
+}
+
+.aegis-market-ribbon--best_rate {
+    background: linear-gradient(135deg, #ff3b3b, #cc2020);
+}
+
+.aegis-market-ribbon--lowest_fee {
+    background: linear-gradient(135deg, #2e8cff, #1a5fcc);
+}
+
+.aegis-market-ribbon--fast_funding {
+    background: linear-gradient(135deg, #ff3b3b, #cc2020);
+}
+
+.aegis-market-ribbon--great_value {
+    background: linear-gradient(135deg, #ff9a2e, #e07010);
+}
+
+.aegis-market-ribbon--no_upfront_fee {
+    background: linear-gradient(135deg, #3dff8a, #1a9a50);
+}
+
+.aegis-market-row-head {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    width: 148px;
+    min-width: 148px;
+    padding: 12px 14px;
+    text-align: left;
+    background: rgba(8, 16, 32, 0.98);
+    border-right: 1px solid rgba(80, 160, 230, 0.2);
+}
+
+.aegis-market-amount-icon {
+    display: block;
+    width: 36px;
+    height: 36px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.aegis-market-amount-label {
+    display: block;
     font-family: 'Orbitron', sans-serif;
     font-size: 0.82rem;
-    letter-spacing: 0.05em;
-    color: #b8ffe8;
-    line-height: 1.3;
+    color: #e8f4ff;
+    letter-spacing: 0.03em;
 }
 
-.aegis-market-rate {
-    flex-shrink: 0;
-    font-size: 0.68rem;
+.aegis-market-amount-sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.65rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #ff9a7a;
-    font-weight: 700;
+    color: rgba(130, 180, 210, 0.65);
 }
 
-.aegis-market-tagline {
-    margin: 0;
-    font-size: 0.78rem;
-    font-style: italic;
-    color: rgba(150, 200, 185, 0.65);
+.aegis-market-cell {
+    padding: 12px 8px;
+    min-height: 100px;
+    background: rgba(10, 18, 34, 0.72);
+    transition: background 0.2s, box-shadow 0.2s;
 }
 
-.aegis-market-product {
-    margin: 0;
-    font-size: 0.88rem;
-    color: rgba(200, 240, 225, 0.9);
+.aegis-market-cell--empty {
+    background: rgba(6, 10, 20, 0.5);
 }
 
-.aegis-market-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px 12px;
-    margin: 0;
-    font-size: 0.72rem;
+.aegis-market-empty {
+    font-size: 1.1rem;
+    color: rgba(100, 130, 160, 0.35);
 }
 
-.aegis-market-stats div {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+.aegis-market-cell--filled:not(.aegis-market-cell--locked):hover {
+    background: color-mix(in srgb, var(--lender-brand, #6ec8ff) 8%, rgba(10, 18, 34, 0.85));
+    box-shadow: inset 0 0 24px color-mix(in srgb, var(--lender-brand, #6ec8ff) 12%, transparent);
 }
 
-.aegis-market-stats dt {
-    color: rgba(130, 190, 170, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+.aegis-market-cell--locked {
+    opacity: 0.55;
+    filter: saturate(0.65);
 }
 
-.aegis-market-stats dd {
-    margin: 0;
+.aegis-market-cell-rate {
+    display: block;
     font-family: 'Orbitron', sans-serif;
-    font-size: 0.85rem;
-    color: #7dff96;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--lender-brand, #ffb347);
+    text-shadow: 0 0 18px color-mix(in srgb, var(--lender-brand, #ffb347) 40%, transparent);
+    line-height: 1.1;
 }
 
-.aegis-market-terms {
-    margin: 0;
-    font-size: 0.76rem;
-    color: rgba(160, 210, 190, 0.8);
+.aegis-market-cell-fee {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.68rem;
+    color: rgba(160, 200, 220, 0.75);
 }
 
-.aegis-market-fineprint {
-    margin: 0;
+.aegis-market-cell-fee--none {
+    color: rgba(61, 255, 138, 0.75);
+}
+
+.aegis-market-cell-total {
+    display: block;
+    margin-top: 6px;
+    font-family: 'Orbitron', sans-serif;
     font-size: 0.72rem;
-    line-height: 1.4;
-    color: rgba(255, 154, 122, 0.75);
-    font-style: italic;
-    flex: 1;
+    color: #8ae8ff;
+}
+
+.aegis-market-cell-product {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+    color: rgba(140, 180, 210, 0.55);
 }
 
 .aegis-market-lock-reason {
-    margin: 0;
-    font-size: 0.74rem;
+    margin: 8px 0 0;
+    font-size: 0.62rem;
+    line-height: 1.35;
     color: rgba(255, 180, 120, 0.85);
-    padding-top: 4px;
 }
 
 .aegis-market-draw-btn {
-    margin-top: 4px;
-    align-self: flex-start;
+    margin-top: 10px;
     font-family: 'Orbitron', sans-serif;
-    font-size: 0.68rem;
+    font-size: 0.62rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 10px 16px;
-    border-radius: 6px;
-    border: 1px solid rgba(100, 220, 180, 0.45);
-    background: rgba(20, 60, 50, 0.85);
-    color: #5dffc8;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(61, 255, 138, 0.4);
+    background: linear-gradient(180deg, rgba(40, 120, 80, 0.45), rgba(20, 60, 40, 0.35));
+    color: #3dff8a;
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
+    box-shadow: 0 0 16px rgba(61, 255, 138, 0.2);
+    transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .aegis-market-draw-btn:hover:not(:disabled) {
-    background: rgba(30, 80, 65, 0.95);
-    border-color: rgba(100, 220, 180, 0.7);
+    border-color: rgba(61, 255, 138, 0.65);
+    box-shadow: 0 0 24px rgba(61, 255, 138, 0.35);
 }
 
 .aegis-market-draw-btn:disabled {

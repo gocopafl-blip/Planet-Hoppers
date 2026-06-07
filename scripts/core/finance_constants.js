@@ -49,6 +49,9 @@ const STARHOPPER_LENDER = {
 /** Minimum lifetime mission earnings before loan market unlocks (Phase 3.2c). */
 const LOAN_MARKET_MIN_LIFETIME_EARNINGS = 5000;
 
+/** Lenders shown as columns in the loan market grid; remainder rotate each Aegis visit. */
+const LOAN_MARKET_VISIBLE_LENDER_COUNT = 6;
+
 /** K-14 Trust Index range and tuning (Phase 3.2c). */
 const CREDIT_SCORE = {
     MIN: 300,
