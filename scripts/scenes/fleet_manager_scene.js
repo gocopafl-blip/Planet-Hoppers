@@ -1,7 +1,9 @@
 const fleetManagerScene = {
     name: 'menu', // We can reuse the menu music
+    _lastFleetUiRefresh: 0,
 
     start(settings) {
+        this._lastFleetUiRefresh = 0;
         console.log("Starting Fleet Manager Scene...");
         // This scene just shows a background. The fleet manager UI is a separate HTML element.
         canvas.style.display = 'block';
@@ -188,7 +190,7 @@ const fleetManagerScene = {
                     <img class="fleet-ship-image" src="${imageSrc}" alt="${ship.name}">
                     
                     <div class="fleet-ship-info">
-                        <h3>${shipData.shipID} (ID: ${ship.name})</h3>
+                        <h3><span class="fleet-ship-callsign">${playerDataManager.formatVesselCallsign(ship.name)}</span><span class="fleet-ship-hull-type">, ${shipData.shipID}</span></h3>
                         <p class="ship-status">Status: ${status}</p>
                         <p class="ship-location">Location: ${location}</p>
                         <div class="ship-stats">
@@ -261,7 +263,7 @@ const fleetManagerScene = {
         modal.innerHTML = `
             <div class="ship-details-content">
                 <div class="ship-details-header">
-                    <h2>${ship.name} - Detailed Parameters</h2>
+                    <h2><span class="fleet-ship-callsign">${playerDataManager.formatVesselCallsign(ship.name)}</span><span class="fleet-ship-hull-type">, ${shipData.shipID}</span></h2>
                     <button class="close-details-btn">×</button>
                 </div>
                 <div class="ship-details-body">
@@ -342,8 +344,11 @@ const fleetManagerScene = {
                 this.jumpToShip(ship);
                 break;
             case 'disabled':
-                // Ship is disabled, show repair message
-                alert('This ship requires repairs before it can be operated.');
+                uiNotify({
+                    title: 'Ship Disabled',
+                    message: 'This ship requires repairs before it can be operated.',
+                    variant: 'warning'
+                });
                 break;
             default:
                 console.warn(`Unknown action: ${action}`);
@@ -353,7 +358,11 @@ const fleetManagerScene = {
     dispatchShip(ship) {
         // Check if ship can be dispatched
         if (ship.currentHealth <= 0) {
-            alert('Cannot dispatch a disabled ship. Repairs are required.');
+            uiNotify({
+                title: 'Repairs Required',
+                message: 'Cannot dispatch a disabled ship. Visit Apex Outfitting when repair is available.',
+                variant: 'warning'
+            });
             return;
         }
 
@@ -361,12 +370,7 @@ const fleetManagerScene = {
         const shipData = shipCatalogue[ship.shipTypeId];
         const maxFuel = ship.consumables?.fuel?.max || shipData?.shipConsumables?.shipFuel?.max || 100;
 
-        if (fuelLevel < maxFuel * 0.1) {
-            if (!confirm('Ship has low fuel. Dispatch anyway?')) {
-                return;
-            }
-        }
-
+        const proceedDispatch = () => {
         // Set ship as active and save its location as "dispatching from dock"
         // ENHANCED: Use dispatch-specific location for proper launch positioning (Task 3.6)
         this.setActiveShipAndLocation(ship, {
@@ -381,12 +385,29 @@ const fleetManagerScene = {
         // Switch to space scene
         console.log(`Dispatching ship ${ship.name} (ID: ${ship.id})`);
         this.closeAndSwitchToSpace('dispatch');
+        };
+
+        if (fuelLevel < maxFuel * 0.1) {
+            uiPrompt.confirm({
+                title: 'Low Fuel',
+                message: 'Ship has low fuel. Dispatch anyway?',
+                confirmLabel: 'Dispatch',
+                cancelLabel: 'Stay Docked'
+            }).then((ok) => { if (ok) proceedDispatch(); });
+            return;
+        }
+
+        proceedDispatch();
     },
 
     jumpToShip(ship) {
         // Check if ship can be controlled
         if (ship.currentHealth <= 0) {
-            alert('Cannot control a disabled ship. Repairs are required.');
+            uiNotify({
+                title: 'Repairs Required',
+                message: 'Cannot control a disabled ship. Visit Apex Outfitting when repair is available.',
+                variant: 'warning'
+            });
             return;
         }
 
@@ -525,7 +546,14 @@ const fleetManagerScene = {
     },
 
     update() {
-        // This scene is static, so there's nothing to update each frame.
+        const now = performance.now();
+        if (now - this._lastFleetUiRefresh < 2000) return;
+        this._lastFleetUiRefresh = now;
+
+        const fleetManager = document.getElementById('fleet-manager');
+        if (fleetManager && fleetManager.style.display === 'flex') {
+            this.populateFleetList();
+        }
     },
 
     draw() {

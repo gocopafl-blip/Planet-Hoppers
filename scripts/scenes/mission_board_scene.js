@@ -87,18 +87,23 @@ const missionBoardScene = {
     },
 
     handleAcceptMission(event) {
-        if (event.target.classList.contains('accept-btn')) {
-            const missionId = event.target.dataset.missionId;
-            // Populate and show the ship assignment modal instead of accepting directly (Task 5.4)
-            missionBoardScene.populateShipAssignmentList();
-            if (missionBoardScene._shipAssignmentModal) {
-                missionBoardScene._shipAssignmentModal.style.display = 'flex';
-                missionBoardScene._shipAssignmentModal.dataset.missionId = missionId;
-            }
-            // Hide the mission board while modal is open
-            const missionBoard = document.getElementById('mission-board');
-            if (missionBoard) missionBoard.style.display = 'none';
+        const acceptBtn = event.target.closest('.accept-btn');
+        if (!acceptBtn || acceptBtn.disabled) return;
+
+        const missionId = acceptBtn.dataset.missionId;
+        const catalogueEntry = missionCatalogue[missionId];
+        if (catalogueEntry) {
+            const unlock = missionManager.getMissionUnlockStatus({ id: missionId, ...catalogueEntry });
+            if (!unlock.unlocked) return;
         }
+
+        missionBoardScene.populateShipAssignmentList();
+        if (missionBoardScene._shipAssignmentModal) {
+            missionBoardScene._shipAssignmentModal.style.display = 'flex';
+            missionBoardScene._shipAssignmentModal.dataset.missionId = missionId;
+        }
+        const missionBoard = document.getElementById('mission-board');
+        if (missionBoard) missionBoard.style.display = 'none';
     },
 
     handleCloseMissionBoard() {
@@ -166,7 +171,7 @@ const missionBoardScene = {
             container.innerHTML = `
                 <img class="assignment-ship-image" src="${imageSrc}" alt="${ship.name}">
                 <div class="assignment-ship-info">
-                    <h3>${shipData.shipID} (ID: ${ship.name})</h3>
+                    <h3><span class="fleet-ship-callsign">${playerDataManager.formatVesselCallsign(ship.name)}</span><span class="fleet-ship-hull-type">, ${shipData.shipID}</span></h3>
                     <p class="ship-status">Status: ${status}</p>
                     <p class="ship-location">Location: ${location}</p>
                     <div class="ship-stats">
@@ -210,6 +215,12 @@ const missionBoardScene = {
         const missionId = modal ? modal.dataset.missionId : null;
         if (!shipId || !missionId) return;
 
+        const catalogueEntry = missionCatalogue[missionId];
+        if (catalogueEntry) {
+            const unlock = missionManager.getMissionUnlockStatus({ id: missionId, ...catalogueEntry });
+            if (!unlock.unlocked) return;
+        }
+
         // Assign mission to the chosen ship using PlayerDataManager
         if (typeof playerDataManager.assignMissionToShip === 'function') {
             playerDataManager.assignMissionToShip(shipId, missionId, {});
@@ -232,19 +243,46 @@ const missionBoardScene = {
     showMissionBoard() {
         const missionBoard = document.getElementById('mission-board');
         const missionList = document.getElementById('mission-list');
+        const metaEl = document.getElementById('mission-board-meta');
 
-        const missions = missionManager.generateAvailableMissions(5);
+        if (!planetManager.celestialBodies?.length && playerDataManager.hasSavedPlanetData()) {
+            planetManager.restoreSavedPlanets();
+        }
+
+        const missions = missionManager.generateAvailableMissions();
         missionList.innerHTML = '';
 
+        const unlockedCount = missions.filter(m => m.unlocked).length;
+        if (metaEl) {
+            metaEl.textContent = `${unlockedCount} contract${unlockedCount === 1 ? '' : 's'} available · ${missions.length} listed`;
+        }
+
         missions.forEach(mission => {
+            const mm = missionManager;
+            const issuer = mm.escapeHtml(mm.getMissionIssuer(mission));
+            const title = mm.escapeHtml(mission.title);
+            const briefing = mm.escapeHtml(mm.formatMissionDescription(mission));
+            const typeLabel = mm.escapeHtml(mission.flavorTag || mm.getMissionTypeLabel(mission));
+            const unlockHint = mm.escapeHtml(mission.unlockHint || '');
+            const reqTags = mm.getMissionRequirementTags(mission)
+                .map(t => `<span class="mission-req-tag">${mm.escapeHtml(t)}</span>`)
+                .join('');
+
             const missionElement = document.createElement('div');
-            missionElement.className = 'mission-item';
+            missionElement.className = mission.unlocked ? 'mission-item' : 'mission-item mission-locked';
             missionElement.innerHTML = `
-                <h3>${mission.title}</h3>
-                <p>${mission.description}</p>
+                ${mission.unlocked ? '' : '<span class="mission-lock-badge">LOCKED</span>'}
+                <p class="mission-issuer">${issuer}</p>
+                <h3>${title}</h3>
+                <div class="mission-tags">
+                    <span class="mission-type-tag">${typeLabel}</span>
+                    ${reqTags}
+                </div>
+                <p class="mission-briefing">${briefing}</p>
+                ${mission.unlocked ? '' : `<p class="mission-unlock-hint">Unlock: ${unlockHint}</p>`}
                 <div class="mission-footer">
                     <span class="mission-reward">REWARD: ¢ ${mission.reward.toLocaleString()}</span>
-                    <button class="accept-btn" data-mission-id="${mission.id}">Accept</button>
+                    <button class="accept-btn" data-mission-id="${mission.id}" ${mission.unlocked ? '' : 'disabled'}>${mission.unlocked ? 'Accept' : 'Locked'}</button>
                 </div>
             `;
             missionList.appendChild(missionElement);

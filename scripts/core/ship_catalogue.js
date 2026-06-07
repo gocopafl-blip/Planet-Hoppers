@@ -22,9 +22,10 @@ const baseShipTemplate = {
     shipBuyValue: 3500,
     shipSellValue: 2750,
     shipRepairCostPerHealth: 2,
-    shipThrusterBurnRate: 0.2,
-    shipOxygenBurnRate: 0.00165,
-    shipElectricityBurnRate: 0.03,
+    // Consumables drain rates — units per second (see consumables_manager.applyFlightBurn)
+    shipThrusterBurnRate: 2.5,
+    shipOxygenBurnRate: 0.1,
+    shipElectricityBurnRate: 0.4,
     shipUpgrades: [],
     shipConsumables: {
         shipFuel: { current: 50, max: 100 },

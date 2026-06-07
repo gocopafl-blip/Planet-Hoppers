@@ -17,7 +17,10 @@ class PlanetManager {
         if (playerDataManager.hasSavedPlanetData()) {
             console.log('Restoring saved planet layout to maintain orbital ship positions');
             this.restoreSavedPlanets();
-            return;
+            if (this.celestialBodies.length > 0) {
+                return;
+            }
+            console.warn('Saved planet data could not be restored — generating a new layout');
         }
         
         // Generate new planets if no saved data exists
@@ -37,10 +40,13 @@ class PlanetManager {
             const mass = Math.pow(radius, 3) * 0.4 * (planetDNA.baseGravity / 0.01); // Mass is now affected by gravity type!
 
             // 3. Create the new planet object with a unique ID
+            const planetIndex = this.celestialBodies.length;
             const newPlanet = {
-                id: `planet_${this.celestialBodies.length}_${Date.now()}`, // A guaranteed unique ID
+                id: `planet_${planetIndex}_${Date.now()}`, // A guaranteed unique ID
+                index: planetIndex,
+                discoveryStatus: PLANET_DISCOVERY_STATUS.UNDISCOVERED,
                 planetTypeId: planetDNA.planetTypeId,
-                name: `${this.getRandomElement(planetDNA.namePrefixes)} ${this.celestialBodies.length}`,
+                name: `${this.getRandomElement(planetDNA.namePrefixes)} ${planetIndex}`,
                 x: Math.random() * worldWidth * 0.8 + worldWidth * 0.1,
                 y: Math.random() * worldHeight * 0.8 + worldHeight * 0.1,
                 radius: radius,
@@ -75,12 +81,18 @@ class PlanetManager {
         
         // ENHANCED: Save the generated planet layout for consistency across game sessions
         if (this.celestialBodies.length > 0) {
+            if (spaceDocks[0]) {
+                playerDataManager.saveHubPosition(spaceDocks[0].x, spaceDocks[0].y);
+                this.markStarterPlanetsDiscovered(spaceDocks[0]);
+            }
             playerDataManager.savePlanetData(this.celestialBodies);
+            playerDataManager.saveData();
             console.log(`Generated and saved ${this.celestialBodies.length} planets for persistent world state`);
         }
         
         // FIXED: Sync global celestialBodies variable with generated planets
         celestialBodies = this.celestialBodies;
+        playerDataManager.applyDiscoveryStatusToCelestialBodies(this.celestialBodies);
         
         console.log("Planet Manager generated celestial bodies:", this.celestialBodies);
         return this.celestialBodies;
@@ -94,7 +106,7 @@ class PlanetManager {
             return false;
         }
         
-        this.celestialBodies = savedPlanets.map(planetData => {
+        this.celestialBodies = savedPlanets.map((planetData, index) => {
             // Reconstruct planet object from saved data
             const planetDNA = planetCatalogue[planetData.planetTypeId];
             if (!planetDNA) {
@@ -104,6 +116,10 @@ class PlanetManager {
             
             return {
                 id: planetData.id,
+                index: planetData.index ?? index,
+                discoveryStatus: isValidPlanetDiscoveryStatus(planetData.discoveryStatus)
+                    ? planetData.discoveryStatus
+                    : PLANET_DISCOVERY_STATUS.UNDISCOVERED,
                 planetTypeId: planetData.planetTypeId,
                 name: planetData.name,
                 x: planetData.x,
@@ -128,7 +144,26 @@ class PlanetManager {
         
         // FIXED: Sync global celestialBodies variable with restored planets
         celestialBodies = this.celestialBodies;
+        playerDataManager.applyDiscoveryStatusToCelestialBodies(this.celestialBodies);
         
         return true;
+    }
+
+    /** Mark the nearest worlds to the station as known at universe creation (Phase 1.3). */
+    markStarterPlanetsDiscovered(dock) {
+        if (!dock || this.celestialBodies.length === 0) return;
+
+        const nearest = [...this.celestialBodies]
+            .sort((a, b) => {
+                const da = Math.hypot(a.x - dock.x, a.y - dock.y);
+                const db = Math.hypot(b.x - dock.x, b.y - dock.y);
+                return da - db;
+            })
+            .slice(0, STARTER_DISCOVERED_PLANET_COUNT);
+
+        nearest.forEach(p => {
+            p.discoveryStatus = PLANET_DISCOVERY_STATUS.SURVEYED;
+        });
+        console.log(`Starter discovery: ${nearest.map(p => p.name).join(', ')}`);
     }
 }

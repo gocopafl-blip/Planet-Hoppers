@@ -115,7 +115,20 @@ class TradeManager {
                     playerDataManager.updateActiveMissionState({ hasPickedUpCargo: true });
 
                     // Show a confirmation to the player, but the mission is NOT complete yet.
-                    alert("Survey Sample Taken: You have retrieved the survey sample. Now, return to the station to collect your contract payout.");
+                    if (typeof notificationManager !== 'undefined') {
+                        notificationManager.showSimple({
+                            title: 'Sample Secured',
+                            message: 'Survey sample retrieved. Return to the station and dock to collect your contract payout.',
+                            variant: 'success',
+                            durationMs: 8000
+                        });
+                    } else {
+                        uiNotify({
+                            title: 'Sample Secured',
+                            message: 'Survey sample retrieved. Return to the station and dock to collect payout.',
+                            variant: 'success'
+                        });
+                    }
                 }
 
                 // STEP 2: Check if we have the cargo and are at the dock to deliver it.
@@ -130,12 +143,31 @@ class TradeManager {
 
         // If any of the conditions above were met, finalize the mission.
         if (isCompleted) {
-            playerDataManager.addMoney(missionData.reward);
+            const payout = bankingManager.applyContractPayoutDeductions(missionData.reward, {
+                missionTitle: missionData.title,
+                missionId: activeMissionId
+            });
             playerDataManager.setActiveMissionId(null);
-            console.log(`Mission "${missionData.title}" completed! Player earned ${missionData.reward} credits.`);
+            console.log(`Mission "${missionData.title}" completed! Gross ¢${missionData.reward}, net ¢${payout.net}.`);
 
-            // We'll use a simple alert for now to notify the player.
-            alert(`Mission Complete: ${missionData.title}\n\nReward: ¢ ${missionData.reward.toLocaleString()}`);
+            if (typeof notificationManager !== 'undefined' && notificationManager.showMissionComplete) {
+                notificationManager.showMissionComplete({
+                    title: missionData.title,
+                    completionLine: null,
+                    gross: payout.gross,
+                    net: payout.net,
+                    deductions: payout.deductions,
+                    isFirstLienReveal: payout.isFirstLienReveal
+                });
+            } else {
+                uiNotify({
+                    title: missionData.title,
+                    message: `Gross: ¢ ${payout.gross.toLocaleString()} · Net deposited: ¢ ${payout.net.toLocaleString()}`,
+                    variant: 'mission',
+                    durationMs: 0,
+                    dismissible: true
+                });
+            }
         }
 
         // In the future, you could add checks here, like:

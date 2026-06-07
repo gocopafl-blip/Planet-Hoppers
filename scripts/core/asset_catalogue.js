@@ -47,6 +47,8 @@ const assetCatalogue = {
         // Docks and Planets
         "space_dock_alpha": "assets/images/spacedocks/spacedockalpha.png",
 
+        // Planet sprites (one type each — see planet_catalogue.js)
+        // planet1 water | planet2 terran | planet3 gas | planet4-5 volcanic | planet6-7 ice | planet8 city
         "planet1": "assets/images/planets/planet1.png",
         "planet2": "assets/images/planets/planet2.png",
         "planet3": "assets/images/planets/planet3.png",
@@ -63,12 +65,15 @@ const assetCatalogue = {
         "blue_planet_b": "assets/images/planets/lander_backgrounds/BluePlanet_1b.jpg",
         "swirling_planet_a": "assets/images/planets/lander_backgrounds/SwirlingPlanet_3a.jpg",
         "swirling_planet_b": "assets/images/planets/lander_backgrounds/SwirlingPlanet_3b.jpg",
+        "city_planet_a": "assets/images/planets/lander_backgrounds/CityPlanet_1a.jpg",
 
         //Scenes
         "start_screen_bg": "assets/images/dock_backgrounds/start_screen_background.jpg",
         "space_dock_terminal": "assets/images/dock_backgrounds/spaceDockTerminal.png",
         "mission_board_bg": "assets/images/dock_backgrounds/OrbitalCargoSystems.jpg",
         "galactic_trade_hub": "assets/images/dock_backgrounds/galactic_trade_hub.jpg",
+        "titan_supply_bg": "assets/images/dock_backgrounds/Titan Supply Services.png",
+        "aegis_banking_bg": "assets/images/dock_backgrounds/Aegis Banking Systems.png",
         "fleet_manager": "assets/images/dock_backgrounds/Fleet_Management_Services.jpg",
 
         //Scene Overlays

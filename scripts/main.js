@@ -98,6 +98,7 @@ function init() {
 
             // Setup event listeners
             setupEventListeners();
+            configureStartScreen();
 
             // Initialize the game
             landerScene.createStars();
@@ -149,6 +150,57 @@ function init() {
     waitForFonts();
 }
 
+function configureStartScreen() {
+    const continueBtn = document.getElementById('continueContractBtn');
+    const newBtn = document.getElementById('newContractBtn');
+    const beginBtn = document.getElementById('startBtn');
+    if (!continueBtn || !newBtn || !beginBtn) return;
+
+    if (playerDataManager.hasSeenIntro()) {
+        continueBtn.style.display = 'inline-block';
+        newBtn.style.display = 'inline-block';
+        beginBtn.style.display = 'none';
+    } else {
+        continueBtn.style.display = 'none';
+        newBtn.style.display = 'none';
+        beginBtn.style.display = 'inline-block';
+    }
+}
+
+function goToDock() {
+    startScreen.style.display = 'none';
+    if (typeof introScreen !== 'undefined') introScreen.hide();
+    gameManager.switchScene(spaceDockScene);
+}
+
+function beginWithIntro() {
+    startScreen.style.display = 'none';
+    if (typeof introScreen !== 'undefined') {
+        introScreen.show(() => {
+            playerDataManager.markIntroSeen();
+            goToDock();
+        });
+    } else {
+        playerDataManager.markIntroSeen();
+        goToDock();
+    }
+}
+
+function startNewContract() {
+    const wipeSave = () => {
+        localStorage.removeItem(playerDataManager.SAVE_KEY);
+        window.location.reload();
+    };
+
+    uiPrompt.confirm({
+        title: 'New Contract',
+        message: 'This clears your fleet, chart progress, missions, and account balance.',
+        confirmLabel: 'Wipe Save',
+        cancelLabel: 'Keep Save',
+        variant: 'danger'
+    }).then((ok) => { if (ok) wipeSave(); });
+}
+
 // --- EVENT LISTENERS SETUP ---
 function setupEventListeners() {
     const missionBoard = document.getElementById('mission-board');
@@ -156,7 +208,7 @@ function setupEventListeners() {
 
     // --- Removed: Dock menu, mission board, and trade hub listeners now handled in their respective scene files ---
 
-    const spaceScene = new SpaceScene();
+    const spaceScene = gameManager.getSpaceScene();
     const navScreenElement = document.getElementById('nav-screen');
     canvas.addEventListener('click', (event) => {
         if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
@@ -246,27 +298,54 @@ function setupEventListeners() {
     });
     */
     // ADD THIS NEW EVENT LISTENER
-    document.getElementById('startBtn').addEventListener('click', () => {
-        startScreen.style.display = 'none'; // Hide the start screen
-        gameManager.switchScene(spaceDockScene); // Start with the Space Dock scene
-    });
+    document.getElementById('startBtn').addEventListener('click', beginWithIntro);
+
+    const continueBtn = document.getElementById('continueContractBtn');
+    if (continueBtn) continueBtn.addEventListener('click', goToDock);
+
+    const newContractBtn = document.getElementById('newContractBtn');
+    if (newContractBtn) newContractBtn.addEventListener('click', startNewContract);
+
+    const introContinueBtn = document.getElementById('introContinueBtn');
+    if (introContinueBtn) {
+        introContinueBtn.addEventListener('click', () => introScreen.handleContinue());
+    }
 /*
     document.getElementById('departBtn').addEventListener('click', () => {
         gameManager.switchScene(spaceScene, { difficulty: 'easy' }); // For now, it will always be 'easy'
     });
     */
-// Event listener for our new test button
+// Debug dock buttons — playtest banking / mission payout without flying
     document.getElementById('getPaidBtn').addEventListener('click', () => {
-        playerDataManager.addMoney(5000); // Give the player 500 credits
+        const payout = bankingManager.applyContractPayoutDeductions(5000, {
+            missionTitle: 'Debug contract pay',
+            missionId: 'debug_get_paid'
+        });
+        uiNotify({
+            title: 'Debug contract pay',
+            message: `Gross ¢5,000 · Net ¢${payout.net.toLocaleString()} (counts toward lifetime earnings).`,
+            variant: 'success',
+            durationMs: 5000
+        });
     });
-    /*document.getElementById('completeMissionBtn').addEventListener('click', () => {
-        missionManager.completeMission();
-    });*/
+
+    const completeMissionBtn = document.getElementById('completeMissionBtn');
+    if (completeMissionBtn) {
+        completeMissionBtn.addEventListener('click', () => {
+            missionManager.debugCompleteActiveMission();
+        });
+    }
 
     document.getElementById('accessDockBtn').addEventListener('click', () => {
         // Check if the current scene is the spaceScene before switching
         if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
             gameManager.switchScene(spaceDockScene);
+        }
+    });
+
+    document.getElementById('requestTowBtn').addEventListener('click', () => {
+        if (gameManager.activeScene && gameManager.activeScene.name === 'space') {
+            rescueManager.requestTow(gameManager.activeScene);
         }
     });
     
@@ -291,16 +370,23 @@ function setupEventListeners() {
     });
     document.getElementById('launchBtn').addEventListener('click', () => {
         if (gameManager.activeScene && gameManager.activeScene.name === 'space' && gameManager.activeScene.ship && gameManager.activeScene.ship.isOrbitLocked) {
-            gameManager.activeScene.saveState(); // Save space scene state before switching
+            const space = gameManager.activeScene;
+            space.saveState();
 
-            // Get the planet the ship is orbiting
-            const orbitingPlanet = gameManager.activeScene.ship.orbitingPlanet;
+            const activeShip = playerDataManager.getActiveShip();
+            if (activeShip) {
+                fleetManager.saveCurrentShipState(activeShip, space);
+                playerDataManager.saveData();
+            }
 
-            // Create a fresh settings object for the lander scene
+            delete settings.fromFleetManager;
+            delete settings.dispatchMode;
+
+            const orbitingPlanet = space.ship.orbitingPlanet;
             const landerSettings = {
                 selectedShip: shipTypes.classic,
-                planet: orbitingPlanet, // Pass the planet data to lander scene
-                difficulty: settings.difficulty || 'medium' // Default to medium if not set
+                planet: orbitingPlanet,
+                difficulty: settings.difficulty || 'medium'
             };
 
             console.log('Launching to planet:', orbitingPlanet);
@@ -349,13 +435,16 @@ function setupEventListeners() {
             if (typeof thrusterSound !== 'undefined' && thrusterSound && thrusterSound.isLoaded) thrusterSound.pause();
 
             if (landerScene.gameState === 'landed') {
-                // SUCCESS: Return to space scene with preserved state
                 console.log('Lander mission successful, returning to space scene with preserved state');
-                gameManager.switchScene(spaceScene, settings);
+                delete settings.fromFleetManager;
+                delete settings.dispatchMode;
+                gameManager.switchScene(gameManager.getSpaceScene(), { returnFromLander: true });
             } else {
-                // CRASHED: Return to spacedock scene (no state preservation needed)
-                console.log('Lander mission failed, returning to spacedock');
-                gameManager.switchScene(spaceDockScene);
+                console.log('Lander crash — returning to mothership orbit');
+                missionManager.handleLanderCrash(landerScene);
+                delete settings.fromFleetManager;
+                delete settings.dispatchMode;
+                gameManager.switchScene(gameManager.getSpaceScene(), { returnFromLander: true });
             }
         }
     });
@@ -389,8 +478,8 @@ function startGame() {
     // The simulator runs continuously from game start, updating fleet physics even when not in space scene
     gameManager.backgroundFleetSimulator.start();
     
-    // Start the main game loop
-    gameManager.loop();
+    // Start the main game loop (rAF when visible; interval when tab hidden)
+    gameManager.startGameLoop();
 }
 
 // --- AUTO-SAVE ON PAGE UNLOAD ---

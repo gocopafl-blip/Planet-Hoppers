@@ -16,6 +16,7 @@
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div id="player-hud" style="display: none;">
+            <div id="mission-timer" style="display: none;"></div>
             <div id="hud-company-name"></div>
             <div id="hud-bank-balance"></div>
             <button id="terminateRemoteCommandBtn"
@@ -28,18 +29,96 @@
             <button id="closeNavScreenBtn" class="close-button">X</button>
         </div>
 
-        <div id="mission-board" style="display: none;">
-            <h2>Orbital Cargo Solutions - Mission Board</h2>
-            <div id="mission-list">
-            </div>
-            <button id="closeMissionBoardBtn" class="close-button">X</button>
+        <div id="mission-board" class="station-panel station-panel--contracts" style="display: none;">
+            <button id="closeMissionBoardBtn" class="station-panel-close close-button" type="button" aria-label="Close">×</button>
+            <header class="station-panel-header">
+                <p class="station-panel-eyebrow">Orbital Cargo Solutions</p>
+                <h2>Mission Board</h2>
+                <p class="station-panel-subtitle">Licensed contracts for charted sectors — assign work to a docked ship</p>
+                <p id="mission-board-meta" class="station-panel-meta"></p>
+            </header>
+            <div id="mission-list" class="station-panel-body"></div>
         </div>
 
-        <div id="trade-hub" style="display: none;">
-            <h2>Galactic Trade Hub</h2>
-            <div id="trade-list">
+        <div id="trade-hub" class="station-panel station-panel--trade" style="display: none;">
+            <button id="closeTradeHubBtn" class="station-panel-close close-button" type="button" aria-label="Close">×</button>
+            <header class="station-panel-header">
+                <p class="station-panel-eyebrow">Galactic Trade Hub</p>
+                <h2>Ship Registry</h2>
+                <p class="station-panel-subtitle">Purchase hulls for your fleet — all sales final, no warranty on used repo stock</p>
+                <p id="trade-hub-balance" class="station-panel-meta">Account balance: ¢ 0</p>
+            </header>
+            <div id="trade-list" class="station-panel-body"></div>
+        </div>
+
+        <div id="aegis-banking" class="station-panel station-panel--finance" style="display: none;">
+            <button id="closeAegisBankingBtn" class="station-panel-close close-button" type="button" aria-label="Close">×</button>
+            <header class="station-panel-header">
+                <p class="station-panel-eyebrow">Aegis Banking Systems</p>
+                <h2>Contractor Finance Terminal</h2>
+                <p class="station-panel-subtitle">Loan desk broker — statements, liens, and lender market access</p>
+                <p id="aegis-company-meta" class="station-panel-meta"></p>
+            </header>
+            <div class="aegis-dashboard">
+                <div class="aegis-stat-card aegis-stat-balance">
+                    <span class="aegis-stat-label">Available balance</span>
+                    <span id="aegis-balance-value" class="aegis-stat-value">¢ 0</span>
+                </div>
+                <div class="aegis-stat-card aegis-stat-liability">
+                    <span class="aegis-stat-label">Total liabilities</span>
+                    <span id="aegis-liabilities-value" class="aegis-stat-value">¢ 0</span>
+                </div>
+                <div class="aegis-stat-card aegis-stat-credit">
+                    <span class="aegis-stat-label">K-14 trust index</span>
+                    <span id="aegis-credit-value" class="aegis-stat-value">—</span>
+                </div>
+                <div class="aegis-stat-card aegis-stat-earnings">
+                    <span class="aegis-stat-label">Lifetime contract pay</span>
+                    <span id="aegis-lifetime-value" class="aegis-stat-value">¢ 0</span>
+                </div>
+                <div class="aegis-stat-card aegis-stat-committed">
+                    <span class="aegis-stat-label">Income committed</span>
+                    <span id="aegis-committed-value" class="aegis-stat-value">—</span>
+                </div>
             </div>
-            <button id="closeTradeHubBtn" class="close-button">X</button>
+            <nav class="aegis-tabs" aria-label="Aegis sections">
+                <button type="button" class="aegis-tab-btn aegis-tab-active" data-tab="statement">Statement</button>
+                <button type="button" class="aegis-tab-btn" data-tab="liens">Active Liens</button>
+                <button type="button" class="aegis-tab-btn" data-tab="market">Loan Market</button>
+            </nav>
+            <div id="aegis-tab-statement" class="aegis-tab-panel station-panel-body" data-tab="statement">
+                <div id="aegis-statement-list" class="aegis-statement-list"></div>
+            </div>
+            <div id="aegis-tab-liens" class="aegis-tab-panel aegis-tab-hidden station-panel-body" data-tab="liens">
+                <div id="aegis-liens-list" class="aegis-liens-list"></div>
+            </div>
+            <div id="aegis-tab-market" class="aegis-tab-panel aegis-tab-hidden station-panel-body" data-tab="market">
+                <div id="aegis-market-header" class="aegis-market-header"></div>
+                <div id="aegis-market-grid" class="aegis-market-grid"></div>
+            </div>
+        </div>
+
+        <div id="titan-supply" style="display: none;">
+            <div class="titan-header">
+                <h2>Titan Supply Services</h2>
+                <p class="titan-subtitle">Resupply docked vessels — fuel, oxygen, and ship power</p>
+                <p id="titan-balance" class="titan-balance">Account balance: ¢ 0</p>
+            </div>
+            <div id="titan-supply-list"></div>
+            <button id="closeTitanSupplyBtn" class="close-button">X</button>
+        </div>
+
+        <!-- In-game confirm / prompt (replaces browser alert, confirm, prompt) -->
+        <div id="ui-prompt-modal" style="display: none;" role="dialog" aria-modal="true">
+            <div id="ui-prompt-content">
+                <h2 id="ui-prompt-title"></h2>
+                <p id="ui-prompt-message"></p>
+                <input id="ui-prompt-input" type="text" maxlength="48" autocomplete="off" />
+                <div id="ui-prompt-actions">
+                    <button id="ui-prompt-confirm" type="button">Confirm</button>
+                    <button id="ui-prompt-cancel" type="button">Cancel</button>
+                </div>
+            </div>
         </div>
 
         <!-- Ship Assignment Modal (Task 5.1) -->
@@ -63,7 +142,7 @@
         </div>
 
         <!-- Music controls button -->
-        <div id="music-controls" style="position: absolute; bottom: 10px; left: 10px; z-index: 1000;">
+        <div id="music-controls" style="position: absolute; top: 10px; left: 10px; z-index: 1000;">
             <button id="muteBtn"
                 style="padding: 8px 12px; background: rgba(0,0,0,0.7); color: white; border: 1px solid #666; border-radius: 4px; font-size: 16px; cursor: pointer;">♪</button>
         </div>
@@ -75,19 +154,41 @@
 --->
 
         <div id="dock-ui" style="display: none;">
-            <button id="getPaidBtn" style="position: absolute; top: 60px; right: 50px;">Get Paid</button>
-            <!--<button id="completeMissionBtn" style="position: absolute; top: 60px; right: 250px;">Complete
-                Mission</button>-->
+            <div id="dock-debug-tools">
+                <button id="completeMissionBtn" type="button">Complete Mission</button>
+                <button id="getPaidBtn" type="button">Get Paid</button>
+            </div>
             <!--<button id="departBtn">Depart Station</button>-->
             <div id="dock-menu">
                 <ul>
-                    <li>Titan Supply Services</li>
-                    <li>Orbital Cargo Solutions</li>
-                    <li>Aegis Banking Systems</li>
-                    <li>Galactic Trade Hub</li>
-                    <li>Apex Outfitting & Repair</li>
-                    <li>Star-Propulsion R&D</li>
-                    <li>Fleet Management Services</li>
+                    <li>
+                        <span class="dock-station-name">Titan Supply Services</span>
+                        <span class="dock-station-sub">Consumables &amp; drop-ship fuel</span>
+                    </li>
+                    <li>
+                        <span class="dock-station-name">Orbital Cargo Solutions</span>
+                        <span class="dock-station-sub">Contract board &amp; paid dispatch</span>
+                    </li>
+                    <li>
+                        <span class="dock-station-name">Aegis Banking Systems</span>
+                        <span class="dock-station-sub">Credits, loans &amp; statements</span>
+                    </li>
+                    <li>
+                        <span class="dock-station-name">Galactic Trade Hub</span>
+                        <span class="dock-station-sub">Buy &amp; sell ships</span>
+                    </li>
+                    <li>
+                        <span class="dock-station-name">Apex Outfitting &amp; Repair</span>
+                        <span class="dock-station-sub">Hull repair &amp; outfitting</span>
+                    </li>
+                    <li>
+                        <span class="dock-station-name">Star-Propulsion R&amp;D</span>
+                        <span class="dock-station-sub">Modules &amp; upgrades — coming soon</span>
+                    </li>
+                    <li>
+                        <span class="dock-station-name">Fleet Management Services</span>
+                        <span class="dock-station-sub">Select ship &amp; launch to space</span>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -96,13 +197,32 @@
             <button id="accessDockBtn">Dock Ship</button>
         </div>
 
+        <div id="request-tow-ui" style="display: none;">
+            <button id="requestTowBtn">Request Tow</button>
+        </div>
+
         <div id="launch-ui" style="display: none;">
             <button id="launchBtn">Launch Drop Ship</button>
         </div>
 
         <div id="start-screen" style="display: none;">
             <h1>PLANET HOPPERS</h1>
-            <button id="startBtn">Activate Holo</button>
+            <p class="start-tagline">Chart the sector. Fly the contract.</p>
+            <div id="start-screen-actions">
+                <button id="continueContractBtn" type="button" style="display: none;">Continue Contract</button>
+                <button id="newContractBtn" type="button" style="display: none;">New Contract</button>
+                <button id="startBtn" type="button">Begin Contract</button>
+            </div>
+        </div>
+
+        <div id="intro-briefing" style="display: none;" role="dialog" aria-labelledby="intro-briefing-title">
+            <div class="intro-briefing-panel">
+                <span class="intro-badge">ORIENTATION</span>
+                <h2 id="intro-briefing-title">Contractor Briefing</h2>
+                <p class="intro-subtitle">Orbital Cargo Solutions — Sector K-14</p>
+                <div id="intro-briefing-body" class="intro-briefing-body"></div>
+                <button id="introContinueBtn" type="button">Report to Station</button>
+            </div>
         </div>
 
         <div id="menu" style="display: none;">
@@ -143,9 +263,15 @@
     <script src="scripts/core/ship_catalogue.js"></script>
     <script src="scripts/core/asset_catalogue.js"></script>
     <script src="scripts/core/player_data.js"></script>
+    <script src="scripts/core/finance_constants.js"></script>
+    <script src="scripts/core/lender_catalogue.js"></script>
+    <script src="scripts/core/consumables_catalogue.js"></script>
     <script src="scripts/core/cargo_catalogue.js"></script>
     <script src="scripts/core/planet_catalogue.js"></script>
     <script src="scripts/core/mission_catalogue.js"></script>
+    <script src="scripts/ui/notification_manager.js"></script>
+    <script src="scripts/ui/ui_notify.js"></script>
+    <script src="scripts/ui/ui_prompt.js"></script>
     <script src="scripts/managers/fleet_manager.js"></script>
     <script src="scripts/managers/asset_manager.js"></script>
     <script src="scripts/managers/trade_manager.js"></script>
@@ -154,16 +280,23 @@
     <script src="scripts/managers/player_data_manager.js"></script>
     <script src="scripts/managers/planet_manager.js"></script>
     <script src="scripts/managers/mission_manager.js"></script>
+    <script src="scripts/managers/banking_manager.js"></script>
+    <script src="scripts/managers/consumables_manager.js"></script>
+    <script src="scripts/managers/rescue_manager.js"></script>
     <script src="scripts/core/camera.js"></script>
     <script src="scripts/game_objects/particle.js"></script>
     <script src="scripts/game_objects/ship.js"></script>
     <script src="scripts/game_objects/space_dock.js"></script>
     <script src="scripts/scenes/mission_board_scene.js"></script>
     <script src="scripts/scenes/galactic_trade_hub_scene.js"></script>
+    <script src="scripts/scenes/aegis_banking_scene.js"></script>
+    <script src="scripts/scenes/titan_supply_scene.js"></script>
     <script src="scripts/scenes/fleet_manager_scene.js"></script>
     <script src="scripts/scenes/space_scene.js"></script>
+    <script src="scripts/lander/lander_world_generator.js"></script>
     <script src="scripts/scenes/lander_scene.js"></script>
     <script src="scripts/scenes/space_dock_scene.js"></script>
+    <script src="scripts/ui/intro_screen.js"></script>
     <script src="scripts/ui/nav_screen.js"></script>
     <script src="scripts/main.js"></script>
 </body>

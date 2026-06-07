@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Default Ship — Ion Rings Preview</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #aaa;
+      font-family: sans-serif;
+    }
+    canvas {
+      image-rendering: auto;
+      max-width: 95vw;
+      max-height: 80vh;
+      border: 1px solid #333;
+    }
+    p { margin: 1rem; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <p>8 frames @ 12 fps — defaultShip ion rings</p>
+  <script>
+    const FRAME_W = 1248;
+    const FRAME_H = 1246;
+    const FRAMES = 8;
+    const FPS = 12;
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById('c');
+      canvas.width = FRAME_W;
+      canvas.height = FRAME_H;
+      const ctx = canvas.getContext('2d');
+      let frame = 0;
+
+      setInterval(() => {
+        ctx.clearRect(0, 0, FRAME_W, FRAME_H);
+        ctx.drawImage(
+          img,
+          frame * FRAME_W, 0, FRAME_W, FRAME_H,
+          0, 0, FRAME_W, FRAME_H
+        );
+        frame = (frame + 1) % FRAMES;
+      }, 1000 / FPS);
+    };
+    img.src = 'defaultShip_ion_rings_spritesheet.png';
+  </script>
+</body>
+</html>

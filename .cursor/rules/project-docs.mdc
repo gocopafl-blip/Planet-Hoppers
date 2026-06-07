@@ -1,0 +1,30 @@
+---
+description: Read docs/ for design context, roadmap, and playtesting before planning or implementing features
+alwaysApply: true
+---
+
+# Planet Hoppers — project documentation
+
+## Before planning or implementing
+
+1. Read **`docs/ROADMAP.md`** for priorities, completed work, and locked decisions.
+2. Read **`docs/README.md`** to find topic docs under `docs/`.
+3. Read **every `docs/*.md` file relevant to the task** (not only files listed in this rule). Examples today: `ECONOMY.md`, `LANDER.md`, `FLEET_AND_ORBIT.md`, `FLEET_BACKGROUND_SIMULATION.md`, `PLAYTESTING.md`, `ADDING_ASSETS.md`. Future docs (e.g. `POST_LANDING.md`) follow the same pattern.
+
+Do not re-debate requirements already documented there unless the user asks to change them.
+
+## When the user adds new work
+
+- If scope is new and no doc exists, suggest a short **`docs/<topic>.md`** plus a bullet in **`docs/ROADMAP.md`**.
+- Keep planning questions to **1–2 at a time** unless the user asks for more.
+
+## Playtesting & saves
+
+- See **`docs/PLAYTESTING.md`**: use **Go Live** (`http://`) for reliable `localStorage`; GitHub Pages uses a **separate** save from localhost.
+- Player saves auto-migrate on load (`player_data_manager.migrateSaveData`); do not assume clearing storage is required after schema changes.
+
+## Code layout hints (not a substitute for docs)
+
+- Economy: `finance_constants.js`, `consumables_manager.js`, `player_data_manager.js`, Titan/Apex scenes when built
+- Lander: `lander_scene.js`, `lander_world_generator.js`, `planet_catalogue.js`
+- Fleet / space: `fleet_manager_scene.js`, `space_scene.js`, `fleet_manager.js`, `game_manager.js`

@@ -5,6 +5,35 @@ class FleetManager {
         // The active ship ID is now stored in playerDataManager.data.activeShipId
         // This allows the active ship to persist across game sessions and be shared
         // between different game systems (fleet manager, space scene, etc.)
+        this._orbitPlanetWarned = new Set();
+    }
+
+    findPlanetForLocation(location, celestialBodies) {
+        if (!location) return null;
+        const bodies = celestialBodies || [];
+
+        const planetId = location.orbitData?.planetId;
+        if (planetId) {
+            const byId = bodies.find(p => p && p.id === planetId);
+            if (byId) return byId;
+        }
+        if (location.planetName) {
+            const byName = bodies.find(p => p && p.name === location.planetName);
+            if (byName) return byName;
+        }
+        const planetIndex = location.orbitData?.planetIndex;
+        if (planetIndex != null) {
+            const byIndex = bodies.find(p => p && p.index === planetIndex);
+            if (byIndex) return byIndex;
+        }
+        return null;
+    }
+
+    demoteStaleOrbit(location) {
+        location.type = 'space';
+        location.isOrbitLocked = false;
+        location.planetName = null;
+        location.orbitData = null;
     }
 
     // A method to get the full data object for the active ship
@@ -72,6 +101,7 @@ class FleetManager {
                 currentLocation.type = 'orbit';
                 currentLocation.planetName = spaceScene.ship.orbitingPlanet.name;
                 currentLocation.orbitData = {
+                    planetId: spaceScene.ship.orbitingPlanet.id,
                     planetIndex: spaceScene.ship.orbitingPlanet.index,
                     orbitRadius: spaceScene.ship.orbitRadius,
                     orbitAngle: spaceScene.ship.orbitAngle,
@@ -147,21 +177,42 @@ class FleetManager {
         console.log(`Saved ${saveType} state for ship ${ship.id}`);
     }
 
-    buyShip(shipCatalogueKey) {
+    buyShip(shipCatalogueKey, playerGivenName) {
         const shipData = shipCatalogue[shipCatalogueKey];
         if (!shipData) {
             console.error(`Ship with ID ${shipCatalogueKey} not found.`);
-            return;
+            return false;
+        }
+
+        if (playerGivenName == null || playerGivenName === '') {
+            console.warn('buyShip requires a hull name from the purchase flow.');
+            return false;
         }
 
         // Check if the player has enough currency to buy the ship
         if (playerDataManager.getBalance() < shipData.shipBuyValue) {
-            alert(`Not enough credits to buy ${shipData.shipID}.`);
-            return;
+            uiNotify({
+                title: 'Insufficient Credits',
+                message: `Not enough credits to purchase ${shipData.shipID}.`,
+                variant: 'warning'
+            });
+            return false;
         }
-        const playerGivenName = prompt(`Enter a name for your new ${shipData.shipID}:`);
-        // Deduct the price from the player's currency
-        playerDataManager.addMoney(-shipData.shipBuyValue);
+
+        const paid = playerDataManager.spend(
+            shipData.shipBuyValue,
+            FINANCE_CATEGORIES.SHIP,
+            `Purchased ${shipData.shipID}`,
+            { shipTypeId: shipCatalogueKey, shipName: playerGivenName || shipData.shipID }
+        );
+        if (!paid) {
+            uiNotify({
+                title: 'Insufficient Credits',
+                message: `Not enough credits to purchase ${shipData.shipID}.`,
+                variant: 'warning'
+            });
+            return false;
+        }
 
         // Add the ship to the player's fleet (store full ship object)
         if (!playerDataManager.data.fleet) {
@@ -223,9 +274,15 @@ class FleetManager {
         // This will save the current ship's state (if any) and switch to the new ship
         this.setActiveShip(newShip.id);
 
-        alert(`Bought ship: ${shipData.shipID}`);
+        uiNotify({
+            title: 'Hull Purchased',
+            message: `${shipData.shipID} added to your fleet as "${playerGivenName}".`,
+            variant: 'success',
+            durationMs: 8000
+        });
         // NOTE: No need to call playerDataManager.saveData() here because
         // both addShipToFleet() and setActiveShip() already save the data
+        return true;
     }
 
     sellShip(shipId) {
@@ -250,10 +307,20 @@ class FleetManager {
         if (removedShip) {
             // Refund the player a portion of the ship's price (80% of original value)
             const refundAmount = Math.floor(shipData.shipSellValue || (shipData.shipBuyValue * 0.8));
-            playerDataManager.addMoney(refundAmount);
+            playerDataManager.credit(
+                refundAmount,
+                FINANCE_CATEGORIES.SHIP,
+                `Sold ${removedShip.name}`,
+                { shipId: removedShip.id, shipTypeId: removedShip.shipTypeId }
+            );
             
             console.log(`Sold ship: ${removedShip.name} for ${refundAmount} credits`);
-            alert(`Sold ${removedShip.name} for ${refundAmount} credits`);
+            uiNotify({
+                title: 'Hull Sold',
+                message: `${removedShip.name} sold for ¢ ${refundAmount.toLocaleString()}.`,
+                variant: 'success',
+                durationMs: 8000
+            });
         }
         // NOTE: PlayerDataManager methods automatically save data, so no manual save needed
     }
@@ -261,24 +328,24 @@ class FleetManager {
     // Task 8.1.2: Extract fleet physics logic for background simulation
     // This method updates fleet ship physics working with fleet data from playerDataManager
     // It can be called independently of the space scene for background simulation
-    updateFleetPhysics(fleetShips, celestialBodies, worldWidth, worldHeight, deltaTime) {
-        // Update each fleet ship's physics
-        // fleetShips: Array of fleet ship data objects from playerDataManager.data.fleet
-        // celestialBodies: Array of planet objects
-        // worldWidth/Height: World boundary dimensions
-        // deltaTime: Time elapsed since last update (for future use)
-        
+    updateFleetPhysics(fleetShips, celestialBodies, worldWidth, worldHeight, deltaSec = 1 / SPACE_PHYSICS_FPS) {
+        // fleetShips: playerDataManager fleet entries; deltaSec: elapsed seconds for this tick
+        // Movement matches space_scene / ship.js: position += velocity once per frame at SPACE_PHYSICS_FPS
+
         if (!fleetShips || fleetShips.length === 0) {
             return;
         }
 
+        const frames = deltaSec * SPACE_PHYSICS_FPS;
+
         const activeShipId = playerDataManager.data.activeShipId;
+        const pilotingInSpace = gameManager.activeScene?.name === 'space';
 
         fleetShips.forEach(shipData => {
             if (!shipData || !shipData.location) return;
 
-            // Skip active ship - it's handled by space scene when active
-            if (shipData.id === activeShipId) return;
+            // Skip only while this ship is being piloted in the space scene
+            if (pilotingInSpace && shipData.id === activeShipId) return;
 
             // Skip docked ships - no physics needed
             if (shipData.location.type === 'docked' || shipData.location.isDocked) return;
@@ -287,9 +354,16 @@ class FleetManager {
             
             // If ship is orbit-locked, handle orbital mechanics (Task 7.9)
             if (location.type === 'orbit' && location.isOrbitLocked && location.orbitData) {
-                const planet = celestialBodies.find(p => p && (p.name === location.planetName || p.index === location.orbitData.planetIndex));
+                const planet = this.findPlanetForLocation(location, celestialBodies);
                 if (!planet) {
-                    console.warn(`Planet ${location.planetName} not found for ship ${shipData.name} in orbit`);
+                    const warnKey = `${shipData.id}:${location.planetName || location.orbitData.planetId || 'unknown'}`;
+                    if (!this._orbitPlanetWarned.has(warnKey)) {
+                        this._orbitPlanetWarned.add(warnKey);
+                        console.warn(
+                            `Planet ${location.planetName || location.orbitData.planetId} not found for ship ${shipData.name} in orbit — reverting to free flight at last position`
+                        );
+                    }
+                    this.demoteStaleOrbit(location);
                     return;
                 }
 
@@ -304,7 +378,7 @@ class FleetManager {
                 const orbitalSpeed = location.orbitData.lockedOrbitSpeed / location.orbitData.orbitRadius;
                 
                 // Update orbital position (using direction: 1 = CCW, -1 = CW)
-                location.orbitData.orbitAngle += orbitalSpeed * (location.orbitData.orbitDirection || 1) * (deltaTime || 0.016); // Scale by deltaTime
+                location.orbitData.orbitAngle += orbitalSpeed * (location.orbitData.orbitDirection || 1) * frames;
                 
                 // Calculate new position
                 location.x = planet.x + Math.cos(location.orbitData.orbitAngle) * location.orbitData.orbitRadius;
@@ -321,8 +395,8 @@ class FleetManager {
 
             } else if (location.type === 'space') {
                 // Normal physics update for ships in space (not in orbit, not docked)
-                location.x += location.velX * (deltaTime ? deltaTime / 0.016 : 1); // Scale by deltaTime
-                location.y += location.velY * (deltaTime ? deltaTime / 0.016 : 1);
+                location.x += location.velX * frames;
+                location.y += location.velY * frames;
 
                 // Check for automatic orbit entry (Task 7.9.2)
                 for (const planet of celestialBodies) {

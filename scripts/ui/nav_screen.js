@@ -71,23 +71,91 @@ class NavScreen {
         console.log("Nav Screen Hidden");
     }
 
+    /** Thin stroke width that stays ~1–2 px on screen at any zoom. */
+    navLineWidth(pixels = 2) {
+        return pixels / this.zoom;
+    }
+
+    /** Orbital insertion ring radius (matches in-flight orbit band). */
+    getOrbitDisplayRadius(planet) {
+        if (!planet?.radius) return ORBIT_RADIUS_MULTIPLIERS.DEFAULT * 2000;
+        return planet.radius * ORBIT_RADIUS_MULTIPLIERS.DEFAULT;
+    }
+
+    worldToScreen(worldX, worldY) {
+        const cx = this.spaceScene.WORLD_WIDTH / 2;
+        const cy = this.spaceScene.WORLD_HEIGHT / 2;
+        return {
+            x: (worldX - cx) * this.zoom + this.panX,
+            y: (worldY - cy) * this.zoom + this.panY
+        };
+    }
+
+    drawScreenLabel(screenX, screenY, lines, options = {}) {
+        const ctx = this.navCtx;
+        const titleSize = options.titleSize ?? 13;
+        const subSize = options.subSize ?? 11;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        let y = screenY;
+        lines.forEach((line, i) => {
+            if (!line) return;
+            const isTitle = i === 0;
+            ctx.font = `${isTitle ? 'bold ' : ''}${isTitle ? titleSize : subSize}px ${isTitle ? 'Orbitron' : 'Consolas'}, monospace`;
+            ctx.fillStyle = isTitle ? '#a0e0ff' : 'rgba(200, 220, 240, 0.9)';
+            ctx.fillText(line, screenX, y);
+            y += isTitle ? titleSize + 4 : subSize + 3;
+        });
+    }
+
+    drawPlanetOrbitBand(ctx, planet, navState) {
+        const orbitR = this.getOrbitDisplayRadius(planet);
+        const isSurvey = navState === 'survey_target';
+        ctx.beginPath();
+        ctx.arc(planet.x, planet.y, orbitR, 0, Math.PI * 2);
+        ctx.fillStyle = isSurvey ? 'rgba(80, 160, 255, 0.1)' : 'rgba(0, 255, 80, 0.12)';
+        ctx.fill();
+        ctx.strokeStyle = isSurvey ? 'rgba(100, 180, 255, 0.45)' : 'rgba(0, 255, 100, 0.4)';
+        ctx.lineWidth = this.navLineWidth(1.5);
+        ctx.stroke();
+    }
+
+    drawPlanetBlip(ctx, planet, navState, showSurveyQuestion) {
+        const blipR = NAV_MAP_BLIP_RADIUS;
+        if (navState === 'survey_target' && showSurveyQuestion) {
+            const fontSize = this.navLineWidth(16);
+            ctx.font = `bold ${fontSize}px "Orbitron"`;
+            ctx.fillStyle = 'rgba(120, 200, 255, 0.95)';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('?', planet.x, planet.y);
+            return;
+        }
+
+        ctx.beginPath();
+        ctx.arc(planet.x, planet.y, blipR, 0, Math.PI * 2);
+        if (navState === 'survey_target') {
+            ctx.fillStyle = 'rgba(80, 160, 255, 0.95)';
+        } else {
+            ctx.fillStyle = 'rgba(0, 255, 80, 0.95)';
+        }
+        ctx.fill();
+    }
+
     // --- NEW DRAWING LOGIC ---
     draw() {
         if (!this.isOpen) return;
-        const ctx = this.navCtx; // Use our dedicated nav canvas context
+        const ctx = this.navCtx;
         ctx.clearRect(0, 0, this.navCanvas.width, this.navCanvas.height);
 
-        // --- Apply Pan and Zoom ---
         ctx.save();
         ctx.translate(this.panX, this.panY);
         ctx.scale(this.zoom, this.zoom);
-
-        // Center the view on the middle of the world, not the top-left
         ctx.translate(-this.spaceScene.WORLD_WIDTH / 2, -this.spaceScene.WORLD_HEIGHT / 2);
 
-        // --- Draw Grid Lines (optional but cool!) ---
         ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
-        ctx.lineWidth = 1 / this.zoom; // Keep lines thin even when zoomed in
+        ctx.lineWidth = this.navLineWidth(1);
         for (let x = 0; x <= this.spaceScene.WORLD_WIDTH; x += 5000) {
             ctx.beginPath();
             ctx.moveTo(x, 0);
@@ -101,16 +169,16 @@ class NavScreen {
             ctx.stroke();
         }
 
+        const showSurveyQuestion = Math.floor(performance.now() / 600) % 2 === 1;
 
-        // --- Draw Planets ---
         celestialBodies.forEach(p => {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
-            ctx.fill();
+            const navState = playerDataManager.getPlanetNavState(p);
+            if (navState === 'hidden') return;
+
+            this.drawPlanetOrbitBand(ctx, p, navState);
+            this.drawPlanetBlip(ctx, p, navState, showSurveyQuestion);
         });
 
-        // --- Draw Docks ---
         this.spaceScene.spaceDocks.forEach(d => {
             ctx.beginPath();
             const spikes = 6;
@@ -129,106 +197,107 @@ class NavScreen {
             ctx.fill();
         });
 
-        // --- Draw Ship ---
         const ship = this.spaceScene.ship;
         if (ship) {
             ctx.save();
             ctx.translate(ship.x, ship.y);
             ctx.rotate(ship.angle);
             ctx.fillStyle = 'red';
-            ctx.beginPath(); // Draw an equilateral triangle for the ship
+            ctx.beginPath();
             const sideLength = 3000;
-            const height = sideLength * (Math.sqrt(3) / 2); // Height of equilateral triangle
+            const height = sideLength * (Math.sqrt(3) / 2);
             const halfBase = sideLength / 2;
-
-            ctx.moveTo(0, -height / 2);           // Top point
-            ctx.lineTo(halfBase, height / 2);     // Bottom right
-            ctx.lineTo(-halfBase, height / 2);    // Bottom left
+            ctx.moveTo(0, -height / 2);
+            ctx.lineTo(halfBase, height / 2);
+            ctx.lineTo(-halfBase, height / 2);
             ctx.closePath();
             ctx.fill();
             ctx.restore();
         }
-        // --- Tooltip Logic Hover & Display Data ---
+
+        // Hover target for screen-space label (collected before restore)
         let hoveredObject = null;
-        // Check for hover over planets
         for (const p of celestialBodies) {
+            if (playerDataManager.getPlanetNavState(p) === 'hidden') continue;
             const dist = Math.hypot(this.mouseWorldX - p.x, this.mouseWorldY - p.y);
-            if (dist < p.radius) {
-                hoveredObject = { ...p, type: 'Planet' };
+            const hitR = Math.max(NAV_MAP_BLIP_HIT_RADIUS, this.getOrbitDisplayRadius(p));
+            if (dist < hitR) {
+                hoveredObject = {
+                    x: p.x,
+                    y: p.y,
+                    radius: p.radius,
+                    type: 'Planet',
+                    navState: playerDataManager.getPlanetNavState(p),
+                    name: playerDataManager.getPlanetNavLabel(p)
+                };
                 break;
             }
         }
-
-        // Check for hover over docks (if no planet was found)
         if (!hoveredObject) {
             for (const d of this.spaceScene.spaceDocks) {
                 if (this.mouseWorldX > d.x - 1000 && this.mouseWorldX < d.x + 1000 &&
                     this.mouseWorldY > d.y - 1000 && this.mouseWorldY < d.y + 1000) {
-                    hoveredObject = { ...d, type: 'Dock', name: 'Space Dock Alpha' };
+                    hoveredObject = { x: d.x, y: d.y, type: 'Dock', name: 'Space Dock Alpha' };
                     break;
                 }
             }
         }
 
-        // If we found a hovered object, draw its tooltip
-        if (hoveredObject) {
-            const ship = this.spaceScene.ship;
-            const distance = Math.hypot(ship.x - hoveredObject.x, ship.y - hoveredObject.y);
+        // Waypoint rings (small markers — not orbit-scale)
+        const wpRingR = NAV_MAP_WAYPOINT_RING_RADIUS;
+        ctx.lineWidth = this.navLineWidth(2);
 
-            const fontSize = Math.max(800, 25 / this.zoom); // Dynamic font size that scales with zoom
-            ctx.font = `bold ${fontSize}px "Orbitron"`;
-            ctx.fillStyle = '#a0e0ff';
-            ctx.textAlign = 'center';
-
-            const textYOffset = (hoveredObject.radius || 500) + fontSize * 1.5;
-
-            ctx.fillText(hoveredObject.name, hoveredObject.x, hoveredObject.y + textYOffset);
-            ctx.font = `${fontSize * 0.8}px "Consolas"`;
-            ctx.fillText(`${Math.floor(distance).toLocaleString()} m`, hoveredObject.x, hoveredObject.y + textYOffset + fontSize);
-        }
-        // --- NEW WAYPOINT DRAWING LOGIC ---
-        ctx.lineWidth = 400; // Make rings thick enough to see when zoomed out
-
-        // Draw intermediate waypoints (white rings)
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
         this.waypoints.forEach(wp => {
             ctx.beginPath();
-            ctx.arc(wp.x, wp.y, (wp.radius || 2000) + 800, 0, Math.PI * 2);
+            ctx.arc(wp.x, wp.y, wpRingR, 0, Math.PI * 2);
             ctx.stroke();
         });
 
-        // Draw the final waypoint (yellow ring)
         if (this.finalWaypoint) {
-            ctx.strokeStyle = 'rgba(255, 255, 0, 0.9)';
+            ctx.strokeStyle = 'rgba(255, 220, 0, 0.95)';
+            ctx.lineWidth = this.navLineWidth(2.5);
             ctx.beginPath();
-            ctx.arc(this.finalWaypoint.x, this.finalWaypoint.y, (this.finalWaypoint.radius || 2000) + 800, 0, Math.PI * 2);
+            ctx.arc(this.finalWaypoint.x, this.finalWaypoint.y, wpRingR, 0, Math.PI * 2);
             ctx.stroke();
         }
-        // --- NEW NAVIGATION LINE LOGIC ---
-        // First, create a complete, ordered list of all points on the route.
+
         const routePoints = [this.spaceScene.ship, ...this.waypoints];
         if (this.finalWaypoint) {
             routePoints.push(this.finalWaypoint);
         }
 
-        // Now, draw the lines connecting each point in the route.
         if (routePoints.length > 1) {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.lineWidth = 250; // Thin line
-            ctx.setLineDash([1000, 1500]); // Creates a dashed line effect!
-
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+            ctx.lineWidth = this.navLineWidth(1.5);
+            ctx.setLineDash([800 / this.zoom, 600 / this.zoom]);
             ctx.beginPath();
-            // Start the line at the first point (always the ship)
             ctx.moveTo(routePoints[0].x, routePoints[0].y);
-
-            // Draw a line to each subsequent point in the array
             for (let i = 1; i < routePoints.length; i++) {
                 ctx.lineTo(routePoints[i].x, routePoints[i].y);
             }
             ctx.stroke();
-            ctx.setLineDash([]); // Reset to a solid line for other drawing
+            ctx.setLineDash([]);
         }
-        ctx.restore(); // This restores the context, removing the pan and zoom for any UI drawing
+
+        ctx.restore();
+
+        // Screen-space labels (fixed pixel size regardless of zoom)
+        if (hoveredObject && this.spaceScene.ship) {
+            const orbitR = hoveredObject.type === 'Planet'
+                ? this.getOrbitDisplayRadius(hoveredObject)
+                : NAV_MAP_BLIP_RADIUS;
+            const screen = this.worldToScreen(hoveredObject.x, hoveredObject.y + orbitR);
+            const distance = Math.hypot(
+                this.spaceScene.ship.x - hoveredObject.x,
+                this.spaceScene.ship.y - hoveredObject.y
+            );
+            const lines = [hoveredObject.name, `${Math.floor(distance).toLocaleString()} m`];
+            if (hoveredObject.type === 'Planet' && hoveredObject.navState === 'survey_target') {
+                lines.push('Active survey target');
+            }
+            this.drawScreenLabel(screen.x, screen.y + 6, lines);
+        }
     }
 
     handleZoom(event) {
@@ -324,9 +393,9 @@ class NavScreen {
     }
 
     getObjectAtMouse() {
-        // Check for planets first
         for (const p of celestialBodies) {
-            if (Math.hypot(this.mouseWorldX - p.x, this.mouseWorldY - p.y) < p.radius) {
+            if (playerDataManager.getPlanetNavState(p) === 'hidden') continue;
+            if (Math.hypot(this.mouseWorldX - p.x, this.mouseWorldY - p.y) < NAV_MAP_BLIP_HIT_RADIUS) {
                 return p;
             }
         }

@@ -4,7 +4,12 @@ const landerScene = {
     isReady: false,
     backgroundImage: null,
     lander: null, terrain: null, particles: [], stars: [], camera: null,
-    baseGravity: 0, difficultySettings: null, selectedShip: null,
+    planet: null, planetSettings: null, windPhase: 0,
+    windStreaks: [], windSignHistory: [],
+    windDisplay: { label: 'Calm', kts: 0, direction: 1 },
+    seismicOffsetX: 0, seismicOffsetY: 0,
+    baseGravity: 0, selectedShip: null,
+    WIND_KTS_SCALE: 3.5,
     gameState: 'playing', zoomLevel: 1.5,
     defaultZoom: 0.5,
     ZOOM_IN: 1.5,
@@ -47,6 +52,7 @@ const landerScene = {
                 this.fuel -= 0.2;
             }
             this.velY += landerScene.baseGravity;
+            landerScene.applyWindForce(this);
             this.x += this.velX; this.y += this.velY;
         }
     },
@@ -83,31 +89,190 @@ const landerScene = {
         this.stars = [];
         for (let i = 0; i < 2000; i++) this.stars.push({ x: Math.random() * this.WORLD_WIDTH, y: Math.random() * this.WORLD_HEIGHT, radius: Math.random() * 1.5 });
     },
-    generateTerrain() {
-        let points = [];
-        let y = this.WORLD_HEIGHT - Math.random() * 150 - 100;
-        for (let x = 0; x <= this.WORLD_WIDTH; x += 20) {
-            points.push({ x: x, y: y });
-            y += Math.random() * 20 - 10;
-            y = Math.max(this.WORLD_HEIGHT - 300, Math.min(this.WORLD_HEIGHT - 50, y));
+
+    WindStreak: class {
+        constructor(x, y, direction, speed, length) {
+            this.x = x;
+            this.y = y;
+            this.direction = direction;
+            this.speed = speed;
+            this.length = length;
+            this.lifespan = 35 + Math.floor(Math.random() * 25);
+            this.alpha = 0.2 + Math.random() * 0.35;
         }
-        const padWidth = this.difficultySettings.padWidth;
-        const padIndex = Math.floor((this.WORLD_WIDTH / 2) / 20);
-        const padY = points[padIndex].y;
-        for (let i = 0; i < padWidth / 20; i++) {
-            if (points[padIndex + i]) points[padIndex + i].y = padY;
+        update() {
+            this.x += this.direction * this.speed;
+            this.lifespan--;
         }
-        const numCraters = 30;
-        for (let i = 0; i < numCraters; i++) {
-            const craterX = Math.random() * this.WORLD_WIDTH;
-            const craterRadius = Math.random() * 80 + 40;
-            if (craterX > points[padIndex].x - craterRadius && craterX < points[padIndex].x + padWidth + craterRadius) continue;
-            for (let p of points) {
-                const dist = Math.abs(p.x - craterX);
-                if (dist < craterRadius) p.y += Math.sqrt(craterRadius * craterRadius - dist * dist) * 0.5;
+        draw() {
+            const a = this.alpha * (this.lifespan / 60);
+            ctx.save();
+            ctx.strokeStyle = `rgba(210, 230, 255, ${Math.min(1, a)})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x - this.direction * this.length, this.y + this.length * 0.08);
+            ctx.stroke();
+            ctx.restore();
+        }
+    },
+
+    updateWindState() {
+        const ps = this.planetSettings;
+        if (!ps || ps.windMax <= 0) {
+            this.windDisplay = { label: 'Calm', kts: 0, direction: 1 };
+            this.currentWindAccel = 0;
+            return;
+        }
+
+        this.windPhase += 0.018;
+        const t = (Math.sin(this.windPhase) + 1) * 0.5;
+        const strength = LanderWorldGenerator.lerp(ps.windMin, ps.windMax, t);
+        const gustSign = Math.sin(this.windPhase * 2.7) >= 0 ? 1 : -1;
+
+        this.windSignHistory.push(gustSign);
+        if (this.windSignHistory.length > 40) this.windSignHistory.shift();
+
+        let signChanges = 0;
+        for (let i = 1; i < this.windSignHistory.length; i++) {
+            if (this.windSignHistory[i] !== this.windSignHistory[i - 1]) signChanges++;
+        }
+
+        const kts = Math.max(1, Math.round(strength * this.WIND_KTS_SCALE));
+        const variable = ps.windGusty && (signChanges >= 7 || strength > ps.windMin + (ps.windMax - ps.windMin) * 0.65);
+
+        if (variable) {
+            this.windDisplay = { label: 'Variable & Gusty', kts, direction: gustSign };
+        } else if (gustSign > 0) {
+            this.windDisplay = { label: `East at ${kts} Kts`, kts, direction: 1 };
+        } else {
+            this.windDisplay = { label: `West at ${kts} Kts`, kts, direction: -1 };
+        }
+
+        this.currentWindAccel = gustSign * strength * 0.0018;
+    },
+
+    applyWindForce(lander) {
+        this.updateWindState();
+        if (this.currentWindAccel) lander.velX += this.currentWindAccel;
+    },
+
+    updateSeismicShake() {
+        const intensity = this.planetSettings?.seismicIntensity || 0;
+        if (intensity <= 0) {
+            this.seismicOffsetX = 0;
+            this.seismicOffsetY = 0;
+            return;
+        }
+        if (Math.random() < 0.14 + intensity * 0.06) {
+            this.seismicOffsetX = (Math.random() - 0.5) * intensity * 10;
+            this.seismicOffsetY = (Math.random() - 0.5) * intensity * 5;
+        } else {
+            this.seismicOffsetX *= 0.82;
+            this.seismicOffsetY *= 0.82;
+        }
+    },
+
+    _withSeismicOffset(drawFn) {
+        ctx.save();
+        ctx.translate(this.seismicOffsetX, this.seismicOffsetY);
+        drawFn();
+        ctx.restore();
+    },
+
+    updateWindStreaks() {
+        const wd = this.windDisplay;
+        if (!wd || wd.kts < 4 || this.gameState !== 'playing') return;
+
+        const spawnRate = Math.min(0.35, 0.08 + wd.kts * 0.008);
+        if (Math.random() > spawnRate) return;
+
+        const dir = wd.direction || 1;
+        const zoom = this.camera?.zoomLevel || 1;
+        const viewW = canvas.width / zoom;
+        const viewH = canvas.height / zoom;
+        const spawnX = this.lander.x + (dir > 0 ? -viewW * 0.55 : viewW * 0.55) + (Math.random() - 0.5) * 80;
+        const spawnY = this.lander.y + (Math.random() - 0.5) * viewH * 0.9;
+
+        this.windStreaks.push(new this.WindStreak(
+            spawnX,
+            spawnY,
+            dir,
+            2.5 + wd.kts * 0.12,
+            40 + wd.kts * 2
+        ));
+    },
+
+    initWorld() {
+        this.planetSettings = LanderWorldGenerator.buildPlanetSettings(this.planet);
+        this.terrain = LanderWorldGenerator.buildWorld(
+            this.planet,
+            this.WORLD_WIDTH,
+            this.WORLD_HEIGHT,
+            this.planetSettings
+        );
+        this.baseGravity = this.planetSettings.gravity;
+        console.log('Lander world:', this.terrain.mode, 'pads:', this.terrain.pads.length, this.planetSettings);
+    },
+
+    updateFloatingPads() {
+        if (!this.terrain?.floatingPads) return;
+        const pads = this.terrain.floatingPads;
+        for (const pad of pads) {
+            pad.phase += 0.014;
+            pad.x += pad.velX + Math.sin(pad.phase) * 0.12;
+            pad.y += pad.velY + Math.cos(pad.phase * 0.65) * 0.08;
+            if (pad.x < 40) { pad.x = 40; pad.velX = Math.abs(pad.velX); }
+            if (pad.x + pad.width > this.WORLD_WIDTH - 40) {
+                pad.x = this.WORLD_WIDTH - 40 - pad.width;
+                pad.velX = -Math.abs(pad.velX);
+            }
+            if (pad.y < this.WORLD_HEIGHT * 0.32) { pad.y = this.WORLD_HEIGHT * 0.32; pad.velY = Math.abs(pad.velY); }
+            if (pad.y > this.WORLD_HEIGHT * 0.72) { pad.y = this.WORLD_HEIGHT * 0.72; pad.velY = -Math.abs(pad.velY); }
+        }
+        this.terrain.pads = pads.map(p => ({
+            id: p.id,
+            padStart: p.x,
+            padEnd: p.x + p.width,
+            y: p.y
+        }));
+    },
+
+    getNearestPad() {
+        if (!this.terrain?.pads?.length || !this.lander) return null;
+        let best = this.terrain.pads[0];
+        let bestDist = Infinity;
+        for (const pad of this.terrain.pads) {
+            const cx = (pad.padStart + pad.padEnd) / 2;
+            const d = Math.hypot(cx - this.lander.x, pad.y - this.lander.y);
+            if (d < bestDist) { bestDist = d; best = pad; }
+        }
+        return best;
+    },
+
+    isOnAnyPad() {
+        return this.getPadUnderLander() != null;
+    },
+
+    getPadUnderLander() {
+        if (!this.lander || !this.terrain) return null;
+        const bottom = this.lander.y + this.lander.height / 2;
+        if (this.terrain.mode === 'gas' && this.terrain.floatingPads) {
+            for (const pad of this.terrain.floatingPads) {
+                if (this.lander.x >= pad.x && this.lander.x <= pad.x + pad.width
+                    && bottom >= pad.y - 4 && bottom <= pad.y + pad.height + 10) {
+                    return pad.id;
+                }
+            }
+            return null;
+        }
+        if (!this.terrain.pads) return null;
+        for (const pad of this.terrain.pads) {
+            if (this.lander.x > pad.padStart && this.lander.x < pad.padEnd) {
+                return pad.id;
             }
         }
-        this.terrain = { points: points, padStart: points[padIndex].x, padEnd: points[padIndex].x + padWidth };
+        return null;
     },
     triggerCrash() {
         if (!this.lander.crashed) {
@@ -122,6 +287,10 @@ const landerScene = {
         }
     },
     drawWorld() {
+        this._withSeismicOffset(() => this._drawWorldContent());
+    },
+
+    _drawWorldContent() {
         if (this.backgroundImage && this.backgroundImage.complete) {
             // Calculate 16:9 aspect ratio dimensions that fit the world
             const aspectRatio = 16 / 9;
@@ -149,23 +318,77 @@ const landerScene = {
             ctx.fillStyle = 'white';
             this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2); ctx.fill(); });
         }
-        const padY = this.terrain.points.find(p => p.x >= this.terrain.padStart)?.y || this.WORLD_HEIGHT - 100;
-        ctx.strokeStyle = '#fff'; ctx.fillStyle = '#808080'; ctx.lineWidth = 2;
+        if (this.terrain.mode === 'gas') {
+            this._drawGasPads(ctx);
+            return;
+        }
+
+        const style = this.terrain.style || {};
+        if (this.terrain.waterRects?.length) {
+            ctx.fillStyle = 'rgba(30, 80, 140, 0.75)';
+            for (const w of this.terrain.waterRects) {
+                ctx.fillRect(w.x, w.y, w.width, w.height);
+            }
+        }
+
+        ctx.strokeStyle = style.stroke || '#444';
+        ctx.fillStyle = style.fill || '#555';
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(this.terrain.points[0].x, this.terrain.points[0].y);
         this.terrain.points.forEach(p => ctx.lineTo(p.x, p.y));
         ctx.lineTo(this.WORLD_WIDTH, this.WORLD_HEIGHT + 50);
         ctx.lineTo(0, this.WORLD_HEIGHT + 50);
-        ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = '#0f0'; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(this.terrain.padStart, padY); ctx.lineTo(this.terrain.padEnd, padY); ctx.stroke();
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        for (const pad of this.terrain.pads) {
+            const padY = pad.y ?? this.terrain.points.find(p => p.x >= pad.padStart)?.y;
+            if (padY == null) continue;
+            if (style.padFill) {
+                ctx.fillStyle = style.padFill;
+                ctx.fillRect(pad.padStart, padY - 6, pad.padEnd - pad.padStart, 10);
+            }
+            ctx.strokeStyle = style.padStroke || '#0f0';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(pad.padStart, padY);
+            ctx.lineTo(pad.padEnd, padY);
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Consolas, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`PAD ${pad.id}`, (pad.padStart + pad.padEnd) / 2, padY - 14);
+        }
+    },
+
+    _drawGasPads(ctx) {
+        const style = this.terrain.style || {};
+        for (const pad of this.terrain.floatingPads) {
+            ctx.fillStyle = style.padGlow || 'rgba(100, 150, 255, 0.2)';
+            ctx.fillRect(pad.x - 8, pad.y - 8, pad.width + 16, pad.height + 20);
+            ctx.fillStyle = style.padFill || 'rgba(180, 200, 255, 0.4)';
+            ctx.strokeStyle = style.padStroke || '#9cf';
+            ctx.lineWidth = 3;
+            ctx.fillRect(pad.x, pad.y, pad.width, pad.height);
+            ctx.strokeRect(pad.x, pad.y, pad.width, pad.height);
+            ctx.fillStyle = '#eef';
+            ctx.font = '14px Consolas, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`CLOUD ${pad.id}`, pad.x + pad.width / 2, pad.y - 10);
+        }
     },
     drawUI() {
         ctx.fillStyle = '#fff'; ctx.font = '18px "Consolas", "Courier New", "Monaco", monospace'; ctx.textAlign = 'left';
-        ctx.fillText(`FUEL: ${Math.floor(this.lander.fuel)}`, 20, 30);
-        ctx.fillText(`ALTITUDE: ${Math.floor(this.getAltitude())}m`, 20, 60);
-        ctx.fillText(`H-SPEED: ${this.lander.velX.toFixed(2)}`, 20, 90);
-        ctx.fillText(`V-SPEED: ${this.lander.velY.toFixed(2)}`, 20, 120);
+        const typeLabel = this.planetSettings?.planetTypeId || 'unknown';
+        ctx.fillText(`WORLD: ${typeLabel.replace('_', ' ')}`, 20, 30);
+        ctx.fillText(`FUEL: ${Math.floor(this.lander.fuel)}`, 20, 55);
+        ctx.fillText(`ALTITUDE: ${Math.floor(this.getAltitude())}m`, 20, 85);
+        const gravG = this.planetSettings?.gravityG?.toFixed(2) || '?';
+        ctx.fillText(`GRAVITY: ${gravG} G`, 20, 115);
+        const windLabel = this.windDisplay?.label || 'Calm';
+        ctx.fillText(`WIND: ${windLabel}`, 20, 145);
         if (this.gameState === 'landed') {
             ctx.textAlign = 'center'; ctx.font = '50px "Consolas", "Courier New", "Monaco", monospace';
             ctx.fillStyle = '#0f0';
@@ -177,12 +400,23 @@ const landerScene = {
         if (this.gameState === 'landed' || this.gameState === 'crashed') {
             ctx.font = '20px "Consolas", "Courier New", "Monaco", monospace';
             ctx.fillStyle = '#fff';
-            const returnText = this.gameState === 'landed' ? 'Click to return to ship' : 'Click to return to menu';
+            const returnText = this.gameState === 'landed' ? 'Click to return to ship' : 'Click to return to mothership';
             ctx.fillText(returnText, canvas.width / 2, canvas.height / 2 + 40);
         }
     },
     getAltitude() {
-        if (!this.terrain) return this.WORLD_HEIGHT;
+        if (!this.terrain || !this.lander) return this.WORLD_HEIGHT;
+        const bottom = this.lander.y + this.lander.height / 2;
+
+        if (this.terrain.mode === 'gas') {
+            let best = Infinity;
+            for (const pad of this.terrain.floatingPads) {
+                if (this.lander.x < pad.x || this.lander.x > pad.x + pad.width) continue;
+                best = Math.min(best, pad.y - bottom);
+            }
+            return Math.floor(best === Infinity ? this.WORLD_HEIGHT * 0.4 : best);
+        }
+
         let groundY = this.WORLD_HEIGHT;
         for (let i = 0; i < this.terrain.points.length - 1; i++) {
             if (this.lander.x >= this.terrain.points[i].x && this.lander.x < this.terrain.points[i + 1].x) {
@@ -190,14 +424,18 @@ const landerScene = {
                 break;
             }
         }
-        return Math.floor(groundY - this.lander.y - this.lander.height / 2);
+        return Math.floor(groundY - bottom);
     },
 
     drawCompass() {
         if (this.gameState !== 'playing' || !this.terrain) return;
-        const padY = this.terrain.points.find(p => p.x >= this.terrain.padStart)?.y;
-        if (!padY) return;
-        const padCenter = { x: this.terrain.padStart + (this.difficultySettings.padWidth / 2), y: padY };
+        const pad = this.getNearestPad();
+        if (!pad) return;
+        const padCenter = {
+            x: (pad.padStart + pad.padEnd) / 2,
+            y: pad.y ?? this.terrain.points?.find(p => p.x >= pad.padStart)?.y
+        };
+        if (padCenter.y == null) return;
         const dx = padCenter.x - this.lander.x;
         const dy = padCenter.y - this.lander.y;
         const distance = Math.hypot(dx, dy);
@@ -221,17 +459,25 @@ const landerScene = {
         // If the gate is closed, do nothing.
         if (!this.isReady) return;
         if (this.gameState === 'playing') {
+            if (this.terrain.mode === 'gas') this.updateFloatingPads();
             this.lander.update();
+            this.updateSeismicShake();
             this.camera.update();
+            this.updateWindStreaks();
             this.lander.emitThrusterParticles();
             if (this.lander.x < 0 || this.lander.x > this.WORLD_WIDTH || this.lander.y < 0) this.triggerCrash();
-            if (this.getAltitude() <= 0) {
-                const onPad = this.lander.x > this.terrain.padStart && this.lander.x < this.terrain.padEnd;
-                const safeSpeed = this.lander.velY < this.difficultySettings.safeSpeed && Math.abs(this.lander.velX) < this.difficultySettings.safeSpeed;
+            if (this.terrain.mode === 'gas' && this.lander.y > this.WORLD_HEIGHT * 0.88) {
+                this.triggerCrash();
+            } else if (this.getAltitude() <= 0) {
+                const onPad = this.isOnAnyPad();
+                const safe = this.planetSettings.safeSpeed;
+                const safeSpeed = this.lander.velY < safe && Math.abs(this.lander.velX) < safe;
                 const upright = Math.abs(this.lander.angle - (-Math.PI / 2)) < 0.2;
                 if (onPad && safeSpeed && upright) {
                     this.gameState = 'landed';
+                    this.landedPadId = this.getPadUnderLander();
                     if (typeof thrusterSound !== 'undefined' && thrusterSound && thrusterSound.isLoaded) thrusterSound.pause();
+                    missionManager.onLanderTouchdown(this);
                 } else { this.triggerCrash(); }
             }
             /*const zoomOutZone = { left: this.terrain.padStart - canvas.width * 0.2, right: this.terrain.padEnd + canvas.width * 0.2 };
@@ -244,6 +490,10 @@ const landerScene = {
         this.particles = this.particles.filter(p => {
             p.update();
             return p.lifespan > 0;
+        });
+        this.windStreaks = this.windStreaks.filter(s => {
+            s.update();
+            return s.lifespan > 0;
         });
         missionManager.completeMission(this);
     },
@@ -262,6 +512,9 @@ const landerScene = {
         this.camera.begin(ctx);
 
         this.drawWorld();
+        this._withSeismicOffset(() => {
+            this.windStreaks.forEach(s => s.draw());
+        });
         this.lander.draw();
         this.particles.forEach(p => p.draw());
 
@@ -288,24 +541,29 @@ const landerScene = {
             this.selectedShip = settings.selectedShip;
         }
         
-        // Default to 'medium' if difficulty is not provided
-        const difficulty = settings.difficulty || 'medium';
-        switch (difficulty) {
-            case 'easy': this.difficultySettings = { gravity: 0.008, fuel: 1000, safeSpeed: 1.5, padWidth: 140 }; break;
-            case 'medium': this.difficultySettings = { gravity: 0.01, fuel: 700, safeSpeed: 1.0, padWidth: 100 }; break;
-            case 'hard': this.difficultySettings = { gravity: 0.012, fuel: 500, safeSpeed: 0.7, padWidth: 60 }; break;
-            default: 
-                console.warn(`Unknown difficulty "${difficulty}", defaulting to 'medium'`);
-                this.difficultySettings = { gravity: 0.01, fuel: 700, safeSpeed: 1.0, padWidth: 100 };
-        }
+        this.planet = settings.planet || null;
+        this.landedPadId = null;
+        this.windPhase = Math.random() * Math.PI * 2;
+        this.windStreaks = [];
+        this.windSignHistory = [];
+        this.windDisplay = { label: 'Calm', kts: 0, direction: 1 };
+        this.currentWindAccel = 0;
+        this.seismicOffsetX = 0;
+        this.seismicOffsetY = 0;
         console.log('Lander scene settings:', settings);
-        console.log('Planet data:', settings.planet);
+        console.log('Planet data:', this.planet);
 
         // --- IMAGE LOADING LOGIC ---
-        if (settings.planet && settings.planet.backgroundOptions) {
-            console.log('Background options found:', settings.planet.backgroundOptions);
-            const backgrounds = settings.planet.backgroundOptions;
-            const randomIndex = Math.floor(Math.random() * backgrounds.length);
+        const dna = LanderWorldGenerator.resolvePlanetDNA(this.planet);
+        const backgrounds = (this.planet && this.planet.backgroundOptions) ||
+            dna.landerBackgrounds ||
+            ['earth_planet_a'];
+        if (backgrounds && backgrounds.length) {
+            console.log('Background options found:', backgrounds);
+            const bgRng = LanderWorldGenerator.createRng(
+                LanderWorldGenerator.hashSeed((this.planet?.id || this.planet?.name || 'default') + '-bg')
+            );
+            const randomIndex = Math.floor(bgRng() * backgrounds.length);
             const randomBackgroundKey = backgrounds[randomIndex];
             console.log('Selecting background key:', randomBackgroundKey);
 
@@ -341,9 +599,8 @@ const landerScene = {
             this.backgroundImage = null; // No background if no planet data is provided
             this.isReady = true; // Open the gate immediately if there's nothing to load.
         }
-        this.baseGravity = this.difficultySettings.gravity;
-        this.generateTerrain();
-        this.lander = new this.Lander(this.WORLD_WIDTH / 2, 150, this.difficultySettings.fuel, this.selectedShip);
+        this.initWorld();
+        this.lander = new this.Lander(this.WORLD_WIDTH / 2, 150, this.planetSettings.fuel, this.selectedShip);
         this.camera = new Camera(this.lander, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
             followSmoothing: 0.08, // A slightly slower, smoother follow for the lander
             zoomSmoothing: 0.04    // A custom zoom speed for the lander scene

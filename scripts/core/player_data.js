@@ -2,17 +2,29 @@
 
 function getNewPlayerData() {
     return {
+        hasSeenIntro: false,
+        completedMissionIds: [],
+
         // Player Profile
         cargoCoName: "StarHopper Cargo",
+        vesselPrefix: "USV",
         playerBankBalance: 2500,
+        transactionLedger: [],
+        activeLoans: [],
+        financeStats: {
+            hasSeenLienReveal: false,
+            lifetimeGrossMissionPay: 0,
+            manualPaymentCount: 0
+        },
         activeShipId: 1,
         activeMissionId: null,
         activeMissionState: null,
 
         // World State - planets and environment (ADDED for planet persistence)
         worldState: {
-            planets: null, // Will store generated planet data to maintain consistency
-            lastGenerated: null // Timestamp of when planets were generated
+            planets: null,
+            lastGenerated: null,
+            hubPosition: null // { x, y } — station anchor for starter discovery migration
         },
 
         // Player's Fleet

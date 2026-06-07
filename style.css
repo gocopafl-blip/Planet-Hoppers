@@ -30,8 +30,8 @@
     border: 3px solid #2ef8ff;
     border-radius: 30px;
     box-shadow: 0 0 30px rgba(46, 248, 255, 0.5);
-    width: 95vw;
-    max-width: 600px;
+    width: min(92vw, 780px);
+    max-width: 780px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
@@ -51,7 +51,7 @@
 
 #ship-assignment-list {
     width: 100%;
-    max-height: 320px;
+    max-height: min(52vh, 480px);
     overflow-y: auto;
     margin-bottom: 18px;
     display: flex;
@@ -171,6 +171,138 @@
         width: 40px;
         height: 40px;
     }
+}
+
+/* === In-game prompt / confirm modal === */
+#ui-prompt-modal {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+}
+
+#ui-prompt-content {
+    background: rgba(0, 20, 40, 0.98);
+    border: 3px solid #2ef8ff;
+    border-radius: 18px;
+    box-shadow: 0 0 36px rgba(46, 248, 255, 0.35);
+    width: min(92vw, 480px);
+    padding: 28px 26px 22px;
+    color: #e8f4ff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    animation: assignmentModalSlideIn 0.35s ease-out;
+}
+
+#ui-prompt-content.ui-prompt--trade {
+    border-color: rgba(255, 214, 120, 0.85);
+    box-shadow: 0 0 36px rgba(255, 190, 80, 0.25);
+}
+
+#ui-prompt-content.ui-prompt--trade #ui-prompt-title {
+    color: #ffd666;
+}
+
+#ui-prompt-content.ui-prompt--trade #ui-prompt-confirm {
+    border-color: rgba(255, 214, 120, 0.8);
+    color: #ffd666;
+    background: rgba(255, 190, 80, 0.15);
+}
+
+#ui-prompt-content.ui-prompt--danger {
+    border-color: rgba(255, 100, 100, 0.75);
+    box-shadow: 0 0 36px rgba(255, 80, 80, 0.2);
+}
+
+#ui-prompt-content.ui-prompt--danger #ui-prompt-title {
+    color: #ff8a8a;
+}
+
+#ui-prompt-content.ui-prompt--danger #ui-prompt-confirm {
+    border-color: rgba(255, 100, 100, 0.85);
+    color: #fff;
+    background: rgba(180, 40, 40, 0.55);
+}
+
+#ui-prompt-title {
+    margin: 0 0 12px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.25rem;
+    color: #2ef8ff;
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+
+#ui-prompt-message {
+    margin: 0 0 16px;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    color: rgba(220, 235, 255, 0.9);
+    text-align: center;
+}
+
+#ui-prompt-input {
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(160, 224, 255, 0.45);
+    background: rgba(0, 12, 28, 0.9);
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+}
+
+#ui-prompt-input:focus {
+    outline: none;
+    border-color: #2ef8ff;
+    box-shadow: 0 0 12px rgba(46, 248, 255, 0.25);
+}
+
+#ui-prompt-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+#ui-prompt-confirm,
+#ui-prompt-cancel {
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+}
+
+#ui-prompt-confirm {
+    background: rgba(46, 248, 255, 0.18);
+    color: #2ef8ff;
+    border: 2px solid #2ef8ff;
+}
+
+#ui-prompt-confirm:hover {
+    background: rgba(46, 248, 255, 0.32);
+    transform: translateY(-1px);
+}
+
+#ui-prompt-cancel {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(200, 220, 240, 0.9);
+    border: 1px solid rgba(160, 200, 230, 0.35);
+}
+
+#ui-prompt-cancel:hover {
+    background: rgba(255, 255, 255, 0.12);
 }
 
 /* --- TABLE OF CONTENTS ---
@@ -320,6 +452,24 @@ button:hover {
     /* A light, icy blue */
     text-shadow: 6px 6px 6px #000000;
     /* A more pronounced shadow */
+    margin: 0;
+}
+
+.start-tagline {
+    font-family: "Orbitron", sans-serif;
+    font-size: 1em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(160, 224, 255, 0.85);
+    margin: 0;
+    text-shadow: 2px 2px 4px #000;
+}
+
+#start-screen-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
 }
 
 #start-screen button {
@@ -341,6 +491,97 @@ button:hover {
 #start-screen button:hover {
     background-color: #f1f7f163;
     color: #0c0606;
+}
+
+/* Phase 1B.1 — contractor intro briefing */
+#intro-briefing {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 8, 16, 0.88);
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+
+#intro-briefing.intro-visible {
+    opacity: 1;
+}
+
+.intro-briefing-panel {
+    width: min(92vw, 560px);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: linear-gradient(145deg, rgba(0, 28, 24, 0.97), rgba(0, 12, 32, 0.97));
+    border: 2px solid rgba(0, 255, 136, 0.6);
+    border-radius: 14px;
+    padding: 24px 26px 22px;
+    color: #e8fff4;
+    font-family: "Orbitron", sans-serif;
+    box-shadow: 0 0 32px rgba(0, 255, 136, 0.25);
+}
+
+.intro-badge {
+    display: inline-block;
+    font-size: 0.65em;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    color: #003820;
+    background: #00ff88;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.intro-briefing-panel h2 {
+    margin: 10px 0 4px;
+    font-size: 1.35em;
+    color: #7dffc4;
+    letter-spacing: 0.05em;
+}
+
+.intro-subtitle {
+    margin: 0 0 16px;
+    font-size: 0.72em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #a0e0ff;
+}
+
+.intro-briefing-body {
+    font-size: 0.82em;
+    line-height: 1.55;
+    color: #d8f5e8;
+    margin-bottom: 20px;
+}
+
+.intro-briefing-body p {
+    margin: 0 0 12px;
+}
+
+.intro-briefing-body strong {
+    color: #ffffff;
+}
+
+#introContinueBtn {
+    width: 100%;
+    background: rgba(0, 255, 136, 0.15);
+    color: #7dffc4;
+    border: 2px solid #00ff88;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.95em;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+#introContinueBtn:hover {
+    background: rgba(0, 255, 136, 0.3);
+    color: #ffffff;
 }
 
 #descent-ui {
@@ -383,6 +624,35 @@ button:hover {
     color: #000;
 }
 
+#dock-debug-tools {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+#dock-debug-tools button {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(160, 224, 255, 0.55);
+    background: rgba(8, 24, 42, 0.92);
+    color: #a0e0ff;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#dock-debug-tools button:hover {
+    background: rgba(20, 48, 72, 0.95);
+    border-color: #a0e0ff;
+}
+
 #dock-menu {
     position: absolute;
     top: 150px;
@@ -410,14 +680,31 @@ button:hover {
 
 /* Styling for each button in the list */
 #dock-menu li {
-    padding: 15px;
+    padding: 12px 15px;
     color: #a0e0ff;
     border-bottom: 1px solid #f1f7f163;
-    /* Dark green line between items */
     cursor: pointer;
-    /* Makes the mouse a pointer, like a link */
     transition: all 0.2s ease-in-out;
-    /* Smooth transition for hover effect */
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dock-station-name {
+    font-size: 0.95em;
+    letter-spacing: 0.04em;
+}
+
+.dock-station-sub {
+    font-size: 0.68em;
+    letter-spacing: 0.03em;
+    color: rgba(160, 224, 255, 0.62);
+    line-height: 1.35;
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+
+#dock-menu li:hover .dock-station-sub {
+    color: rgba(12, 6, 6, 0.72);
 }
 
 /* Removes the line from the very last item */
@@ -478,6 +765,31 @@ button:hover {
     color: #0c0606;
 }
 
+#request-tow-ui {
+    position: absolute;
+    bottom: 130px;
+    left: 20px;
+    z-index: 100;
+}
+
+#requestTowBtn {
+    background-color: #00000099;
+    color: #ffaa66;
+    border: 2px solid #ff8844;
+    border-radius: 35px;
+    padding: 12px 22px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1em;
+    cursor: pointer;
+    text-shadow: 2px 2px 4px #000;
+    transition: all 0.2s ease;
+}
+
+#requestTowBtn:hover {
+    background-color: #ff884466;
+    color: #fff;
+}
+
 #launchBtn {
     position: absolute;
     bottom: 30px;
@@ -526,52 +838,765 @@ button:hover {
     margin-bottom: 5px;
 }
 
-/* Mission Board Styles */
-#mission-board {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, 100vh);
-    /* NEW: Default position is off-screen at the bottom */
-    width: 600px;
-    max-height: 80vh;
-    background-color: rgba(0, 20, 40, 0.243);
-    border: 2px solid #a0e0ff;
-    border-radius: 10px;
-    color: #a0e0ff;
-    padding: 20px;
-    z-index: 1100;
-    /* Make sure it's on top of other UI */
-    font-family: 'Consolas', 'Courier New', monospace;
-    display: flex;
-    flex-direction: column;
+#mission-timer {
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    color: #7dffc4;
+    border: 1px solid rgba(0, 255, 136, 0.45);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    text-align: center;
 }
 
-#mission-board h2 {
+#mission-timer.mission-timer-urgent {
+    color: #ffb347;
+    border-color: rgba(255, 179, 71, 0.65);
+}
+
+#mission-timer.mission-timer-critical {
+    color: #ff6666;
+    border-color: rgba(255, 102, 102, 0.75);
+    animation: missionTimerPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes missionTimerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.65; }
+}
+
+/* === Station terminal panels (mission board, trade hub) === */
+.station-panel {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, 100vh);
+    width: min(94vw, 1120px);
+    height: min(88vh, 860px);
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: #d8f0ff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    border-radius: 14px;
+    border: 2px solid rgba(160, 224, 255, 0.75);
+    background: linear-gradient(165deg, rgba(4, 18, 38, 0.98) 0%, rgba(8, 28, 52, 0.96) 48%, rgba(2, 12, 28, 0.99) 100%);
+    box-shadow:
+        0 0 48px rgba(46, 148, 255, 0.2),
+        0 28px 72px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(160, 224, 255, 0.12);
+}
+
+.station-panel--trade {
+    border-color: rgba(255, 214, 120, 0.65);
+    box-shadow:
+        0 0 48px rgba(255, 190, 80, 0.16),
+        0 28px 72px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 220, 140, 0.1);
+}
+
+.station-panel-header {
+    flex-shrink: 0;
+    padding: 26px 72px 18px 32px;
+    border-bottom: 1px solid rgba(160, 224, 255, 0.18);
+    background: linear-gradient(180deg, rgba(46, 120, 200, 0.14), transparent);
+}
+
+.station-panel--trade .station-panel-header {
+    border-bottom-color: rgba(255, 214, 120, 0.2);
+    background: linear-gradient(180deg, rgba(180, 120, 40, 0.12), transparent);
+}
+
+.station-panel-eyebrow {
+    margin: 0 0 6px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #2ef8ff;
+}
+
+.station-panel--trade .station-panel-eyebrow {
+    color: #ffd666;
+}
+
+.station-panel-header h2 {
+    margin: 0 0 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.45rem, 2.4vw, 2rem);
+    color: #fff;
+    letter-spacing: 0.05em;
+    text-align: left;
+}
+
+.station-panel-subtitle {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: rgba(200, 228, 255, 0.82);
+    max-width: 52em;
+}
+
+.station-panel-meta {
+    margin: 12px 0 0;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    color: #7dff96;
+}
+
+.station-panel--trade .station-panel-meta {
+    color: #ffd666;
+}
+
+.station-panel--finance {
+    border-color: rgba(100, 220, 180, 0.65);
+    box-shadow:
+        0 0 48px rgba(60, 200, 160, 0.16),
+        0 28px 72px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(140, 240, 200, 0.1);
+}
+
+.station-panel--finance .station-panel-header {
+    border-bottom-color: rgba(100, 220, 180, 0.22);
+    background: linear-gradient(180deg, rgba(40, 140, 110, 0.14), transparent);
+}
+
+.station-panel--finance .station-panel-eyebrow {
+    color: #5dffc8;
+}
+
+.station-panel--finance .station-panel-meta {
+    color: #7dff96;
+}
+
+.aegis-dashboard {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 16px 28px 8px;
+    border-bottom: 1px solid rgba(100, 220, 180, 0.15);
+}
+
+.aegis-stat-card {
+    background: linear-gradient(135deg, rgba(8, 32, 28, 0.92), rgba(4, 18, 22, 0.88));
+    border: 1px solid rgba(100, 220, 180, 0.28);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.aegis-stat-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(140, 220, 190, 0.75);
+}
+
+.aegis-stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+    color: #b8ffe8;
+    letter-spacing: 0.04em;
+}
+
+.aegis-stat-balance .aegis-stat-value {
+    color: #7dff96;
+}
+
+.aegis-stat-liability .aegis-stat-value {
+    color: #ff9a7a;
+}
+
+.aegis-tabs {
+    flex-shrink: 0;
+    display: flex;
+    gap: 4px;
+    padding: 12px 28px 0;
+    border-bottom: 1px solid rgba(100, 220, 180, 0.12);
+}
+
+.aegis-tab-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border: 1px solid rgba(100, 220, 180, 0.25);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    background: rgba(6, 24, 22, 0.6);
+    color: rgba(160, 220, 200, 0.7);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.aegis-tab-btn:hover:not(:disabled) {
+    color: #b8ffe8;
+    background: rgba(20, 48, 42, 0.8);
+}
+
+.aegis-tab-btn.aegis-tab-active {
+    color: #5dffc8;
+    background: rgba(12, 40, 36, 0.95);
+    border-color: rgba(100, 220, 180, 0.45);
+}
+
+.aegis-tab-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.aegis-tab-panel.aegis-tab-hidden {
+    display: none;
+}
+
+.aegis-statement-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.aegis-statement-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(100, 220, 180, 0.18);
+    background: rgba(6, 22, 20, 0.65);
+}
+
+.aegis-statement-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.aegis-statement-time {
+    font-size: 0.72rem;
+    color: rgba(140, 200, 180, 0.65);
+}
+
+.aegis-statement-cat {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #5dffc8;
+}
+
+.aegis-statement-desc {
+    font-size: 0.88rem;
+    color: rgba(210, 240, 230, 0.9);
+    word-break: break-word;
+}
+
+.aegis-statement-amounts {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.aegis-statement-amount {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.95rem;
+}
+
+.aegis-amount-credit {
+    color: #7dff96;
+}
+
+.aegis-amount-debit {
+    color: #ff9a7a;
+}
+
+.aegis-statement-balance {
+    font-size: 0.72rem;
+    color: rgba(140, 200, 180, 0.55);
+}
+
+.aegis-empty,
+.aegis-placeholder {
+    margin: 0;
+    padding: 24px 8px;
     text-align: center;
-    margin-top: 0;
-    font-family: "Orbitron", sans-serif;
+    color: rgba(160, 210, 190, 0.65);
+    font-style: italic;
+}
+
+.aegis-liens-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.aegis-lien-card {
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(100, 220, 180, 0.28);
+    background: linear-gradient(135deg, rgba(8, 32, 28, 0.92), rgba(4, 18, 22, 0.88));
+}
+
+.aegis-lien-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.aegis-lien-lender {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    color: #5dffc8;
+}
+
+.aegis-lien-skim {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ff9a7a;
+}
+
+.aegis-lien-balance {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+    color: rgba(180, 230, 210, 0.85);
+}
+
+.aegis-lien-balance strong {
+    font-family: 'Orbitron', sans-serif;
+    color: #ff9a7a;
+    font-size: 1rem;
+}
+
+.aegis-lien-original {
+    font-size: 0.78rem;
+    color: rgba(140, 200, 180, 0.55);
+}
+
+.aegis-lien-progress {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(4, 18, 16, 0.9);
+    border: 1px solid rgba(100, 220, 180, 0.2);
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.aegis-lien-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2a9a78, #5dffc8);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.aegis-lien-terms {
+    margin: 0 0 6px;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: rgba(150, 200, 185, 0.85);
+}
+
+.aegis-lien-fineprint {
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: rgba(140, 190, 175, 0.55);
+    font-style: italic;
+}
+
+.aegis-lien-collateral,
+.aegis-lien-hook {
+    margin: 0 0 8px;
+    font-size: 0.74rem;
+    color: rgba(255, 180, 120, 0.85);
+}
+
+.aegis-lien-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.aegis-lien-pay-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(100, 220, 180, 0.4);
+    background: rgba(12, 40, 34, 0.9);
+    color: #5dffc8;
+    cursor: pointer;
+}
+
+.aegis-lien-pay-btn:hover {
+    background: rgba(24, 58, 48, 0.95);
+    border-color: rgba(100, 220, 180, 0.65);
+}
+
+.aegis-lien-pay-btn--full {
+    border-color: rgba(255, 154, 122, 0.45);
+    color: #ff9a7a;
+}
+
+.aegis-lien-payoff-hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.7rem;
+    color: rgba(255, 154, 122, 0.75);
+}
+
+.aegis-lien-product {
+    display: block;
+    font-size: 0.78rem;
+    color: rgba(160, 220, 200, 0.7);
+    margin-bottom: 8px;
+}
+
+.aegis-market-header {
+    flex-shrink: 0;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(100, 220, 180, 0.15);
+}
+
+.aegis-market-lock-title,
+.aegis-market-unlock-title {
+    margin: 0 0 6px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    color: #5dffc8;
+}
+
+.aegis-market-lock-desc,
+.aegis-market-unlock-desc {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: rgba(180, 230, 210, 0.8);
+}
+
+.aegis-market-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+}
+
+.aegis-market-card {
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(100, 220, 180, 0.3);
+    background: linear-gradient(145deg, rgba(8, 30, 26, 0.94), rgba(4, 16, 20, 0.9));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.aegis-market-card--locked {
+    opacity: 0.72;
+    border-color: rgba(100, 140, 130, 0.25);
+}
+
+.aegis-market-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.aegis-market-lender {
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.05em;
+    color: #b8ffe8;
+    line-height: 1.3;
+}
+
+.aegis-market-rate {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ff9a7a;
+    font-weight: 700;
+}
+
+.aegis-market-tagline {
+    margin: 0;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: rgba(150, 200, 185, 0.65);
+}
+
+.aegis-market-product {
+    margin: 0;
+    font-size: 0.88rem;
+    color: rgba(200, 240, 225, 0.9);
+}
+
+.aegis-market-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    margin: 0;
+    font-size: 0.72rem;
+}
+
+.aegis-market-stats div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.aegis-market-stats dt {
+    color: rgba(130, 190, 170, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.aegis-market-stats dd {
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    color: #7dff96;
+}
+
+.aegis-market-terms {
+    margin: 0;
+    font-size: 0.76rem;
+    color: rgba(160, 210, 190, 0.8);
+}
+
+.aegis-market-fineprint {
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: rgba(255, 154, 122, 0.75);
+    font-style: italic;
+    flex: 1;
+}
+
+.aegis-market-lock-reason {
+    margin: 0;
+    font-size: 0.74rem;
+    color: rgba(255, 180, 120, 0.85);
+    padding-top: 4px;
+}
+
+.aegis-market-draw-btn {
+    margin-top: 4px;
+    align-self: flex-start;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: 1px solid rgba(100, 220, 180, 0.45);
+    background: rgba(20, 60, 50, 0.85);
+    color: #5dffc8;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.aegis-market-draw-btn:hover:not(:disabled) {
+    background: rgba(30, 80, 65, 0.95);
+    border-color: rgba(100, 220, 180, 0.7);
+}
+
+.aegis-market-draw-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.station-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 28px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(160, 224, 255, 0.35) transparent;
+}
+
+.station-panel-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.station-panel-body::-webkit-scrollbar-thumb {
+    background: rgba(160, 224, 255, 0.28);
+    border-radius: 4px;
+}
+
+.station-panel-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    bottom: auto;
+    left: auto;
+    width: 44px;
+    height: 44px;
+    z-index: 2;
+}
+
+#closeFleetManagerBtn,
+#closeTitanSupplyBtn {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    top: auto;
+    right: auto;
+    width: 40px;
+    height: 40px;
+    z-index: 2;
+}
+
+#mission-board.slide-in,
+#trade-hub.slide-in,
+#aegis-banking.slide-in,
+.station-panel.slide-in {
+    animation: slideInFromBottom 0.5s ease-out forwards;
+}
+
+#mission-board.slide-out,
+#trade-hub.slide-out,
+#aegis-banking.slide-out,
+.station-panel.slide-out {
+    animation: slideOutToBottom 0.5s ease-in forwards;
+}
+
+/* Mission Board Styles */
+#mission-board {
+    /* inherits .station-panel */
 }
 
 #mission-list {
-    flex-grow: 1;
-    overflow-y: auto;
-    /* Add scrollbar if list is long */
-    padding-right: 10px;
-    /* Space for the scrollbar */
+    /* inherits .station-panel-body */
 }
 
 .mission-item {
-    background-color: rgba(10, 30, 50, 0.8);
-    border: 1px solid #507090;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 5px;
+    background: linear-gradient(135deg, rgba(10, 34, 58, 0.92), rgba(6, 22, 40, 0.88));
+    border: 1px solid rgba(120, 180, 220, 0.45);
+    padding: 20px 22px;
+    border-radius: 10px;
+    position: relative;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mission-item:not(.mission-locked):hover {
+    border-color: rgba(160, 224, 255, 0.65);
+    box-shadow: 0 0 20px rgba(46, 148, 255, 0.12);
+}
+
+.mission-item.mission-locked {
+    background-color: rgba(8, 16, 24, 0.88);
+    border-color: #3a4550;
+    opacity: 0.92;
+}
+
+.mission-item.mission-locked h3,
+.mission-item.mission-locked p {
+    color: #9aa8b8;
+}
+
+.mission-lock-badge {
+    display: inline-block;
+    font-size: 0.65em;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: #1a1a1a;
+    background: #888;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.mission-unlock-hint {
+    color: #ffb347 !important;
+    font-size: 0.9em;
+    font-style: italic;
+    border-left: 3px solid #ffb347;
+    padding-left: 10px;
+    margin-top: 4px !important;
+}
+
+.mission-issuer {
+    margin: 0 0 4px 0 !important;
+    font-size: 0.72em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #2ef8ff !important;
+}
+
+.mission-item.mission-locked .mission-issuer {
+    color: #6a8898 !important;
+}
+
+.mission-tags {
+    margin-bottom: 8px;
+}
+
+.mission-type-tag {
+    display: inline-block;
+    font-size: 0.65em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #b8e8ff;
+    border: 1px solid rgba(160, 224, 255, 0.35);
+    border-radius: 4px;
+    padding: 2px 8px;
+}
+
+.mission-req-tag {
+    display: inline-block;
+    font-size: 0.65em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #ffd4a0;
+    border: 1px solid rgba(255, 179, 71, 0.4);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-left: 4px;
+}
+
+.mission-briefing {
+    line-height: 1.55;
+    font-size: 0.95rem;
+    color: #d0e8f8 !important;
+}
+
+.mission-item.mission-locked .mission-briefing {
+    color: #9aa8b8 !important;
 }
 
 .mission-item h3 {
-    margin: 0 0 10px 0;
+    margin: 0 0 8px 0;
     color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.12rem;
+    letter-spacing: 0.03em;
 }
 
 .mission-item p {
@@ -586,35 +1611,36 @@ button:hover {
 
 .mission-reward {
     font-weight: bold;
-    color: #00ff00;
-    /* Green for money */
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    color: #7dff96;
+}
+
+.mission-footer .accept-btn {
+    min-width: 120px;
+    padding: 10px 22px;
+    font-size: 0.95rem;
 }
 
 .close-button {
-    position: absolute;
-    /* Position it relative to the #mission-board container */
-    bottom: 10px;
-    left: 10px;
-    width: 40px;
-    height: 40px;
     border-radius: 50%;
-    /* This makes the button a perfect circle */
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.55);
     color: #a0e0ff;
     border: 1px solid #a0e0ff;
-    font-size: 1.2em;
+    font-size: 1.4em;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 0;
-    transition: background-color 0.2s, color 0.2s;
+    transition: background-color 0.2s, color 0.2s, transform 0.15s;
 }
 
 .close-button:hover {
     background-color: #a0e0ff;
     color: #000;
+    transform: scale(1.05);
 }
 
 @keyframes slideInFromBottom {
@@ -643,14 +1669,7 @@ button:hover {
 }
 
 /* We will add this class with JavaScript to trigger the fly-in */
-#mission-board.slide-in {
-    animation: slideInFromBottom 0.5s ease-out forwards;
-}
-
-/* We will add this class with JavaScript to trigger the fly-out */
-#mission-board.slide-out {
-    animation: slideOutToBottom 0.5s ease-in forwards;
-}
+/* slide-in/out for station panels defined above with .station-panel */
 
 #nav-screen {
     position: absolute;
@@ -699,101 +1718,275 @@ h2 {
 }
 
 #trade-hub {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 90vw;
-    max-width: 800px;
-    height: 80vh;
-    z-index: 10;
-    background: rgba(20, 20, 40, 0.75);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 1px;
-    overflow: hidden;
+    /* inherits .station-panel .station-panel--trade */
 }
 
 #trade-list {
-    width: 90vw;
-    max-width: 100%;
-    max-height: 70vh;
-    overflow-y: auto;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    /* inherits .station-panel-body */
 }
 
 .trade-item {
-    background: #222a;
+    background: linear-gradient(135deg, rgba(18, 24, 38, 0.95), rgba(10, 16, 28, 0.92));
+    border: 1px solid rgba(255, 214, 120, 0.28);
     border-radius: 12px;
-    box-shadow: 0 2px 8px #0008;
-    padding: 20px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    padding: 24px 26px;
     color: #fff;
-    font-family: 'Orbitron', Arial, sans-serif;
-
-    /* --- NEW FLEXBOX STYLES --- */
+    font-family: 'Consolas', 'Courier New', monospace;
     display: flex;
-    /* ✨ This is the magic! It tells the container to arrange its children in a row. */
     flex-direction: row;
-    /* Explicitly set the direction to a row (side-by-side). */
-    align-items: center;
-    /* Vertically aligns the image and the text block to their center. */
-    gap: 20px;
-    /* Adds a 20px gap between the image and the text block. */
+    align-items: stretch;
+    gap: 28px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* New style for the image */
+.trade-item:hover {
+    border-color: rgba(255, 214, 120, 0.5);
+    box-shadow: 0 0 28px rgba(255, 190, 80, 0.1);
+}
+
 .trade-item-image {
-    width: 150px;
-    /* Give the image a fixed width. */
-    height: 150px;
-    /* Give it a fixed height. */
+    width: min(240px, 32vw);
+    height: 168px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 10px;
     flex-shrink: 0;
-    /* Prevents the image from shrinking if the text is long. */
+    border: 1px solid rgba(255, 214, 120, 0.25);
+    background: #0a1020;
 }
 
 .trade-item-info {
     display: flex;
     flex-direction: column;
-    /* Stack the text items vertically inside their own container. */
-    width: 100%;
-    /* Allow this container to fill the remaining space. */
+    flex: 1;
+    min-width: 0;
+}
+
+.trade-item-info h3 {
+    margin: 0 0 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.04em;
+    color: #ffd666;
+}
+
+.trade-description {
+    margin: 0 0 12px;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    color: rgba(220, 230, 245, 0.88);
+}
+
+.trade-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 20px;
+    margin: 0;
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.trade-stats-grid div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.trade-stats-grid dt {
+    margin: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(200, 210, 230, 0.65);
+}
+
+.trade-stats-grid dd {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #e8f0ff;
 }
 
 .trade-footer {
-    margin-top: 10px;
+    margin-top: auto;
+    padding-top: 16px;
     display: flex;
-    gap: 20px;
+    justify-content: space-between;
     align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.trade-price {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #7dff96;
+    letter-spacing: 0.04em;
+}
+
+.trade-buy-btn {
+    background: linear-gradient(180deg, #3a9eff, #2568c8);
+    border: 1px solid rgba(120, 190, 255, 0.6);
+    padding: 11px 24px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+}
+
+.trade-buy-btn:hover {
+    background: linear-gradient(180deg, #5cb4ff, #3078d8);
 }
 
 .accept-btn {
-    background: #2e8bff;
+    background: linear-gradient(180deg, #3a9eff, #2568c8);
     color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 18px;
-    font-size: 1rem;
+    border: 1px solid rgba(120, 190, 255, 0.5);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.04em;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.15s;
 }
 
-.accept-btn:hover {
-    background: #1a5bb8;
+.accept-btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, #5cb4ff, #3078d8);
+    transform: translateY(-1px);
 }
 
-#trade-hub.slide-in {
+@media (max-width: 820px) {
+    .station-panel-header {
+        padding: 22px 56px 16px 20px;
+    }
+
+    .station-panel-body {
+        padding: 16px 18px 22px;
+    }
+
+    .trade-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .trade-item-image {
+        width: 100%;
+        height: 180px;
+    }
+
+    .trade-stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+#titan-supply {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 820px;
+    height: 80vh;
+    z-index: 10;
+    background: rgba(20, 30, 25, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 24px;
+    overflow: hidden;
+    color: #e8ffe8;
+    font-family: 'Orbitron', Arial, sans-serif;
+}
+
+.titan-header {
+    flex-shrink: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(120, 200, 120, 0.25);
+}
+
+#titan-supply h2 {
+    margin: 0 0 4px 0;
+    text-align: center;
+}
+
+.titan-subtitle {
+    text-align: center;
+    font-size: 0.85rem;
+    opacity: 0.85;
+    margin: 0 0 8px 0;
+}
+
+#titan-balance.titan-balance {
+    text-align: center;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+#titan-supply-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.titan-empty {
+    text-align: center;
+    opacity: 0.9;
+}
+
+.supply-item {
+    background: rgba(30, 50, 35, 0.9);
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid rgba(120, 200, 120, 0.35);
+}
+
+.supply-item h3 {
+    margin: 0 0 4px 0;
+}
+
+.supply-ship-type {
+    margin: 0 0 12px 0;
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+
+.supply-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.supply-footer {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.supply-fill-all {
+    background: #3a9e4a;
+}
+
+.supply-fill-all:hover {
+    background: #2d7a38;
+}
+
+.accept-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+#titan-supply.slide-in {
     animation: slideInFromBottom 0.5s ease-out forwards;
 }
 
-/* We will add this class with JavaScript to trigger the fly-out */
-#trade-hub.slide-out {
+#titan-supply.slide-out {
     animation: slideOutToBottom 0.5s ease-in forwards;
 }
 
@@ -1030,8 +2223,19 @@ h2 {
 
 .fleet-ship-info h3 {
     margin: 0 0 5px 0;
-    color: #2ef8ff;
     font-size: 1.2em;
+    line-height: 1.3;
+}
+
+.fleet-ship-callsign {
+    color: #2ef8ff;
+    font-weight: 700;
+}
+
+.fleet-ship-hull-type {
+    color: rgba(200, 228, 255, 0.72);
+    font-weight: 400;
+    font-size: 0.92em;
 }
 
 .fleet-ship-info p {
@@ -1206,4 +2410,294 @@ h2 {
     .ship-details-image {
         flex: none;
     }
+}
+
+/* === Discovery / toast notifications === */
+@keyframes notificationScanSweep {
+    0% { transform: translateY(-100%); opacity: 0.6; }
+    100% { transform: translateY(420%); opacity: 0; }
+}
+
+@keyframes notificationPulseGlow {
+    0%, 100% { box-shadow: 0 0 24px rgba(0, 255, 136, 0.35), 0 8px 32px rgba(0, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 36px rgba(0, 255, 136, 0.55), 0 8px 32px rgba(0, 0, 0, 0.5); }
+}
+
+#notification-stack {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+    width: min(92vw, 420px);
+}
+
+.notification-card {
+    position: relative;
+    width: 100%;
+    background: linear-gradient(145deg, rgba(0, 28, 24, 0.96), rgba(0, 12, 32, 0.96));
+    border: 2px solid rgba(0, 255, 136, 0.65);
+    border-radius: 12px;
+    padding: 16px 18px 14px;
+    color: #e8fff4;
+    font-family: "Orbitron", sans-serif;
+    pointer-events: auto;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-24px) scale(0.96);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    animation: notificationPulseGlow 2.4s ease-in-out infinite;
+}
+
+.notification-card.notification-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.notification-card.notification-hiding {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.98);
+}
+
+.notification-scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 40%;
+    background: linear-gradient(180deg, transparent, rgba(0, 255, 136, 0.12), transparent);
+    animation: notificationScanSweep 1.8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.notification-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.notification-badge {
+    align-self: flex-start;
+    font-size: 0.65em;
+    letter-spacing: 0.14em;
+    color: #003820;
+    background: #00ff88;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.notification-title {
+    margin: 0;
+    font-size: 0.95em;
+    color: #7dffc4;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.notification-planet-name {
+    margin: 0 0 2px;
+    font-size: 1.35em;
+    color: #ffffff;
+    letter-spacing: 0.04em;
+}
+
+.notification-planet-type {
+    margin: 0 0 12px;
+    font-size: 0.78em;
+    color: #a0e0ff;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.notification-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 14px;
+    margin: 0 0 12px;
+    font-size: 0.72em;
+    line-height: 1.35;
+}
+
+.notification-stats div {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.notification-stats dt {
+    color: #6a9fb8;
+    font-size: 0.9em;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.notification-stats dd {
+    margin: 0;
+    color: #dfffe8;
+}
+
+.notification-stats div:nth-child(5),
+.notification-stats div:nth-child(6) {
+    grid-column: 1 / -1;
+}
+
+.notification-flavor {
+    margin: 0;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 255, 136, 0.25);
+    font-size: 0.72em;
+    line-height: 1.45;
+    color: #b8e8d0;
+    font-style: italic;
+}
+
+.notification-dismiss {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    color: #7dffc4;
+    font-size: 1.4em;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+    opacity: 0.75;
+}
+
+.notification-dismiss:hover {
+    opacity: 1;
+}
+
+.notification-dismiss-hint {
+    margin: 8px 0 0;
+    font-size: 0.62em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(125, 255, 196, 0.55);
+    text-align: center;
+}
+
+.notification-subline {
+    margin: 10px 0 0;
+    font-size: 0.78em;
+    color: rgba(200, 240, 255, 0.85);
+    line-height: 1.4;
+}
+
+.notification-payout {
+    margin-top: 4px;
+}
+
+.notification-deduction {
+    color: #ff9a7a !important;
+}
+
+.notification-lien-reveal {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    border-left: 3px solid #5dffc8;
+    background: rgba(40, 80, 70, 0.35);
+    font-size: 0.88em;
+    line-height: 1.45;
+    color: #b8ffe8;
+}
+
+.notification-lien-reveal strong {
+    color: #5dffc8;
+}
+
+/* Notification variants */
+.notification-card.notification-discovery {
+    animation: notificationPulseGlow 2.4s ease-in-out infinite;
+}
+
+.notification-card.notification-mission {
+    border-color: rgba(255, 214, 102, 0.75);
+    animation: notificationPulseGlowMission 2.4s ease-in-out infinite;
+}
+
+.notification-card.notification-mission .notification-badge {
+    background: #ffd666;
+    color: #3a2800;
+}
+
+.notification-card.notification-mission .notification-scan-line {
+    background: linear-gradient(180deg, transparent, rgba(255, 214, 102, 0.14), transparent);
+}
+
+.notification-card.notification-mission .notification-dismiss-hint {
+    color: rgba(255, 220, 140, 0.55);
+}
+
+.notification-card.notification-success {
+    border-color: rgba(100, 220, 180, 0.7);
+    animation: none;
+    box-shadow: 0 0 20px rgba(100, 220, 180, 0.25), 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.notification-card.notification-success .notification-badge {
+    background: #64dcb4;
+    color: #002818;
+}
+
+.notification-card.notification-warning {
+    border-color: rgba(255, 179, 71, 0.75);
+    animation: notificationPulseGlowWarning 2.6s ease-in-out infinite;
+}
+
+.notification-card.notification-warning .notification-badge {
+    background: #ffb347;
+    color: #3a1a00;
+}
+
+.notification-card.notification-warning .notification-scan-line {
+    background: linear-gradient(180deg, transparent, rgba(255, 179, 71, 0.12), transparent);
+}
+
+.notification-card.notification-error {
+    border-color: rgba(255, 90, 90, 0.8);
+    animation: notificationPulseGlowError 2.2s ease-in-out infinite;
+}
+
+.notification-card.notification-error .notification-badge {
+    background: #ff5a5a;
+    color: #3a0000;
+}
+
+.notification-card.notification-error .notification-scan-line {
+    background: linear-gradient(180deg, transparent, rgba(255, 90, 90, 0.12), transparent);
+}
+
+.notification-card.notification-info {
+    border-color: rgba(120, 180, 255, 0.65);
+    animation: none;
+    box-shadow: 0 0 20px rgba(120, 180, 255, 0.2), 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.notification-card.notification-info .notification-badge {
+    background: #78b4ff;
+    color: #001830;
+}
+
+@keyframes notificationPulseGlowMission {
+    0%, 100% { box-shadow: 0 0 24px rgba(255, 214, 102, 0.35), 0 8px 32px rgba(0, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 36px rgba(255, 214, 102, 0.55), 0 8px 32px rgba(0, 0, 0, 0.5); }
+}
+
+@keyframes notificationPulseGlowWarning {
+    0%, 100% { box-shadow: 0 0 24px rgba(255, 179, 71, 0.35), 0 8px 32px rgba(0, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 36px rgba(255, 179, 71, 0.5), 0 8px 32px rgba(0, 0, 0, 0.5); }
+}
+
+@keyframes notificationPulseGlowError {
+    0%, 100% { box-shadow: 0 0 24px rgba(255, 90, 90, 0.35), 0 8px 32px rgba(0, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 36px rgba(255, 90, 90, 0.55), 0 8px 32px rgba(0, 0, 0, 0.5); }
 }

@@ -74,10 +74,22 @@ class SpaceScene {
             planetManager.generatePlanets(this.numPlanets, this.WORLD_WIDTH, this.WORLD_HEIGHT, this.spaceDocks);
         }
 
-        // FIXED BUG: Fleet dispatch must take priority over saved state restoration
-        // When coming from fleet manager, always load the newly selected ship
-        if (settings.fromFleetManager && settings.dispatchMode) {
-            // Clear any existing saved state to prevent wrong ship restoration
+        const alphaDock = this.spaceDocks[0];
+        if (alphaDock && !playerDataManager.data?.worldState?.hubPosition) {
+            playerDataManager.saveHubPosition(alphaDock.x, alphaDock.y);
+            if (playerDataManager.migrateStarterDiscoveredPlanets()) {
+                playerDataManager.applyDiscoveryStatusToCelestialBodies(planetManager.celestialBodies);
+            }
+            playerDataManager.saveData();
+        }
+
+        if (settings.returnFromLander) {
+            delete settings.returnFromLander;
+            if (!this.restoreState()) {
+                console.warn('returnFromLander: could not restore orbit state from savedState');
+            }
+        } else if (settings.fromFleetManager && settings.dispatchMode) {
+            // Fleet dispatch must take priority over saved state restoration
             this.savedState = null;
             this.handleFleetDispatch(settings.dispatchMode);
         } else if (!this.restoreState()) {
@@ -124,8 +136,19 @@ class SpaceScene {
             this.camera.zoomLevel = defaultZoom;
         }
 
+        if (this.ship) {
+            const active = playerDataManager.getActiveShip();
+            const shipData = fleetManager.getActiveShipData();
+            if (active && shipData && this.ship.fuel == null) {
+                consumablesManager.initShipConsumables(this.ship, shipData, active);
+                this.restoreShipNavigation(active);
+            }
+        }
+
         // TASK 6.1: Load all fleet ships for visualization
         this.loadFleetShips();
+
+        missionManager.onActiveShipEnterSpace(this);
 
         canvas.style.display = 'block';
         //zoomControls.style.display = 'flex';
@@ -133,10 +156,16 @@ class SpaceScene {
 
     stop() {
         if (thrusterSound.isLoaded) thrusterSound.pause();
+        if (this.navScreen?.isOpen) {
+            this.navScreen.hide();
+        }
         //zoomControls.style.display = 'none';
         document.getElementById('access-dock-ui').style.display = 'none';
+        document.getElementById('request-tow-ui').style.display = 'none';
         document.getElementById('launch-ui').style.display = 'none';
         document.getElementById('player-hud').style.display = 'none';
+        const missionTimer = document.getElementById('mission-timer');
+        if (missionTimer) missionTimer.style.display = 'none';
     }
 
     handleFleetDispatch(dispatchMode) {
@@ -144,7 +173,11 @@ class SpaceScene {
         const activeShip = playerDataManager.getActiveShip();
         if (!activeShip) {
             console.error('No active ship found for fleet dispatch');
-            alert('Error: No active ship selected. Returning to fleet manager.');
+            uiNotify({
+                title: 'Dispatch Error',
+                message: 'No active ship selected. Returning to fleet manager.',
+                variant: 'error'
+            });
             gameManager.switchScene(fleetManagerScene);
             return;
         }
@@ -152,7 +185,11 @@ class SpaceScene {
         const startingShipData = fleetManager.getActiveShipData();
         if (!startingShipData) {
             console.error('No ship data found for active ship:', activeShip.shipTypeId);
-            alert('Error: Ship configuration not found. Please check your ship setup.');
+            uiNotify({
+                title: 'Ship Configuration Error',
+                message: 'Ship configuration not found. Check your fleet setup.',
+                variant: 'error'
+            });
             gameManager.switchScene(fleetManagerScene);
             return;
         }
@@ -209,7 +246,7 @@ class SpaceScene {
                     this.ship = new Ship(this.WORLD_WIDTH / 2, this.WORLD_HEIGHT / 2, this, startingShipData);
                     console.warn('Planet system unavailable - placed ship in center space');
                 } else {
-                    const planet = planets.find(p => p.name === location.planetName);
+                    const planet = fleetManager.findPlanetForLocation(location, planets);
 
                     if (planet && location.orbitData) {
                         // Validate orbit data before using it
@@ -315,8 +352,11 @@ class SpaceScene {
             }
         }
 
-        // ENHANCED: Restore complete ship state from fleet data
-        this.restoreShipConsumablesAndHealth(activeShip);
+        const shipDataForInit = fleetManager.getActiveShipData();
+        if (shipDataForInit) {
+            consumablesManager.initShipConsumables(this.ship, shipDataForInit, activeShip);
+        }
+        this.restoreShipNavigation(activeShip);
 
         // Set up camera with ship-specific zoom level
         const shipData = fleetManager.getActiveShipData();
@@ -340,39 +380,17 @@ class SpaceScene {
         console.log('Fleet dispatch complete - ship positioned and state fully restored via', dispatchMode, 'mode');
     }
 
-    // NEW METHOD: Restore ship consumables and health from fleet data (Task 3.5)
     restoreShipConsumablesAndHealth(activeShip) {
-        // This method restores the ship's consumables and health from the saved fleet data
-        // It ensures the ship in the space scene matches the saved fleet state exactly
-
-        if (!this.ship || !activeShip) {
-            console.warn('Cannot restore ship state - missing ship or active ship data');
-            return;
+        if (!this.ship || !activeShip) return;
+        const shipData = fleetManager.getActiveShipData();
+        if (shipData) {
+            consumablesManager.initShipConsumables(this.ship, shipData, activeShip);
         }
+        this.restoreShipNavigation(activeShip);
+    }
 
-        // Restore health from fleet data
-        if (activeShip.currentHealth !== undefined) {
-            this.ship.health = activeShip.currentHealth;
-            console.log(`Restored ship health: ${activeShip.currentHealth}/${activeShip.maxHealth}`);
-        }
-
-        // Restore fuel from fleet data
-        if (activeShip.consumables?.fuel?.current !== undefined) {
-            this.ship.fuel = activeShip.consumables.fuel.current;
-            console.log(`Restored ship fuel: ${activeShip.consumables.fuel.current}/${activeShip.consumables.fuel.max}`);
-        }
-
-        // Restore oxygen if space scene tracks it
-        if (activeShip.consumables?.oxygen?.current !== undefined && this.ship.oxygen !== undefined) {
-            this.ship.oxygen = activeShip.consumables.oxygen.current;
-            console.log(`Restored ship oxygen: ${activeShip.consumables.oxygen.current}/${activeShip.consumables.oxygen.max}`);
-        }
-
-        // Restore electricity if space scene tracks it
-        if (activeShip.consumables?.electricity?.current !== undefined && this.ship.electricity !== undefined) {
-            this.ship.electricity = activeShip.consumables.electricity.current;
-            console.log(`Restored ship electricity: ${activeShip.consumables.electricity.current}/${activeShip.consumables.electricity.max}`);
-        }
+    restoreShipNavigation(activeShip) {
+        if (!this.ship || !activeShip) return;
 
         // ENHANCED: Restore navigation waypoints specific to this ship (Issue #2 fix)
         if (activeShip.navigation && this.navScreen) {
@@ -403,7 +421,7 @@ class SpaceScene {
             }
         }
 
-        console.log('Ship consumables, health, and navigation restoration complete');
+        console.log('Ship navigation restoration complete');
     }
 
     // NEW METHOD: Load all fleet ships into the scene for visualization (Task 6.1)
@@ -454,9 +472,8 @@ class SpaceScene {
                         console.log(`Loaded ${shipData.name} in deep space at (${shipX}, ${shipY})`);
                         break;
 
-                    case 'orbit':
-                        // Ship is in orbit around a planet
-                        const planet = celestialBodies.find(p => p.name === shipData.location.planetName);
+                    case 'orbit': {
+                        const planet = fleetManager.findPlanetForLocation(shipData.location, celestialBodies);
                         if (planet && shipData.location.orbitData) {
                             const orbitRadius = shipData.location.orbitData.orbitRadius || (planet.radius * 1.5);
                             const orbitAngle = shipData.location.orbitData.orbitAngle || 0;
@@ -473,10 +490,11 @@ class SpaceScene {
                             ship.orbitTransitionProgress = 1; // Already in orbit
                             console.log(`Loaded ${shipData.name} orbiting ${planet.name}`);
                         } else {
-                            console.warn(`Could not find planet ${shipData.location.planetName} for ship ${shipData.name}`);
-                            return; // Skip this ship
+                            fleetManager.demoteStaleOrbit(shipData.location);
+                            return;
                         }
                         break;
+                    }
 
                     case 'docked':
                         // Ship is docked at station - don't render it in space
@@ -682,6 +700,7 @@ class SpaceScene {
                 updatedLocation.isOrbitLocked = true;
                 updatedLocation.planetName = fleetShip.orbitingPlanet.name;
                 updatedLocation.orbitData = {
+                    planetId: fleetShip.orbitingPlanet.id,
                     planetIndex: fleetShip.orbitingPlanet.index,
                     orbitRadius: fleetShip.orbitRadius,
                     orbitAngle: fleetShip.orbitAngle,
@@ -701,17 +720,33 @@ class SpaceScene {
         console.log('Fleet ships saved to localStorage');
     }
 
-    update() {
+    update(deltaSec = 0) {
         if (!this.ship || this.isPaused) return;
+
+        if (this.ship.fuel == null) {
+            const active = playerDataManager.getActiveShip();
+            const shipData = fleetManager.getActiveShipData();
+            if (active && shipData) {
+                consumablesManager.initShipConsumables(this.ship, shipData, active);
+            }
+        }
         
         // TASK 6.1 & 7.9: Update all fleet ships FIRST (before active ship logic)
         // This ensures fleet ships continue moving even when active ship is in orbit
         this.updateFleetShips();
+
+        consumablesManager.applyFlightBurn(this.ship, deltaSec);
+        consumablesManager.syncSceneShipToFleet(this);
         
         // --- ORBIT LOCK LOGIC ---
         if (this.ship.isOrbitLocked && this.ship.orbitingPlanet) {
             const ship = this.ship;
             const planet = this.ship.orbitingPlanet;
+
+            if (typeof ship.fuel === 'number' && ship.fuel <= 0) {
+                ship.thrusting = false;
+                ship.reversing = false;
+            }
 
             // Orbit can only be exited by accelerating to MAX_ORBIT_SPEED (Task 7.8)
             // Strafing, rotation, and other controls are disabled while in orbit
@@ -834,6 +869,7 @@ class SpaceScene {
         const wantsToMove = this.ship.thrusting || this.ship.reversing || this.ship.strafingLeft || this.ship.strafingRight;
         if (this.ship.isDocked && wantsToMove) {
             this.ship.isDocked = false;
+            missionManager.onShipUndocked(this);
         }
 
         this.ship.update();
@@ -905,6 +941,8 @@ class SpaceScene {
 
         this.camera.update();
         this.navScreen.update();
+        missionManager.updateMissionTimer(this);
+        missionManager.updateMissionTimerHUD();
 
         /*    if (this.ship.isDocked) {
                  this.orbitData = null;
@@ -988,6 +1026,7 @@ class SpaceScene {
                     this.ship.orbitDirection = crossProduct >= 0 ? 1 : -1; // 1 = CCW, -1 = CW
                     
                     console.log(`Orbit locked at radius ${this.ship.orbitRadius.toFixed(0)}! Direction: ${this.ship.orbitDirection > 0 ? 'CCW' : 'CW'}`);
+                    missionManager.onOrbitLocked(this, planet);
                 }
             }
 
@@ -1051,10 +1090,11 @@ class SpaceScene {
         this.particles.forEach(p => p.draw(ctx));
         this.camera.end(ctx);
         this.drawSpeedometer.call(this);
+        this.drawConsumablesGauges.call(this);
         this.drawCompass.call(this);
         this.drawRadar.call(this);
         this.drawHud.call(this);
-        this.drawDebugInfo.call(this);
+        // this.drawDebugInfo.call(this); // orbital radius/zoom debug (disabled)
         this.navScreen.draw(ctx);
         this.updateHUD();
 
@@ -1072,6 +1112,11 @@ class SpaceScene {
             launchUI.style.display = 'block';
         } else {
             launchUI.style.display = 'none';
+        }
+
+        const towUI = document.getElementById('request-tow-ui');
+        if (towUI) {
+            towUI.style.display = rescueManager.canRequestTow(this) ? 'block' : 'none';
         }
     }
     drawSpeedometer() {
@@ -1155,7 +1200,95 @@ class SpaceScene {
         }
         ctx.restore();
     }
-    
+
+    drawConsumablesGauges() {
+        if (!this.ship || this.ship.fuel == null) return;
+
+        const radius = 28;
+        const outlineRadius = 32;
+        const arcLineWidth = 5;
+        const startAngle = Math.PI * 0.75;
+        const endAngle = Math.PI * 2.25;
+        const totalAngle = endAngle - startAngle;
+        const groupBottom = canvas.height - 20;
+        const centerY = groupBottom - radius - 8;
+        const spacing = 72;
+        const firstCenterX = 52;
+
+        const gauges = [
+            {
+                label: 'Fuel',
+                value: this.ship.fuel,
+                max: this.ship.fuelMax || 100,
+                zones: ['#ff5533', '#ffaa33', '#33cc66']
+            },
+            {
+                label: 'O2',
+                value: this.ship.oxygen,
+                max: this.ship.oxygenMax || 100,
+                zones: ['#ff5533', '#55bbff', '#33ccaa']
+            },
+            {
+                label: 'PWR',
+                value: this.ship.electricity,
+                max: this.ship.electricityMax || 100,
+                zones: ['#ff5533', '#eedd44', '#77aaff']
+            }
+        ];
+
+        ctx.save();
+        ctx.font = '9px "Orbitron", Arial, sans-serif';
+        ctx.textAlign = 'center';
+
+        gauges.forEach((gauge, index) => {
+            const centerX = firstCenterX + index * spacing;
+            const ratio = Math.min(1, Math.max(0, gauge.value / gauge.max));
+
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, outlineRadius, startAngle, endAngle);
+            ctx.stroke();
+
+            ctx.lineWidth = arcLineWidth;
+            ctx.strokeStyle = gauge.zones[0];
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle, startAngle + totalAngle * 0.33);
+            ctx.stroke();
+
+            ctx.strokeStyle = gauge.zones[1];
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle + totalAngle * 0.33, startAngle + totalAngle * 0.66);
+            ctx.stroke();
+
+            ctx.strokeStyle = gauge.zones[2];
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle + totalAngle * 0.66, endAngle);
+            ctx.stroke();
+
+            const needleAngle = startAngle + ratio * totalAngle;
+
+            ctx.fillStyle = ratio <= 0.1 ? '#ff8888' : 'rgba(255, 255, 255, 0.95)';
+            ctx.font = '9px "Orbitron", Arial, sans-serif';
+            ctx.fillText(`${Math.floor(gauge.value)}`, centerX, centerY - 6);
+
+            ctx.strokeStyle = ratio <= 0.1 ? '#ff2222' : '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(
+                centerX + Math.cos(needleAngle) * (radius + 4),
+                centerY + Math.sin(needleAngle) * (radius + 4)
+            );
+            ctx.stroke();
+
+            ctx.fillStyle = ratio <= 0.1 ? '#ff8888' : '#ffffff';
+            ctx.fillText(gauge.label, centerX, centerY + 22);
+        });
+
+        ctx.restore();
+    }
+
     drawOrbitalPathRing(ctx) {
         // Only draw if ship is in orbit (Task 7.7)
         if (!this.ship || !this.ship.isOrbitLocked || !this.ship.orbitingPlanet) return;
@@ -1356,8 +1489,11 @@ class SpaceScene {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Draw each planet as a blip on the radar
+        // Draw each planet as a blip on the radar (same visibility rules as NAV)
         for (const planet of celestialBodies) {
+            const navState = playerDataManager.getPlanetNavState(planet);
+            if (navState === 'hidden') continue;
+
             const dx = planet.x - this.ship.x;
             const dy = planet.y - this.ship.y;
             const distance = Math.hypot(dx, dy);
@@ -1365,20 +1501,19 @@ class SpaceScene {
             let blipX, blipY;
 
             if (distance < radarRange) {
-                // Planet is inside radar range, position it proportionally
                 blipX = radarX + dx * radarScale;
                 blipY = radarY + dy * radarScale;
             } else {
-                // Planet is outside range, pin it to the edge of the radar
                 const angle = Math.atan2(dy, dx);
                 blipX = radarX + Math.cos(angle) * radarRadius;
                 blipY = radarY + Math.sin(angle) * radarRadius;
             }
 
-            // Draw the planet's blip
             ctx.beginPath();
-            ctx.arc(blipX, blipY, 4, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
+            ctx.arc(blipX, blipY, navState === 'discovered' ? 4 : 3, 0, Math.PI * 2);
+            ctx.fillStyle = navState === 'discovered'
+                ? 'rgba(0, 255, 0, 0.9)'
+                : 'rgba(80, 160, 255, 0.85)';
             ctx.fill();
         }
         // Draw each dock as a blip on the radar
@@ -1526,8 +1661,9 @@ class SpaceScene {
         ctx.font = '16px "Orbitron"';
         ctx.fillStyle = 'yellow';
         ctx.textAlign = 'left';
-        ctx.fillText(`Radius: ${radius.toFixed(0)}`, 10, canvas.height - 30);
-        ctx.fillText(`Zoom: ${zoom.toFixed(2)}`, 10, canvas.height - 10);
+        // Orbital tuning overlays (disabled — overlapped consumables HUD)
+        // ctx.fillText(`Radius: ${radius.toFixed(0)}`, 10, canvas.height - 30);
+        // ctx.fillText(`Zoom: ${zoom.toFixed(2)}`, 10, canvas.height - 10);
         ctx.restore();
     }
 
@@ -1567,54 +1703,101 @@ class SpaceScene {
 
     // --- State Preservation Methods ---
     saveState() {
-        if (this.ship && this.camera) {
-            this.savedState = {
-                ship: {
-                    x: this.ship.x,
-                    y: this.ship.y,
-                    vx: this.ship.vx,
-                    vy: this.ship.vy,
-                    rotation: this.ship.rotation,
-                    isOrbitLocked: this.ship.isOrbitLocked,
-                    inStableOrbit: this.ship.inStableOrbit,
-                    orbitingPlanet: this.ship.orbitingPlanet,
-                    isDocked: this.ship.isDocked
-                },
-                camera: {
-                    x: this.camera.x,
-                    y: this.camera.y,
-                    zoom: this.camera.zoom,
-                    targetZoom: this.camera.targetZoom
-                }
-            };
-            console.log('SpaceScene state saved:', this.savedState);
-        }
+        if (!this.ship || !this.camera) return;
+
+        const planet = this.ship.orbitingPlanet;
+        this.savedState = {
+            ship: {
+                x: this.ship.x,
+                y: this.ship.y,
+                velX: this.ship.velX,
+                velY: this.ship.velY,
+                angle: this.ship.angle,
+                rotation: this.ship.rotation,
+                isOrbitLocked: this.ship.isOrbitLocked,
+                inStableOrbit: this.ship.inStableOrbit,
+                isApproachingOrbit: this.ship.isApproachingOrbit,
+                orbitingPlanet: planet,
+                planetId: planet?.id ?? null,
+                planetIndex: planet?.index ?? null,
+                planetName: planet?.name ?? null,
+                orbitRadius: this.ship.orbitRadius,
+                orbitAngle: this.ship.orbitAngle,
+                lockedOrbitSpeed: this.ship.lockedOrbitSpeed,
+                orbitDirection: this.ship.orbitDirection,
+                targetOrbitRadius: this.ship.targetOrbitRadius,
+                isDocked: this.ship.isDocked
+            },
+            camera: {
+                x: this.camera.x,
+                y: this.camera.y,
+                zoomLevel: this.camera.zoomLevel,
+                targetZoom: this.camera.targetZoom
+            }
+        };
+        console.log('SpaceScene state saved:', this.savedState);
     }
 
     restoreState() {
-        if (this.savedState && this.ship && this.camera) {
-            // Restore ship state
-            this.ship.x = this.savedState.ship.x;
-            this.ship.y = this.savedState.ship.y;
-            this.ship.vx = this.savedState.ship.vx;
-            this.ship.vy = this.savedState.ship.vy;
-            this.ship.rotation = this.savedState.ship.rotation;
-            this.ship.isOrbitLocked = this.savedState.ship.isOrbitLocked;
-            this.ship.inStableOrbit = this.savedState.ship.inStableOrbit;
-            this.ship.orbitingPlanet = this.savedState.ship.orbitingPlanet;
-            this.ship.isDocked = this.savedState.ship.isDocked;
+        if (!this.savedState) return false;
 
-            // Restore camera state
-            this.camera.x = this.savedState.camera.x;
-            this.camera.y = this.savedState.camera.y;
-            this.camera.zoom = this.savedState.camera.zoom;
-            this.camera.targetZoom = this.savedState.camera.targetZoom;
-
-            console.log('SpaceScene state restored:', this.savedState);
-            this.savedState = null; // Clear saved state after restoration
-            return true;
+        const shipData = fleetManager.getActiveShipData();
+        if (!this.ship && shipData) {
+            const s = this.savedState.ship;
+            this.ship = new Ship(s.x, s.y, this, shipData);
         }
-        return false;
+        if (!this.camera && this.ship) {
+            const defaultZoom = shipData?.shipDefaultZoom || 1.0;
+            this.camera = new Camera(this.ship, this.WORLD_WIDTH, this.WORLD_HEIGHT, {
+                zoomSmoothing: this.zoomSmoothing,
+                followSmoothing: 0.5,
+                defaultZoom
+            });
+        }
+        if (!this.ship || !this.camera) return false;
+
+        const s = this.savedState.ship;
+        this.ship.x = s.x;
+        this.ship.y = s.y;
+        this.ship.velX = s.velX ?? 0;
+        this.ship.velY = s.velY ?? 0;
+        this.ship.angle = s.angle ?? this.ship.angle;
+        this.ship.rotation = s.rotation ?? 0;
+        this.ship.isOrbitLocked = s.isOrbitLocked ?? false;
+        this.ship.inStableOrbit = s.inStableOrbit ?? false;
+        this.ship.isApproachingOrbit = s.isApproachingOrbit ?? false;
+        this.ship.isDocked = s.isDocked ?? false;
+        this.ship.orbitRadius = s.orbitRadius ?? 0;
+        this.ship.orbitAngle = s.orbitAngle ?? 0;
+        this.ship.lockedOrbitSpeed = s.lockedOrbitSpeed ?? 0;
+        this.ship.orbitDirection = s.orbitDirection ?? 1;
+        this.ship.targetOrbitRadius = s.targetOrbitRadius;
+
+        if (s.planetId) {
+            this.ship.orbitingPlanet = celestialBodies.find(p => p && p.id === s.planetId) || s.orbitingPlanet;
+        } else if (s.orbitingPlanet) {
+            this.ship.orbitingPlanet = s.orbitingPlanet;
+        } else if (s.planetIndex != null) {
+            this.ship.orbitingPlanet = celestialBodies.find(p => p && p.index === s.planetIndex) || null;
+        } else if (s.planetName) {
+            this.ship.orbitingPlanet = celestialBodies.find(p => p.name === s.planetName) || null;
+        }
+
+        const c = this.savedState.camera;
+        this.camera.target = this.ship;
+        this.camera.x = c.x;
+        this.camera.y = c.y;
+        this.camera.zoomLevel = c.zoomLevel ?? c.zoom ?? this.camera.zoomLevel;
+        this.camera.targetZoom = c.targetZoom ?? this.camera.targetZoom;
+
+        const active = playerDataManager.getActiveShip();
+        if (active && shipData) {
+            this.restoreShipConsumablesAndHealth(active);
+        }
+
+        console.log('SpaceScene state restored');
+        this.savedState = null;
+        return true;
     }
 
     // TASK 6.6: Handle clicks on canvas to detect fleet ship selection
@@ -1681,6 +1864,7 @@ class SpaceScene {
 
         if (this.ship.isOrbitLocked && this.ship.orbitingPlanet) {
             currentShipLocation.orbitData = {
+                planetId: this.ship.orbitingPlanet.id,
                 planetIndex: this.ship.orbitingPlanet.index,
                 orbitRadius: this.ship.orbitRadius,
                 orbitAngle: this.ship.orbitAngle,
