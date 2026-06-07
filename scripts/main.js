@@ -315,13 +315,26 @@ function setupEventListeners() {
         gameManager.switchScene(spaceScene, { difficulty: 'easy' }); // For now, it will always be 'easy'
     });
     */
-// Event listener for our new test button
+// Debug dock buttons — playtest banking / mission payout without flying
     document.getElementById('getPaidBtn').addEventListener('click', () => {
-        playerDataManager.credit(5000, FINANCE_CATEGORIES.DEBUG, 'Debug credit (Get Paid button)');
+        const payout = bankingManager.applyContractPayoutDeductions(5000, {
+            missionTitle: 'Debug contract pay',
+            missionId: 'debug_get_paid'
+        });
+        uiNotify({
+            title: 'Debug contract pay',
+            message: `Gross ¢5,000 · Net ¢${payout.net.toLocaleString()} (counts toward lifetime earnings).`,
+            variant: 'success',
+            durationMs: 5000
+        });
     });
-    /*document.getElementById('completeMissionBtn').addEventListener('click', () => {
-        missionManager.completeMission();
-    });*/
+
+    const completeMissionBtn = document.getElementById('completeMissionBtn');
+    if (completeMissionBtn) {
+        completeMissionBtn.addEventListener('click', () => {
+            missionManager.debugCompleteActiveMission();
+        });
+    }
 
     document.getElementById('accessDockBtn').addEventListener('click', () => {
         // Check if the current scene is the spaceScene before switching

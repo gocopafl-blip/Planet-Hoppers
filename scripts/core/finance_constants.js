@@ -49,6 +49,19 @@ const STARHOPPER_LENDER = {
 /** Minimum lifetime mission earnings before loan market unlocks (Phase 3.2c). */
 const LOAN_MARKET_MIN_LIFETIME_EARNINGS = 5000;
 
+/** K-14 Trust Index range and tuning (Phase 3.2c). */
+const CREDIT_SCORE = {
+    MIN: 300,
+    MAX: 850,
+    BASE: 650,
+    /** Penalty per active loan above the first (StarHopper doesn't count extra). */
+    EXTRA_LOAN_PENALTY: 22,
+    /** Bonus once lifetime earnings cross market unlock threshold. */
+    MARKET_UNLOCK_BONUS: 35,
+    /** K-14 bonus per manual loan payment (Phase 3.2d). */
+    MANUAL_PAYMENT_BONUS: 8
+};
+
 /** Display labels for ledger categories on Aegis statement. */
 const FINANCE_CATEGORY_LABELS = {
     mission: 'Contract',

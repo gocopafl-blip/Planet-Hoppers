@@ -120,7 +120,7 @@ Background asset: `assets/images/dock_backgrounds/Aegis Banking Systems.png` (wi
 |-------|---------|
 | **3.2a** | Aegis scene, background, dashboard shell, statement list |
 | **3.2b** | StarHopper lien + payout hook + first-job reveal *(shipped)* |
-| **3.2c** | Credit rating + lender catalogue + loan market grid (6–8 lenders) |
-| **3.2d** | Make Payment, early payoff fees, auto-skim from signed terms, collateral/compound hooks |
+| **3.2c** | Credit rating + lender catalogue + loan market grid (6–8 lenders) *(shipped)* |
+| **3.2d** | Make Payment, early payoff fees, auto-skim from signed terms, collateral/compound hooks *(shipped)* |
 
 Ledger category: `loan` (meta: `lenderId`, `principal`, `interest`, `grossPayout`).

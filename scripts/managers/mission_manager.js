@@ -710,67 +710,158 @@ class MissionManager {
 
         }
 
-        // If any of the conditions above were met, finalize the mission.
         if (isCompleted) {
             let discoveryBonusPaid = 0;
             if (missionData.type === 'ORBIT_PLANET' && scene.ship?.orbitingPlanet) {
                 discoveryBonusPaid = this.applySurveyDiscovery(scene.ship.orbitingPlanet, missionData);
             }
-
-            const grossPay = missionData.reward + discoveryBonusPaid;
-            const payout = bankingManager.applyContractPayoutDeductions(grossPay, {
-                missionTitle: missionData.title,
-                missionId: activeMissionId,
-                shipId: activeShip?.id ?? null,
-                discoveryBonus: discoveryBonusPaid
+            this.finalizeMissionCompletion({
+                activeMissionId,
+                missionData,
+                activeShip,
+                usingPerShip,
+                scene,
+                discoveryBonusPaid
             });
-            if (usingPerShip && activeShip) {
-                if (typeof playerDataManager.clearShipMission === 'function') {
-                    playerDataManager.clearShipMission(activeShip.id);
-                } else {
-                    activeShip.assignedMissionId = null;
-                    activeShip.missionState = null;
-                    if (typeof playerDataManager.saveData === 'function') playerDataManager.saveData();
-                }
-            } else {
-                playerDataManager.setActiveMissionId(null);
-            }
-
-            if (missionData.oneTime) {
-                playerDataManager.markMissionCompleted(activeMissionId);
-            }
-
-            if (typeof notificationManager !== 'undefined' && notificationManager.showMissionComplete) {
-                notificationManager.showMissionComplete({
-                    title: missionData.title,
-                    completionLine: missionData.completionLine || null,
-                    gross: payout.gross,
-                    net: payout.net,
-                    deductions: payout.deductions,
-                    discoveryBonus: discoveryBonusPaid,
-                    planetName: discoveryBonusPaid > 0
-                        ? (scene.ship?.orbitingPlanet?.name || null)
-                        : null,
-                    isFirstLienReveal: payout.isFirstLienReveal
-                });
-            } else {
-                let msg = missionData.completionLine ? `${missionData.completionLine}\n\n` : '';
-                msg += `Gross: ¢ ${payout.gross.toLocaleString()} · Net deposited: ¢ ${payout.net.toLocaleString()}`;
-                if (payout.isFirstLienReveal) {
-                    msg += '\n\nYour opening advance is being repaid. Visit Aegis Banking Systems for your lien statement.';
-                }
-                if (discoveryBonusPaid > 0) {
-                    const planetName = scene.ship?.orbitingPlanet?.name || 'Unknown world';
-                    msg += `\n\n${planetName} is now surveyed.`;
-                }
-                uiNotify({ title: missionData.title, message: msg, variant: 'mission', durationMs: 0, dismissible: true });
-            }
         }
 
         // In the future, you could add checks here, like:
         // if (missionData.type === 'DELIVER_TO_PLANET' && player.location === missionData.destination)
 
         // You could also add a system for failed missions, time limits, etc.
+    }
+
+    finalizeMissionCompletion({
+        activeMissionId,
+        missionData,
+        activeShip,
+        usingPerShip,
+        scene,
+        discoveryBonusPaid = 0
+    }) {
+        const grossPay = missionData.reward + discoveryBonusPaid;
+        const payout = bankingManager.applyContractPayoutDeductions(grossPay, {
+            missionTitle: missionData.title,
+            missionId: activeMissionId,
+            shipId: activeShip?.id ?? null,
+            discoveryBonus: discoveryBonusPaid
+        });
+
+        if (usingPerShip && activeShip) {
+            if (typeof playerDataManager.clearShipMission === 'function') {
+                playerDataManager.clearShipMission(activeShip.id);
+            } else {
+                activeShip.assignedMissionId = null;
+                activeShip.missionState = null;
+                if (typeof playerDataManager.saveData === 'function') playerDataManager.saveData();
+            }
+        } else {
+            playerDataManager.setActiveMissionId(null);
+        }
+
+        if (missionData.oneTime) {
+            playerDataManager.markMissionCompleted(activeMissionId);
+        }
+
+        if (typeof notificationManager !== 'undefined' && notificationManager.showMissionComplete) {
+            notificationManager.showMissionComplete({
+                title: missionData.title,
+                completionLine: missionData.completionLine || null,
+                gross: payout.gross,
+                net: payout.net,
+                deductions: payout.deductions,
+                discoveryBonus: discoveryBonusPaid,
+                planetName: discoveryBonusPaid > 0
+                    ? (scene?.ship?.orbitingPlanet?.name || null)
+                    : null,
+                isFirstLienReveal: payout.isFirstLienReveal
+            });
+        } else {
+            let msg = missionData.completionLine ? `${missionData.completionLine}\n\n` : '';
+            msg += `Gross: ¢ ${payout.gross.toLocaleString()} · Net deposited: ¢ ${payout.net.toLocaleString()}`;
+            if (payout.isFirstLienReveal) {
+                msg += '\n\nYour opening advance is being repaid. Visit Aegis Banking Systems for your lien statement.';
+            }
+            if (discoveryBonusPaid > 0) {
+                const planetName = scene?.ship?.orbitingPlanet?.name || 'Unknown world';
+                msg += `\n\n${planetName} is now surveyed.`;
+            }
+            uiNotify({ title: missionData.title, message: msg, variant: 'mission', durationMs: 0, dismissible: true });
+        }
+
+        return payout;
+    }
+
+    /** Debug: force-complete a ship contract (dock UI playtest button). */
+    resolveDebugMissionTarget() {
+        const activeShip = typeof playerDataManager.getActiveShip === 'function'
+            ? playerDataManager.getActiveShip()
+            : null;
+
+        if (activeShip?.assignedMissionId) {
+            return {
+                ship: activeShip,
+                missionId: activeShip.assignedMissionId,
+                usingPerShip: true
+            };
+        }
+
+        const fleet = playerDataManager.data?.fleet || [];
+        const shipWithMission = fleet.find(ship => ship?.assignedMissionId);
+        if (shipWithMission) {
+            return {
+                ship: shipWithMission,
+                missionId: shipWithMission.assignedMissionId,
+                usingPerShip: true
+            };
+        }
+
+        const legacyId = typeof playerDataManager.getActiveMissionId === 'function'
+            ? playerDataManager.getActiveMissionId()
+            : null;
+        if (legacyId) {
+            return {
+                ship: activeShip,
+                missionId: legacyId,
+                usingPerShip: false
+            };
+        }
+
+        return null;
+    }
+
+    debugCompleteActiveMission() {
+        const target = this.resolveDebugMissionTarget();
+
+        if (!target?.missionId) {
+            uiNotify({
+                title: 'No active contract',
+                message: 'Accept a mission on the contract board and assign it to a ship first.',
+                variant: 'warning'
+            });
+            return false;
+        }
+
+        const missionData = missionCatalogue[target.missionId];
+        if (!missionData) {
+            uiNotify({
+                title: 'Contract error',
+                message: `Unknown mission id: ${target.missionId}`,
+                variant: 'error'
+            });
+            return false;
+        }
+
+        const scene = typeof gameManager !== 'undefined' ? gameManager.activeScene : null;
+        this.finalizeMissionCompletion({
+            activeMissionId: target.missionId,
+            missionData,
+            activeShip: target.ship,
+            usingPerShip: target.usingPerShip,
+            scene,
+            discoveryBonusPaid: 0
+        });
+        return true;
     }
 }
 // --- Future Functions ---

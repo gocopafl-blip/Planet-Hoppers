@@ -1,12 +1,25 @@
 const spaceDockScene = {
     name: 'menu', // We can reuse the menu music for now
 
+    hideStationPanels() {
+        const panelIds = ['mission-board', 'trade-hub', 'aegis-banking', 'titan-supply', 'fleet-manager'];
+        panelIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = 'none';
+            el.classList.remove('slide-in', 'slide-out');
+        });
+        const assignModal = document.getElementById('ship-assignment-modal');
+        if (assignModal) assignModal.style.display = 'none';
+    },
+
     start(settings) {
         console.log("Starting SpaceDock Scene...");
         // Hide other UI elements and show the ones for this scene
         menu.style.display = 'none';
         shipSelectionMenu.style.display = 'none';
         //zoomControls.style.display = 'none';
+        this.hideStationPanels();
         document.getElementById('dock-ui').style.display = 'block';
 
         canvas.style.display = 'block';

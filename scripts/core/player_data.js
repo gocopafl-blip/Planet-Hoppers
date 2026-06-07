@@ -13,7 +13,8 @@ function getNewPlayerData() {
         activeLoans: [],
         financeStats: {
             hasSeenLienReveal: false,
-            lifetimeGrossMissionPay: 0
+            lifetimeGrossMissionPay: 0,
+            manualPaymentCount: 0
         },
         activeShipId: 1,
         activeMissionId: null,
