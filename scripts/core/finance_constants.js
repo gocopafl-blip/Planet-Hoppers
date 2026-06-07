@@ -38,6 +38,14 @@ const STARHOPPER_ADVANCE = {
     principalRateOfGross: 0.12
 };
 
+/** Lender #0 — hidden contractor advance (not shown in loan market). */
+const STARHOPPER_LENDER = {
+    id: 'starhopper',
+    name: 'StarHopper Cargo',
+    productId: 'contractor_advance',
+    termsSummary: '30% of gross contract pay (18% interest · 12% principal) until advance repaid'
+};
+
 /** Minimum lifetime mission earnings before loan market unlocks (Phase 3.2c). */
 const LOAN_MARKET_MIN_LIFETIME_EARNINGS = 5000;
 

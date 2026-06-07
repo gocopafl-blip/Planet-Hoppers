@@ -1105,6 +1105,86 @@ button:hover {
     font-style: italic;
 }
 
+.aegis-liens-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.aegis-lien-card {
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(100, 220, 180, 0.28);
+    background: linear-gradient(135deg, rgba(8, 32, 28, 0.92), rgba(4, 18, 22, 0.88));
+}
+
+.aegis-lien-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.aegis-lien-lender {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    color: #5dffc8;
+}
+
+.aegis-lien-skim {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ff9a7a;
+}
+
+.aegis-lien-balance {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+    color: rgba(180, 230, 210, 0.85);
+}
+
+.aegis-lien-balance strong {
+    font-family: 'Orbitron', sans-serif;
+    color: #ff9a7a;
+    font-size: 1rem;
+}
+
+.aegis-lien-original {
+    font-size: 0.78rem;
+    color: rgba(140, 200, 180, 0.55);
+}
+
+.aegis-lien-progress {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(4, 18, 16, 0.9);
+    border: 1px solid rgba(100, 220, 180, 0.2);
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.aegis-lien-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2a9a78, #5dffc8);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.aegis-lien-terms {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: rgba(150, 200, 185, 0.7);
+    font-style: italic;
+}
+
 .station-panel-body {
     flex: 1;
     overflow-y: auto;
@@ -2269,6 +2349,24 @@ h2 {
 
 .notification-payout {
     margin-top: 4px;
+}
+
+.notification-deduction {
+    color: #ff9a7a !important;
+}
+
+.notification-lien-reveal {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    border-left: 3px solid #5dffc8;
+    background: rgba(40, 80, 70, 0.35);
+    font-size: 0.88em;
+    line-height: 1.45;
+    color: #b8ffe8;
+}
+
+.notification-lien-reveal strong {
+    color: #5dffc8;
 }
 
 /* Notification variants */

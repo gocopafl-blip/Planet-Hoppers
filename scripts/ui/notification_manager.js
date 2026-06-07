@@ -75,18 +75,46 @@ class NotificationManager {
     }
 
     /** Mission payout banner — replaces browser alert on contract completion. */
-    showMissionComplete({ title, completionLine, reward, discoveryBonus = 0, planetName = null }) {
+    showMissionComplete({
+        title,
+        completionLine,
+        gross = 0,
+        net = 0,
+        deductions = [],
+        reward = null,
+        discoveryBonus = 0,
+        planetName = null,
+        isFirstLienReveal = false
+    }) {
         const parts = [];
         if (completionLine) {
             parts.push(`<p class="notification-flavor">${this.escapeHtml(completionLine)}</p>`);
         }
+
+        const grossPay = gross > 0 ? gross : (Number(reward) || 0) + (Number(discoveryBonus) || 0);
+        const netPay = net > 0 || deductions.length ? net : grossPay;
+        const totalDeducted = deductions.reduce((sum, d) => sum + (d.amount || 0), 0);
+
         const payoutRows = [
-            `<div><dt>Contract pay</dt><dd>¢ ${Number(reward || 0).toLocaleString()}</dd></div>`
+            `<div><dt>Gross contract pay</dt><dd>¢ ${Number(grossPay).toLocaleString()}</dd></div>`
         ];
         if (discoveryBonus > 0) {
-            payoutRows.push(`<div><dt>Discovery bonus</dt><dd>¢ ${Number(discoveryBonus).toLocaleString()}</dd></div>`);
+            payoutRows.push(`<div><dt>Includes discovery</dt><dd>¢ ${Number(discoveryBonus).toLocaleString()}</dd></div>`);
         }
+        if (totalDeducted > 0) {
+            payoutRows.push(
+                `<div><dt>Lien repayment</dt><dd class="notification-deduction">−¢ ${Number(totalDeducted).toLocaleString()}</dd></div>`
+            );
+        }
+        payoutRows.push(`<div><dt>Net deposited</dt><dd>¢ ${Number(netPay).toLocaleString()}</dd></div>`);
         parts.push(`<dl class="notification-stats notification-payout">${payoutRows.join('')}</dl>`);
+
+        if (isFirstLienReveal) {
+            parts.push(
+                '<p class="notification-lien-reveal">Your opening contractor advance is being repaid from contract pay. ' +
+                'Visit <strong>Aegis Banking Systems</strong> on the dock for your lien statement.</p>'
+            );
+        }
         if (discoveryBonus > 0 && planetName) {
             parts.push(`<p class="notification-subline">${this.escapeHtml(planetName)} is now surveyed.</p>`);
         }

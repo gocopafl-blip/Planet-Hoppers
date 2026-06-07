@@ -536,15 +536,7 @@ class MissionManager {
         if (!wasUndiscovered) return 0;
 
         const bonus = missionData?.discoveryBonus ?? DISCOVERY_FIRST_SURVEY_BONUS;
-        if (bonus <= 0) return 0;
-
-        playerDataManager.credit(
-            bonus,
-            FINANCE_CATEGORIES.MISSION,
-            `Discovery bonus: ${planet.name}`,
-            { planetId: planet.id, discovery: true, missionId: missionData?.title }
-        );
-        return bonus;
+        return bonus > 0 ? bonus : 0;
     }
 
     /** Called when the active ship locks orbit — completes scan missions or catalogues a new world. */
@@ -725,15 +717,13 @@ class MissionManager {
                 discoveryBonusPaid = this.applySurveyDiscovery(scene.ship.orbitingPlanet, missionData);
             }
 
-            playerDataManager.credit(
-                missionData.reward,
-                FINANCE_CATEGORIES.MISSION,
-                `Mission complete: ${missionData.title}`,
-                {
-                    missionId: activeMissionId,
-                    shipId: activeShip?.id ?? null
-                }
-            );
+            const grossPay = missionData.reward + discoveryBonusPaid;
+            const payout = bankingManager.applyContractPayoutDeductions(grossPay, {
+                missionTitle: missionData.title,
+                missionId: activeMissionId,
+                shipId: activeShip?.id ?? null,
+                discoveryBonus: discoveryBonusPaid
+            });
             if (usingPerShip && activeShip) {
                 if (typeof playerDataManager.clearShipMission === 'function') {
                     playerDataManager.clearShipMission(activeShip.id);
@@ -754,18 +744,22 @@ class MissionManager {
                 notificationManager.showMissionComplete({
                     title: missionData.title,
                     completionLine: missionData.completionLine || null,
-                    reward: missionData.reward,
+                    gross: payout.gross,
+                    net: payout.net,
+                    deductions: payout.deductions,
                     discoveryBonus: discoveryBonusPaid,
                     planetName: discoveryBonusPaid > 0
                         ? (scene.ship?.orbitingPlanet?.name || null)
-                        : null
+                        : null,
+                    isFirstLienReveal: payout.isFirstLienReveal
                 });
             } else {
-                let msg = missionData.completionLine
-                    ? `${missionData.completionLine}\n\nContract reward: ¢ ${missionData.reward.toLocaleString()}`
-                    : `Contract reward: ¢ ${missionData.reward.toLocaleString()}`;
+                let msg = missionData.completionLine ? `${missionData.completionLine}\n\n` : '';
+                msg += `Gross: ¢ ${payout.gross.toLocaleString()} · Net deposited: ¢ ${payout.net.toLocaleString()}`;
+                if (payout.isFirstLienReveal) {
+                    msg += '\n\nYour opening advance is being repaid. Visit Aegis Banking Systems for your lien statement.';
+                }
                 if (discoveryBonusPaid > 0) {
-                    msg += `\nDiscovery bonus: ¢ ${discoveryBonusPaid.toLocaleString()}`;
                     const planetName = scene.ship?.orbitingPlanet?.name || 'Unknown world';
                     msg += `\n\n${planetName} is now surveyed.`;
                 }

@@ -20,6 +20,10 @@ class PlayerDataManager {
 
         this.migrateSaveData();
 
+        if (typeof bankingManager !== 'undefined') {
+            bankingManager.ensurePlayerFinanceState();
+        }
+
         // ENHANCED: Initialize fleet location data for existing saves (Task 3.8)
         // This ensures compatibility with save files created before the fleet system
         this.initializeFleetLocationData();

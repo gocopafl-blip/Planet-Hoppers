@@ -10,7 +10,7 @@
 1. **Game type:** Progression cargo explorer — start small, grow ships & gear, discover worlds, unlock routes & surprises, eventually chart the whole sector (including alien trade).
 2. **First “wow” we’re building toward:** **Discovery** — find something weird (new planet, wreck, alien signal), unlock new work, not just “hard landing.”
 3. **Playtest:** Go Live → `http://127.0.0.1:5500` — see [PLAYTESTING.md](PLAYTESTING.md).
-4. **Next recommended build slice:** **Phase 3.2b** — StarHopper lien + payout deductions (see `ECONOMY.md` Phase D).
+4. **Next recommended build slice:** **Phase 3.2c** — Loan market + credit rating (see `ECONOMY.md` Phase D).
 5. **Key code areas:** missions → `mission_manager.js`, `mission_catalogue.js` · planets → `planet_catalogue.js`, `planet_manager.js` · lander → `lander_scene.js` · dock/money → `player_data_manager.js`, station scenes · fleet → `fleet_manager_scene.js`, `fleet_manager.js` · notifications → `notification_manager.js` · onboarding → `index.html`, `main.js`, start/menu scenes.
 
 ---
@@ -156,7 +156,7 @@ Build in this order (each slice is playable before the next):
 - [ ] **3.0 Ship hierarchy design review** — **Before** adding more hulls or Apex modules: audit the full ladder (starter → hauler → specialist → late game). Each tier must *do* something the previous tier cannot — speed, cargo, efficiency, or role (see **Ship progression design** below). Tie missions, fuel cost, and payouts to that ladder so upgrades feel necessary, not cosmetic.
 - [ ] **3.1 Apex repair (Economy C)** — Damage sources (bad landing, hull events); **Apex Outfitting & Repair** UI; `shipRepairCostPerHealth`.
 - [x] **3.2a Aegis terminal shell** — Scene, background asset, dashboard cards, statement tab (ledger).
-- [ ] **3.2b StarHopper lien** — ¢2,500 principal; 30% of gross per mission (18% interest / 12% principal); first-payout reveal → visit Aegis.
+- [x] **3.2b StarHopper lien** — ¢2,500 principal; 30% of gross per mission (18% interest / 12% principal); first-payout reveal → visit Aegis.
 - [ ] **3.2c Loan market** — `lender_catalogue.js`, credit rating, grid/list lender shop, 6–8 lenders, draw flow.
 - [ ] **3.2d Loan servicing** — Auto-skim per signed terms (fixed principal/interest fine print), per-job fees, **Make Payment** + early payoff fees; hooks: ship collateral, compound-after-N-missions (data-driven).
 - [ ] **3.3 Ship tiers** — Gate tier-2/3 ships behind credits + optional certification; implement reviewed stat curves from 3.0.

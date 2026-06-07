@@ -143,25 +143,26 @@ class TradeManager {
 
         // If any of the conditions above were met, finalize the mission.
         if (isCompleted) {
-            playerDataManager.credit(
-                missionData.reward,
-                FINANCE_CATEGORIES.MISSION,
-                `Mission complete: ${missionData.title}`,
-                { missionId: activeMissionId }
-            );
+            const payout = bankingManager.applyContractPayoutDeductions(missionData.reward, {
+                missionTitle: missionData.title,
+                missionId: activeMissionId
+            });
             playerDataManager.setActiveMissionId(null);
-            console.log(`Mission "${missionData.title}" completed! Player earned ${missionData.reward} credits.`);
+            console.log(`Mission "${missionData.title}" completed! Gross ¢${missionData.reward}, net ¢${payout.net}.`);
 
             if (typeof notificationManager !== 'undefined' && notificationManager.showMissionComplete) {
                 notificationManager.showMissionComplete({
                     title: missionData.title,
                     completionLine: null,
-                    reward: missionData.reward
+                    gross: payout.gross,
+                    net: payout.net,
+                    deductions: payout.deductions,
+                    isFirstLienReveal: payout.isFirstLienReveal
                 });
             } else {
                 uiNotify({
                     title: missionData.title,
-                    message: `Contract reward: ¢ ${missionData.reward.toLocaleString()}`,
+                    message: `Gross: ¢ ${payout.gross.toLocaleString()} · Net deposited: ¢ ${payout.net.toLocaleString()}`,
                     variant: 'mission',
                     durationMs: 0,
                     dismissible: true

@@ -80,7 +80,41 @@ const aegisBankingScene = {
         setText('aegis-company-meta', `${snap.companyName} · contractor account`);
 
         this.renderStatement();
+        this.renderLiens();
         this.setActiveTab('statement');
+    },
+
+    renderLiens() {
+        const list = document.getElementById('aegis-liens-list');
+        if (!list) return;
+
+        const liens = bankingManager.getLienSummaries();
+        if (!liens.length) {
+            list.innerHTML = '<p class="aegis-empty">No active liens. Your contractor advance is fully repaid.</p>';
+            return;
+        }
+
+        list.innerHTML = liens.map(lien => {
+            const bm = bankingManager;
+            return `
+                <div class="aegis-lien-card">
+                    <div class="aegis-lien-header">
+                        <span class="aegis-lien-lender">${bm.escapeHtml(lien.lenderName)}</span>
+                        <span class="aegis-lien-skim">${lien.skimPct}% of gross pay</span>
+                    </div>
+                    <div class="aegis-lien-balance">
+                        <span>Principal remaining</span>
+                        <strong>${bm.escapeHtml(bm.formatCredits(lien.principalRemaining))}</strong>
+                        <span class="aegis-lien-original">of ${bm.escapeHtml(bm.formatCredits(lien.principalOriginal))}</span>
+                    </div>
+                    <div class="aegis-lien-progress" role="progressbar"
+                        aria-valuenow="${lien.progressPct}" aria-valuemin="0" aria-valuemax="100">
+                        <div class="aegis-lien-progress-fill" style="width: ${lien.progressPct}%"></div>
+                    </div>
+                    <p class="aegis-lien-terms">${bm.escapeHtml(lien.termsSummary)}</p>
+                </div>
+            `;
+        }).join('');
     },
 
     renderStatement() {

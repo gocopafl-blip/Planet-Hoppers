@@ -10,6 +10,11 @@ function getNewPlayerData() {
         vesselPrefix: "USV",
         playerBankBalance: 2500,
         transactionLedger: [],
+        activeLoans: [],
+        financeStats: {
+            hasSeenLienReveal: false,
+            lifetimeGrossMissionPay: 0
+        },
         activeShipId: 1,
         activeMissionId: null,
         activeMissionState: null,
