@@ -10,7 +10,7 @@
 1. **Game type:** Progression cargo explorer — start small, grow ships & gear, discover worlds, unlock routes & surprises, eventually chart the whole sector (including alien trade).
 2. **First “wow” we’re building toward:** **Discovery** — find something weird (new planet, wreck, alien signal), unlock new work, not just “hard landing.”
 3. **Playtest:** Go Live → `http://127.0.0.1:5500` — see [PLAYTESTING.md](PLAYTESTING.md).
-4. **Next recommended build slice:** **Phase 3.1** — Apex repair UI, or expand **Phase 2.6** Era 2 chains as players survey more worlds.
+4. **Next recommended build slice:** **Phase 3.2b** — StarHopper lien + payout deductions (see `ECONOMY.md` Phase D).
 5. **Key code areas:** missions → `mission_manager.js`, `mission_catalogue.js` · planets → `planet_catalogue.js`, `planet_manager.js` · lander → `lander_scene.js` · dock/money → `player_data_manager.js`, station scenes · fleet → `fleet_manager_scene.js`, `fleet_manager.js` · notifications → `notification_manager.js` · onboarding → `index.html`, `main.js`, start/menu scenes.
 
 ---
@@ -155,12 +155,15 @@ Build in this order (each slice is playable before the next):
 
 - [ ] **3.0 Ship hierarchy design review** — **Before** adding more hulls or Apex modules: audit the full ladder (starter → hauler → specialist → late game). Each tier must *do* something the previous tier cannot — speed, cargo, efficiency, or role (see **Ship progression design** below). Tie missions, fuel cost, and payouts to that ladder so upgrades feel necessary, not cosmetic.
 - [ ] **3.1 Apex repair (Economy C)** — Damage sources (bad landing, hull events); **Apex Outfitting & Repair** UI; `shipRepairCostPerHealth`.
-- [ ] **3.2 Aegis banking (Economy D)** — Balance, statements, loans + autopay; wire background asset.
+- [x] **3.2a Aegis terminal shell** — Scene, background asset, dashboard cards, statement tab (ledger).
+- [ ] **3.2b StarHopper lien** — ¢2,500 principal; 30% of gross per mission (18% interest / 12% principal); first-payout reveal → visit Aegis.
+- [ ] **3.2c Loan market** — `lender_catalogue.js`, credit rating, grid/list lender shop, 6–8 lenders, draw flow.
+- [ ] **3.2d Loan servicing** — Auto-skim per signed terms (fixed principal/interest fine print), per-job fees, **Make Payment** + early payoff fees; hooks: ship collateral, compound-after-N-missions (data-driven).
 - [ ] **3.3 Ship tiers** — Gate tier-2/3 ships behind credits + optional certification; implement reviewed stat curves from 3.0.
 - [ ] **3.4 Cargo capacity missions** — Contracts that **require** minimum `cargoCapacity` (bulk haul, multi-crate) so buying a hauler is a real unlock, not optional.
 - [ ] **3.5 Modules (Apex / Star-Propulsion)** — Fuel tank, cargo pod, shields, engine swaps — trade-offs and discovery (see **Ship progression design**). Installed at Apex/Titan/R&D when wired.
 
-**Locked rules:** Mission pay = **instant on completion**. Stations: Orbital = missions, Trade = ships, Titan = consumables, Apex = repair, Aegis = bank, Fleet = dispatch only.
+**Locked rules:** Mission pay = **instant on completion** (gross → liens → net). Stations: Orbital = missions, Trade = ships, Titan = consumables, Apex = repair, **Aegis = loan broker**, Fleet = dispatch only.
 
 #### Ship progression design (north-star tension)
 
@@ -263,6 +266,7 @@ Build in this order (each slice is playable before the next):
 - Engine families as discoverable upgrades — chemical, ion, plasma, nuclear, point-to-point exotic (trade-offs, not linear power creep)
 - Shield / defense modules — obvious need for hostile landing or anomaly zones
 - Mission payouts tuned to fuel burn per route (margin matters on long hauls)
+- Aegis loan market + credit rating — see `ECONOMY.md` Phase D (design locked)
 - “Fuel remaining” contract bonus — rewards efficient hulls on timed or long routes
 - Codex entries for ship classes and modules (discovery journal overlap)
 

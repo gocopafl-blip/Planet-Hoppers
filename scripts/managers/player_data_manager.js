@@ -55,6 +55,7 @@ class PlayerDataManager {
         if (this.migrateStarterDiscoveredPlanets()) changed = true;
         if (this.migrateIntroFlag()) changed = true;
         if (this.migrateCompletedMissions()) changed = true;
+        if (this.migrateVesselPrefix()) changed = true;
 
         if (changed) {
             console.log('Player save migrated to current schema.');
@@ -211,6 +212,12 @@ class PlayerDataManager {
         if (this.data.hasSeenIntro) return;
         this.data.hasSeenIntro = true;
         this.saveData();
+    }
+
+    migrateVesselPrefix() {
+        if (!this.data || this.data.vesselPrefix) return false;
+        this.data.vesselPrefix = 'USV';
+        return true;
     }
 
     migrateCompletedMissions() {
@@ -525,6 +532,20 @@ class PlayerDataManager {
     // A helper function to easily get the player's company name.
     getCompanyName() {
         return this.data.cargoCoName;
+    }
+
+    getVesselPrefix() {
+        return this.data?.vesselPrefix || 'USV';
+    }
+
+    /** Formal callsign for fleet UI — e.g. USV Christina */
+    formatVesselCallsign(shipName) {
+        const name = String(shipName || '').trim();
+        const prefix = this.getVesselPrefix();
+        if (!name) return prefix;
+        const prefixPattern = new RegExp(`^${prefix}\\s+`, 'i');
+        if (prefixPattern.test(name)) return name;
+        return `${prefix} ${name}`;
     }
 
     // A helper function to find the currently active ship object from the fleet.

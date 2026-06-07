@@ -177,11 +177,16 @@ class FleetManager {
         console.log(`Saved ${saveType} state for ship ${ship.id}`);
     }
 
-    buyShip(shipCatalogueKey) {
+    buyShip(shipCatalogueKey, playerGivenName) {
         const shipData = shipCatalogue[shipCatalogueKey];
         if (!shipData) {
             console.error(`Ship with ID ${shipCatalogueKey} not found.`);
-            return;
+            return false;
+        }
+
+        if (playerGivenName == null || playerGivenName === '') {
+            console.warn('buyShip requires a hull name from the purchase flow.');
+            return false;
         }
 
         // Check if the player has enough currency to buy the ship
@@ -191,11 +196,7 @@ class FleetManager {
                 message: `Not enough credits to purchase ${shipData.shipID}.`,
                 variant: 'warning'
             });
-            return;
-        }
-        const playerGivenName = prompt(`Enter a name for your new ${shipData.shipID}:`);
-        if (playerGivenName === null) {
-            return;
+            return false;
         }
 
         const paid = playerDataManager.spend(
@@ -210,7 +211,7 @@ class FleetManager {
                 message: `Not enough credits to purchase ${shipData.shipID}.`,
                 variant: 'warning'
             });
-            return;
+            return false;
         }
 
         // Add the ship to the player's fleet (store full ship object)
@@ -275,12 +276,13 @@ class FleetManager {
 
         uiNotify({
             title: 'Hull Purchased',
-            message: `${shipData.shipID} added to your fleet as "${playerGivenName || shipData.shipID}".`,
+            message: `${shipData.shipID} added to your fleet as "${playerGivenName}".`,
             variant: 'success',
             durationMs: 8000
         });
         // NOTE: No need to call playerDataManager.saveData() here because
         // both addShipToFleet() and setActiveShip() already save the data
+        return true;
     }
 
     sellShip(shipId) {

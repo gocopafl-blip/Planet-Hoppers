@@ -5,6 +5,5 @@ function uiNotify({ title, message = '', variant = 'info', durationMs = 6000, di
         notificationManager.showSimple({ title, message, variant, durationMs, dismissible });
         return;
     }
-    const text = [title, message].filter(Boolean).join('\n\n');
-    if (text) window.alert(text);
+    console.warn('[uiNotify] notificationManager unavailable:', title, message);
 }

@@ -28,3 +28,27 @@ const DISCOVERY_FIRST_SURVEY_BONUS = 250;
 
 /** Billed when a drop ship is destroyed on landing (Phase 1B.3). */
 const DROP_SHIP_REPLACEMENT_COST = 750;
+
+/** StarHopper opening advance — tune payoff pace here (Phase 3.2b). */
+const STARHOPPER_ADVANCE = {
+    principal: 2500,
+    /** Share of gross contract payout → interest (gone). */
+    interestRateOfGross: 0.18,
+    /** Share of gross contract payout → principal reduction. */
+    principalRateOfGross: 0.12
+};
+
+/** Minimum lifetime mission earnings before loan market unlocks (Phase 3.2c). */
+const LOAN_MARKET_MIN_LIFETIME_EARNINGS = 5000;
+
+/** Display labels for ledger categories on Aegis statement. */
+const FINANCE_CATEGORY_LABELS = {
+    mission: 'Contract',
+    ship: 'Hull',
+    consumables: 'Consumables',
+    repair: 'Repair',
+    tow: 'Tow',
+    loan: 'Loan',
+    debug: 'Debug',
+    other: 'Other'
+};

@@ -14,6 +14,7 @@ const spaceDockScene = {
         // Add dock menu listeners
         this._titanSupplyLi = document.querySelector('#dock-menu li:nth-child(1)');
         this._orbitalCargoLi = document.querySelector('#dock-menu li:nth-child(2)');
+        this._aegisBankingLi = document.querySelector('#dock-menu li:nth-child(3)');
         this._galacticTradeHubLi = document.querySelector('#dock-menu li:nth-child(4)');
         this._fleetManagerLi = document.querySelector('#dock-menu li:nth-child(7)');
         if (this._titanSupplyLi) {
@@ -21,6 +22,9 @@ const spaceDockScene = {
         }
         if (this._orbitalCargoLi) {
             this._orbitalCargoLi.addEventListener('click', this.handleOrbitalCargoClick);
+        }
+        if (this._aegisBankingLi) {
+            this._aegisBankingLi.addEventListener('click', this.handleAegisBankingClick);
         }
         if (this._galacticTradeHubLi) {
             this._galacticTradeHubLi.addEventListener('click', this.handleGalacticTradeHubClick);
@@ -47,6 +51,9 @@ const spaceDockScene = {
         }
         if (this._orbitalCargoLi) {
             this._orbitalCargoLi.removeEventListener('click', this.handleOrbitalCargoClick);
+        }
+        if (this._aegisBankingLi) {
+            this._aegisBankingLi.removeEventListener('click', this.handleAegisBankingClick);
         }
         if (this._galacticTradeHubLi) {
             this._galacticTradeHubLi.removeEventListener('click', this.handleGalacticTradeHubClick);
@@ -81,6 +88,9 @@ const spaceDockScene = {
 
     handleOrbitalCargoClick(event) {
         gameManager.switchScene(missionBoardScene);
+    },
+    handleAegisBankingClick() {
+        gameManager.switchScene(aegisBankingScene);
     },
     handleGalacticTradeHubClick(event) {
         gameManager.switchScene(galacticTradeHubScene);

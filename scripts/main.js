@@ -187,12 +187,18 @@ function beginWithIntro() {
 }
 
 function startNewContract() {
-    const confirmed = window.confirm(
-        'Start a new contract?\n\nThis clears your fleet, chart progress, missions, and account balance.'
-    );
-    if (!confirmed) return;
-    localStorage.removeItem(playerDataManager.SAVE_KEY);
-    window.location.reload();
+    const wipeSave = () => {
+        localStorage.removeItem(playerDataManager.SAVE_KEY);
+        window.location.reload();
+    };
+
+    uiPrompt.confirm({
+        title: 'New Contract',
+        message: 'This clears your fleet, chart progress, missions, and account balance.',
+        confirmLabel: 'Wipe Save',
+        cancelLabel: 'Keep Save',
+        variant: 'danger'
+    }).then((ok) => { if (ok) wipeSave(); });
 }
 
 // --- EVENT LISTENERS SETUP ---

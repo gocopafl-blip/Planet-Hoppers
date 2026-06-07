@@ -51,9 +51,18 @@ const galacticTradeHubScene = {
     },
 
     handleAcceptTrade(event) {
-        if (event.target.classList.contains('accept-btn')) {
-            const shipId = event.target.dataset.shipId;
-            fleetManager.buyShip(shipId);
+        const btn = event.target.closest('.accept-btn');
+        if (!btn || btn.disabled) return;
+
+        const shipKey = btn.dataset.shipId;
+        const shipData = shipCatalogue[shipKey];
+        if (!shipData) return;
+
+        const price = shipData.shipBuyValue ? shipData.shipBuyValue.toLocaleString() : 'N/A';
+        const runPurchase = (name) => {
+            if (!name) return;
+            const purchased = fleetManager.buyShip(shipKey, name);
+            if (!purchased) return;
 
             const tradeHub = document.getElementById('trade-hub');
             tradeHub.classList.remove('slide-in');
@@ -64,7 +73,16 @@ const galacticTradeHubScene = {
                     gameManager.switchScene(spaceDockScene);
                 }
             }, 500);
-        }
+        };
+
+        uiPrompt.prompt({
+            title: `Name your ${shipData.shipID}`,
+            message: `¢ ${price} will be billed when you confirm.`,
+            defaultValue: shipData.shipID,
+            confirmLabel: 'Purchase',
+            cancelLabel: 'Cancel',
+            variant: 'trade'
+        }).then((name) => runPurchase(name));
     },
 
     handleCloseTradeHub() {

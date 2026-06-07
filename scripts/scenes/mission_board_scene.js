@@ -171,7 +171,7 @@ const missionBoardScene = {
             container.innerHTML = `
                 <img class="assignment-ship-image" src="${imageSrc}" alt="${ship.name}">
                 <div class="assignment-ship-info">
-                    <h3>${shipData.shipID} (ID: ${ship.name})</h3>
+                    <h3><span class="fleet-ship-callsign">${playerDataManager.formatVesselCallsign(ship.name)}</span><span class="fleet-ship-hull-type">, ${shipData.shipID}</span></h3>
                     <p class="ship-status">Status: ${status}</p>
                     <p class="ship-location">Location: ${location}</p>
                     <div class="ship-stats">

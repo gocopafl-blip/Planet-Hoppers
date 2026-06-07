@@ -73,6 +73,7 @@ const assetCatalogue = {
         "mission_board_bg": "assets/images/dock_backgrounds/OrbitalCargoSystems.jpg",
         "galactic_trade_hub": "assets/images/dock_backgrounds/galactic_trade_hub.jpg",
         "titan_supply_bg": "assets/images/dock_backgrounds/Titan Supply Services.png",
+        "aegis_banking_bg": "assets/images/dock_backgrounds/Aegis Banking Systems.png",
         "fleet_manager": "assets/images/dock_backgrounds/Fleet_Management_Services.jpg",
 
         //Scene Overlays

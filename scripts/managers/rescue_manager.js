@@ -10,20 +10,25 @@ class RescueManager {
 
     requestTow(spaceScene) {
         if (!this.canRequestTow(spaceScene)) {
-            return { ok: false, message: 'Tow not available.' };
+            return Promise.resolve({ ok: false, message: 'Tow not available.' });
         }
 
         const activeShip = playerDataManager.getActiveShip();
         if (!activeShip) {
-            return { ok: false, message: 'No active ship.' };
+            return Promise.resolve({ ok: false, message: 'No active ship.' });
         }
 
         const confirmMsg =
-            `Emergency tow to Alpha Station will cost ¢ ${TOW_COST.toLocaleString()}.\n\n` +
-            'Your ship will be docked with empty fuel. Continue?';
-        if (!confirm(confirmMsg)) {
-            return { ok: false, cancelled: true };
-        }
+            `Emergency tow to Alpha Station will cost ¢ ${TOW_COST.toLocaleString()}. ` +
+            'Your ship will be docked with empty fuel.';
+
+        return uiPrompt.confirm({
+            title: 'Emergency Tow',
+            message: confirmMsg,
+            confirmLabel: 'Request Tow',
+            cancelLabel: 'Cancel'
+        }).then((ok) => {
+            if (!ok) return { ok: false, cancelled: true };
 
         const paid = playerDataManager.spend(
             TOW_COST,
@@ -47,6 +52,7 @@ class RescueManager {
 
         gameManager.switchScene(spaceDockScene, { openTitanSupply: true });
         return { ok: true };
+        });
     }
 
     dockShipAtStation(spaceScene, fleetShip) {

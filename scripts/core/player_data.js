@@ -7,6 +7,7 @@ function getNewPlayerData() {
 
         // Player Profile
         cargoCoName: "StarHopper Cargo",
+        vesselPrefix: "USV",
         playerBankBalance: 2500,
         transactionLedger: [],
         activeShipId: 1,
