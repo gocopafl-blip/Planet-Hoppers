@@ -3,9 +3,10 @@
 // Holo-call message panel: portrait + name + typewriter text + holo flicker.
 // Queue-based; messages are queued by mission effects (contactOnComplete /
 // contactOnRivalWin), dock encounters, and story beats. See docs/MISSIONS.md
-// §12. Portraits are v1 placeholders from approved concepts until clean
-// production portraits exist; contacts without a portrait get an initials
-// badge. Text-first: voice stingers arrive in a later slice.
+// §12. Mara/Pip portraits are v1 placeholders from approved concepts (baked
+// holo frames); the other four are clean production-style portraits. A
+// contact without a portrait file falls back to an initials badge.
+// Text-first: voice stingers arrive in a later slice.
 
 const CONTACTS = {
     mara: {
@@ -23,18 +24,52 @@ const CONTACTS = {
     kess: {
         name: 'Kess Alden',
         role: 'Rival hauler — open comms',
-        portrait: null,
+        portrait: 'assets/images/portraits/kess_alden.webp',
         fallbackInitials: 'KA'
     },
     old_tam: {
         name: 'Old Tam',
         role: 'Dock 9',
-        portrait: null,
+        portrait: 'assets/images/portraits/old_tam.webp',
         fallbackInitials: 'OT'
+    },
+    sorren: {
+        name: 'Dr. Ilya Sorren',
+        role: 'Geological Survey Office',
+        portrait: 'assets/images/portraits/ilya_sorren.webp',
+        fallbackInitials: 'IS'
+    },
+    harlan: {
+        name: 'Mr. Harlan',
+        role: 'StarHopper Accounts',
+        portrait: 'assets/images/portraits/harlan.webp',
+        fallbackInitials: 'MH'
     }
 };
 
 const CONTACT_MESSAGES = {
+    mara_first_cert: {
+        contact: 'mara',
+        lines: [
+            "Mara Voss, dispatch. I run the board, the buoys, and — on bad days — the coffee machine. You did fine out there. The clamps held, which is more than I can say for last week's trainee.",
+            "One rule: if your comms start hissing, it's the buoys. Probably. Come find me on the board when you're ready for real work."
+        ]
+    },
+    harlan_lien: {
+        contact: 'harlan',
+        lines: [
+            "Good evening. Mr. Harlan, StarHopper accounts. I handle your advance personally — every contractor's ledger has a name attached, and yours is mine.",
+            'Your first repayment posted cleanly. Keep flying, keep paying, and you and I will have a short, pleasant relationship. Fall behind, and it becomes a longer one.',
+            'That is all. Fly safe. The company prefers its assets intact.'
+        ]
+    },
+    sorren_sample: {
+        contact: 'sorren',
+        lines: [
+            "Dr. Ilya Sorren, Geological Survey. Your core sample is... irregular. The alloy content doesn't match anything in our catalogue, and our catalogue is very thorough.",
+            "I've logged it as an anomaly and asked that the next sample come to my lab directly. If you find more rock that shouldn't exist, bring it to me before the board does."
+        ]
+    },
     pip_comet: {
         contact: 'pip',
         lines: [

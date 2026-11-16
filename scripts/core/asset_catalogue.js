@@ -75,6 +75,10 @@ const assetCatalogue = {
         // approved concepts; clean production portraits arrive later)
         "portrait_mara_voss": "assets/images/portraits/mara_voss.webp",
         "portrait_pip_comet": "assets/images/portraits/pip_comet.webp",
+        "portrait_kess_alden": "assets/images/portraits/kess_alden.webp",
+        "portrait_ilya_sorren": "assets/images/portraits/ilya_sorren.webp",
+        "portrait_harlan": "assets/images/portraits/harlan.webp",
+        "portrait_old_tam": "assets/images/portraits/old_tam.webp",
         "mission_board_bg": "assets/images/dock_backgrounds/OrbitalCargoSystems.jpg",
         "galactic_trade_hub": "assets/images/dock_backgrounds/galactic_trade_hub.jpg",
         "titan_supply_bg": "assets/images/dock_backgrounds/Titan Supply Services.png",

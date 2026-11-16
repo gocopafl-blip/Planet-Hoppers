@@ -20,6 +20,7 @@ const missionCatalogue = {
         reward: 150,
         type: 'DOCK_CERT',
         completionLine: "Clamps held. Mara logs your cert: 'Unsupervised dock approach. Try not to let it go to your head.'",
+        contactOnComplete: 'mara_first_cert'
     },
 
     "FETCH_ORBIT_01": {
@@ -231,6 +232,7 @@ const missionCatalogue = {
             surveyedPlanetTypes: ['terran_world', 'water_world', 'ice_world', 'volcanic_world', 'city_world']
         },
         completionLine: "Sample logged. GSO transfers contract funds to your account.",
+        contactOnComplete: 'sorren_sample'
     },
 
     // ── Era 2 — System opens (planet-type routes) ─────────────────────────

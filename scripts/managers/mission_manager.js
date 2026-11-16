@@ -917,6 +917,15 @@ class MissionManager {
             contactsUI.queueMessage(missionData.contactOnComplete);
         }
 
+        // First lien reveal: Mr. Harlan introduces the debt. Once, ever —
+        // the flag gates it even if the reveal is somehow re-armed.
+        if (payout.isFirstLienReveal
+            && !playerDataManager.hasStoryFlag('met_harlan')
+            && typeof contactsUI !== 'undefined') {
+            playerDataManager.setStoryFlag('met_harlan');
+            contactsUI.queueMessage('harlan_lien');
+        }
+
         return payout;
     }
 

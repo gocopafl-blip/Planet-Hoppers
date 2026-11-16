@@ -9,7 +9,7 @@ const fs = require('fs');
 const http = require('http');
 const path = require('path');
 
-const REPO = 'path.resolve(__dirname, "..", "..")';
+const REPO = path.resolve(__dirname, "..", "..");
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.json': 'application/json' };
 
 function startServer() {
@@ -269,7 +269,8 @@ async function main() {
         check('unknown message rejected', G.contactsUI.queueMessage('nope_nope') === false);
         check('unknown encounter rejected', G.contactsUI.showEncounter('nope_nope') === false);
         G.contactsUI.queueMessage('kess_race_won');
-        check('fallback badge for Kess (no portrait)', !!w.document.querySelector('.contact-portrait-fallback'));
+        const kessImg = w.document.querySelector('.contact-portrait');
+        check('Kess portrait img shown', !!kessImg && kessImg.src.includes('kess_alden.webp'));
         guard = 0;
         while (G.contactsUI.active && guard++ < 10) G.contactsUI._advance();
         check('queue drains clean', G.contactsUI.queue.length === 0 && !G.contactsUI.active);
@@ -282,6 +283,28 @@ async function main() {
         G.playerDataManager.addWriteOffEntry({ kind: 'recovery', what: 'test tow' });
         G.aegisBankingScene.renderStatement();
         check('admin line counts recoveries', (w.document.querySelector('.aegis-admin-line')?.textContent || '').includes('Recoveries on file: 1'));
+
+        // ── T17: portrait wiring (all characters) ─────────────────────
+        console.log('T17 portrait wiring');
+        const G17 = w.eval('({ CONTACTS, assetCatalogue })');
+        const contactIds = ['mara', 'pip', 'kess', 'old_tam', 'sorren', 'harlan'];
+        check('all 6 contacts have portraits', contactIds.every(id => !!G17.CONTACTS[id]?.portrait));
+        check('catalogue has all 6 portrait keys', ['portrait_mara_voss', 'portrait_pip_comet', 'portrait_kess_alden', 'portrait_ilya_sorren', 'portrait_harlan', 'portrait_old_tam'].every(k => !!G17.assetCatalogue.images[k]));
+        // Mara: completing the docking cert queues her welcome.
+        G.playerDataManager.assignMissionToShip(ship.id, 'TUTORIAL_DOCK_01', {});
+        mm.debugCompleteActiveMission();
+        check('Mara message fires on cert', G.contactsUI.active?.contactId === 'mara' || G.contactsUI.queue.some(m => m.contactId === 'mara'));
+        guard = 0;
+        while (G.contactsUI.active && guard++ < 10) G.contactsUI._advance();
+        // Sorren: completing the core-sample run queues his anomaly note.
+        G.playerDataManager.assignMissionToShip(ship.id, 'PICK_UP_CARGO_01', {});
+        ship.missionState.hasPickedUpCargo = true;
+        mm.completeMission(fakeSpaceDocked);
+        check('Sorren message fires on sample run', G.contactsUI.active?.contactId === 'sorren' || G.contactsUI.queue.some(m => m.contactId === 'sorren'));
+        guard = 0;
+        while (G.contactsUI.active && guard++ < 10) G.contactsUI._advance();
+        // Harlan's first-lien-reveal hook is tested in T18 (fresh boot):
+        // the banking legacy guard makes it untestable mid-boot here.
 
         // ── T16: emergency tow → recovery log ─────────────────────────
         console.log('T16 emergency tow');
@@ -312,6 +335,22 @@ async function main() {
         check('flag persists', G.playerDataManager.hasStoryFlag('persist_probe'));
         check('log persists', G.playerDataManager.getWriteOffLog().length > 0);
         check('journal persists', G.playerDataManager.getJournalEntries().some(e => e.id === 'pip_drawing'));
+
+        // ── T18: Harlan first-lien-reveal hook (separate FRESH boot) ────
+        // The reveal only fires on a genuinely first payout: the banking
+        // legacy guard re-arms hasSeenLienReveal whenever completed
+        // missions exist, so this cannot be tested mid-boot in b1.
+        console.log('T18 Harlan fresh-boot hook');
+        const b3 = await boot(port, null);
+        const w3 = b3.dom.window;
+        const G3 = w3.eval('({ playerDataManager, missionManager, contactsUI })');
+        const ship3 = G3.playerDataManager.getActiveShip();
+        G3.playerDataManager.assignMissionToShip(ship3.id, 'FETCH_ORBIT_01', {});
+        G3.missionManager.debugCompleteActiveMission();
+        check('Harlan fires on first payout', G3.contactsUI.active?.contactId === 'harlan' || G3.contactsUI.queue.some(m => m.contactId === 'harlan'));
+        check('met_harlan flag set', G3.playerDataManager.hasStoryFlag('met_harlan'));
+        check('no errors in fresh boot', b3.errors.length === 0, b3.errors.slice(0, 3).join(' | '));
+        b3.dom.window.close();
 
         // ── Final: console errors across the whole run ──────────────────
         console.log('T15 error sweep');
