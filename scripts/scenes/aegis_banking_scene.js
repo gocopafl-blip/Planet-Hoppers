@@ -385,8 +385,15 @@ const aegisBankingScene = {
         if (!list) return;
 
         const rows = bankingManager.getStatementRows(50);
+        // B9 breadcrumb (MISSIONS.md §7): an innocent admin line. Pre-reveal
+        // it reads as insurance paperwork; post-reveal it counts the
+        // branches the player pruned.
+        const recoveryCount = typeof playerDataManager.getRecoveryCount === 'function'
+            ? playerDataManager.getRecoveryCount()
+            : 0;
+        const adminLine = `<p class="aegis-admin-line">Recoveries on file: ${recoveryCount} · Aegis Salvage Administration</p>`;
         if (!rows.length) {
-            list.innerHTML = '<p class="aegis-empty">No transactions yet. Complete a contract to see your statement.</p>';
+            list.innerHTML = '<p class="aegis-empty">No transactions yet. Complete a contract to see your statement.</p>' + adminLine;
             return;
         }
 
@@ -407,7 +414,7 @@ const aegisBankingScene = {
                     </div>
                 </div>
             `;
-        }).join('');
+        }).join('') + adminLine;
     },
 
     handleClose() {

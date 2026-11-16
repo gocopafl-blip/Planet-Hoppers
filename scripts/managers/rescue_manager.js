@@ -20,6 +20,8 @@ class RescueManager {
 
         const confirmMsg =
             `Emergency tow to Alpha Station will cost ¢ ${TOW_COST.toLocaleString()}. ` +
+            'A rescue skiff will match your drift and bring you and your hull home — ' +
+            'pilots always come home; it is the ships that get written off. ' +
             'Your ship will be docked with empty fuel.';
 
         return uiPrompt.confirm({
@@ -48,6 +50,16 @@ class RescueManager {
         this.dockShipAtStation(spaceScene, activeShip);
         consumablesManager.syncSceneShipToFleet(spaceScene);
         fleetManager.saveCurrentShipState(activeShip, spaceScene);
+
+        // Silent recovery log (R7): the tow recovers pilot and hull alike.
+        // Counted by the Aegis "Recoveries on file" admin line (B9).
+        playerDataManager.addWriteOffEntry({
+            kind: 'recovery',
+            what: 'emergency tow — pilot and hull recovered',
+            shipId: activeShip.id,
+            missionId: activeShip.assignedMissionId ?? null
+        });
+
         playerDataManager.saveData();
 
         gameManager.switchScene(spaceDockScene, { openTitanSupply: true });

@@ -5,6 +5,15 @@ function getNewPlayerData() {
         hasSeenIntro: false,
         completedMissionIds: [],
 
+        // Story state (Phase 2, Slice A) — flags, counters, the silent
+        // write-off log, and journal entries. See docs/MISSIONS.md.
+        story: {
+            flags: {},
+            counters: {},
+            writeOffLog: [],
+            journal: []
+        },
+
         // Player Profile
         cargoCoName: "StarHopper Cargo",
         vesselPrefix: "USV",

@@ -60,6 +60,7 @@ class PlayerDataManager {
         if (this.migrateIntroFlag()) changed = true;
         if (this.migrateCompletedMissions()) changed = true;
         if (this.migrateVesselPrefix()) changed = true;
+        if (this.migrateStoryData()) changed = true;
 
         if (changed) {
             console.log('Player save migrated to current schema.');
@@ -229,6 +230,125 @@ class PlayerDataManager {
         if (Array.isArray(this.data.completedMissionIds)) return false;
         this.data.completedMissionIds = [];
         return true;
+    }
+
+    /** Story state (Phase 2, Slice A): flags, counters, write-off log, journal. */
+    migrateStoryData() {
+        if (!this.data) return false;
+        let changed = false;
+        if (!this.data.story || typeof this.data.story !== 'object') {
+            this.data.story = {};
+            changed = true;
+        }
+        const story = this.data.story;
+        if (!story.flags || typeof story.flags !== 'object' || Array.isArray(story.flags)) {
+            story.flags = {};
+            changed = true;
+        }
+        if (!story.counters || typeof story.counters !== 'object' || Array.isArray(story.counters)) {
+            story.counters = {};
+            changed = true;
+        }
+        if (!Array.isArray(story.writeOffLog)) {
+            story.writeOffLog = [];
+            changed = true;
+        }
+        if (!Array.isArray(story.journal)) {
+            story.journal = [];
+            changed = true;
+        }
+        return changed;
+    }
+
+    /** Story flag accessors (MISSIONS.md §12). Flags are set-once, never unset. */
+    hasStoryFlag(flagName) {
+        return !!this.data?.story?.flags?.[flagName];
+    }
+
+    setStoryFlag(flagName) {
+        if (!this.data || !flagName) return false;
+        this.migrateStoryData();
+        if (this.data.story.flags[flagName]) return false;
+        this.data.story.flags[flagName] = true;
+        this.saveData();
+        return true;
+    }
+
+    setStoryFlags(flagNames) {
+        if (!Array.isArray(flagNames)) return;
+        let changed = false;
+        flagNames.forEach(name => { if (this.setStoryFlag(name)) changed = true; });
+        return changed;
+    }
+
+    getStoryCounter(counterName) {
+        const value = this.data?.story?.counters?.[counterName];
+        return typeof value === 'number' ? value : 0;
+    }
+
+    incrementStoryCounter(counterName, amount = 1) {
+        if (!this.data || !counterName) return 0;
+        this.migrateStoryData();
+        const next = this.getStoryCounter(counterName) + amount;
+        this.data.story.counters[counterName] = next;
+        this.saveData();
+        return next;
+    }
+
+    /**
+     * Silent write-off / recovery log (MISSIONS.md §12, R7–R10). Every crash,
+     * tow, destruction and void appends an entry. Invisible to the player
+     * pre-reveal except the Aegis "Recoveries on file" admin line (B9).
+     * Entry: { kind: 'write_off' | 'recovery' | 'void', what, shipId, missionId, timestamp }
+     */
+    addWriteOffEntry(entry) {
+        if (!this.data || !entry || typeof entry !== 'object') return null;
+        this.migrateStoryData();
+        const record = {
+            kind: entry.kind || 'write_off',
+            what: entry.what || 'unspecified loss',
+            shipId: entry.shipId ?? null,
+            missionId: entry.missionId ?? null,
+            timestamp: Date.now()
+        };
+        this.data.story.writeOffLog.push(record);
+        if (this.data.story.writeOffLog.length > 200) {
+            this.data.story.writeOffLog = this.data.story.writeOffLog.slice(-200);
+        }
+        this.saveData();
+        return record;
+    }
+
+    getWriteOffLog() {
+        return Array.isArray(this.data?.story?.writeOffLog)
+            ? [...this.data.story.writeOffLog]
+            : [];
+    }
+
+    /** Count of recovery entries — the B9 "Recoveries on file" number. */
+    getRecoveryCount() {
+        return this.getWriteOffLog().filter(e => e.kind === 'recovery').length;
+    }
+
+    /** Journal entries (drawings, logs, fragments). Deduped by id. */
+    addJournalEntry(entry) {
+        if (!this.data || !entry?.id) return false;
+        this.migrateStoryData();
+        if (this.data.story.journal.some(e => e.id === entry.id)) return false;
+        this.data.story.journal.push({
+            id: entry.id,
+            title: entry.title || 'Journal entry',
+            body: entry.body || '',
+            timestamp: Date.now()
+        });
+        this.saveData();
+        return true;
+    }
+
+    getJournalEntries() {
+        return Array.isArray(this.data?.story?.journal)
+            ? [...this.data.story.journal]
+            : [];
     }
 
     hasCompletedMission(missionId) {

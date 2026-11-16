@@ -97,6 +97,16 @@ const missionBoardScene = {
             if (!unlock.unlocked) return;
         }
 
+        // Dock encounters (Phase 2, Slice A): dialogue-only, no ship assignment.
+        if (catalogueEntry?.type === 'DOCK_ENCOUNTER') {
+            if (typeof contactsUI === 'undefined' || !contactsUI.showEncounter) return;
+            contactsUI.showEncounter(catalogueEntry.encounterId || 'mad_hauler_first', () => {
+                missionManager.completeDockEncounter(missionId);
+                missionBoardScene.showMissionBoard();
+            });
+            return;
+        }
+
         missionBoardScene.populateShipAssignmentList();
         if (missionBoardScene._shipAssignmentModal) {
             missionBoardScene._shipAssignmentModal.style.display = 'flex';
@@ -267,6 +277,9 @@ const missionBoardScene = {
             const reqTags = mm.getMissionRequirementTags(mission)
                 .map(t => `<span class="mission-req-tag">${mm.escapeHtml(t)}</span>`)
                 .join('');
+            const actionLabel = !mission.unlocked
+                ? 'Locked'
+                : (mission.type === 'DOCK_ENCOUNTER' ? 'Talk' : 'Accept');
 
             const missionElement = document.createElement('div');
             missionElement.className = mission.unlocked ? 'mission-item' : 'mission-item mission-locked';
@@ -282,7 +295,7 @@ const missionBoardScene = {
                 ${mission.unlocked ? '' : `<p class="mission-unlock-hint">Unlock: ${unlockHint}</p>`}
                 <div class="mission-footer">
                     <span class="mission-reward">REWARD: ¢ ${mission.reward.toLocaleString()}</span>
-                    <button class="accept-btn" data-mission-id="${mission.id}" ${mission.unlocked ? '' : 'disabled'}>${mission.unlocked ? 'Accept' : 'Locked'}</button>
+                    <button class="accept-btn" data-mission-id="${mission.id}" ${mission.unlocked ? '' : 'disabled'}>${actionLabel}</button>
                 </div>
             `;
             missionList.appendChild(missionElement);

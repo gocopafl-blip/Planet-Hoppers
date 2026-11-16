@@ -70,6 +70,11 @@ const assetCatalogue = {
         //Scenes
         "start_screen_bg": "assets/images/dock_backgrounds/start_screen_background.jpg",
         "space_dock_terminal": "assets/images/dock_backgrounds/spaceDockTerminal.png",
+
+        // Character portraits (Phase 2, Slice A — v1 placeholders from
+        // approved concepts; clean production portraits arrive later)
+        "portrait_mara_voss": "assets/images/portraits/mara_voss.webp",
+        "portrait_pip_comet": "assets/images/portraits/pip_comet.webp",
         "mission_board_bg": "assets/images/dock_backgrounds/OrbitalCargoSystems.jpg",
         "galactic_trade_hub": "assets/images/dock_backgrounds/galactic_trade_hub.jpg",
         "titan_supply_bg": "assets/images/dock_backgrounds/Titan Supply Services.png",

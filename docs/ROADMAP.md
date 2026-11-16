@@ -141,6 +141,8 @@ Build in this order (each slice is playable before the next):
 
 *Goal: deliveries matter; planet types feel different. **Most items moved to Phase 1B.3** — keep this section for Era 2+ expansion.*
 
+*Story design: see [MISSIONS.md](MISSIONS.md) — acts, full mission plan, forks, realm, era shift (approved outline, Nov 15, 2026; branch `testing/phase-2-missions-story`).*
+
 - [ ] **2.5 Multi-leg contracts (optional)** — Pick up at A → deliver to dock B; bonus for fuel remaining.
 - [x] **2.6 Era 2 mission pack (initial)** — Rim scan + planet-type fetch/sample/land chain (ice, water, volcanic, city); gated after Era 1 core sample.
 - [ ] **2.6b Era 2 expansion** — Repeatable type routes, gas-giant cloud ports, certification tiers.

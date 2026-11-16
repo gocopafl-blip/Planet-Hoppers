@@ -15,11 +15,11 @@ const missionCatalogue = {
         oneTime: true,
         issuer: "Station Operations",
         title: "Docking Clamp Certification",
-        briefing: "Engineering is load-testing the new mag-clamps on your berth. Launch clear of the station, then re-dock under your own power. If the clamps fail, you'll drift — if they hold, you earn your cert and ¢150.",
+        briefing: "Mara here. Engineering is load-testing the new mag-clamps on your berth, and you drew the short straw. Launch clear of the station, then re-dock under your own power. Clamps hold, you get your cert and ¢150. Clamps fail, you drift and I fill out the paperwork. No pressure.",
         flavorTag: "Certification",
         reward: 150,
         type: 'DOCK_CERT',
-        completionLine: "Clamps held. You're certified for unsupervised dock approach.",
+        completionLine: "Clamps held. Mara logs your cert: 'Unsupervised dock approach. Try not to let it go to your head.'",
     },
 
     "FETCH_ORBIT_01": {
@@ -29,7 +29,7 @@ const missionCatalogue = {
         oneTime: true,
         issuer: "Orbital Cargo Solutions",
         title: "Trauma Kit Orbital Pickup",
-        briefing: "Med bay stockpiled trauma kits at the nearest charted world's orbital depot. Fly there, lock orbit to load the pallet, then return and dock before the window closes.",
+        briefing: "Med bay stockpiled trauma kits at the orbital depot over the nearest charted world. Fly out, lock orbit to load the pallet, and get back before the window closes. Fair warning: the buoy network has been fuzzing out all week — static on every channel. If your comms hiss at you out there, it's the buoys. Probably. — Mara",
         flavorTag: "Fetch & deliver",
         reward: 400,
         type: 'FETCH_AND_DELIVER',
@@ -37,7 +37,7 @@ const missionCatalogue = {
         hubPlanetRank: 0,
         timeLimitSec: 1200,
         requires: { completedMissions: ['TUTORIAL_DOCK_01'] },
-        completionLine: "Med bay confirms the kits are aboard station. Priority lane cleared.",
+        completionLine: "Med bay confirms the kits. Mara: 'Static's getting worse, not better. Ops says it's sunspots. Ops says a lot of things.'",
     },
 
     "FETCH_ORBIT_02": {
@@ -47,7 +47,7 @@ const missionCatalogue = {
         oneTime: true,
         issuer: "Station Operations",
         title: "Comms Fuse Bank Run",
-        briefing: "Survey buoy comms are fuzzing out. A fuse bank is waiting at the second nearest charted world — orbit to pick it up, then haul it back to the dock on the clock.",
+        briefing: "Survey buoy comms are fuzzing out worse. A fuse bank is waiting at the second nearest charted world — orbit to pick it up, then haul it back on the clock. Mara: 'Third fuse bank this month. Either the buoys are dying, or something out there likes chewing on them.'",
         flavorTag: "Fetch & deliver",
         reward: 450,
         type: 'FETCH_AND_DELIVER',
@@ -55,7 +55,7 @@ const missionCatalogue = {
         hubPlanetRank: 1,
         timeLimitSec: 1200,
         requires: { completedMissions: ['FETCH_ORBIT_01'] },
-        completionLine: "Ops reports cleaner signal on the buoy network.",
+        completionLine: "Ops reports cleaner signal. Mara, half-joking: 'You know what's funny? The static has a pattern. Don't think about it too hard. I don't.'",
     },
 
     "FETCH_LAND_01": {
@@ -65,7 +65,7 @@ const missionCatalogue = {
         oneTime: true,
         issuer: "Titan Supply Services",
         title: "Scrubber Coupler Surface Pickup",
-        briefing: "Night shift left O₂ scrubber couplers in a surface warehouse on the inner charted world. Launch your drop ship, land at any pad, load the crate, return to mothership, then dock here — timed contract.",
+        briefing: "Night shift left O₂ scrubber couplers in a surface warehouse on the inner charted world. Drop ship down, land at any pad, load the crate, come home — timed contract. Mara: 'Pea Pod's a good little ship. Treat her gentle. Replacements come out of your pay, and the paperwork comes out of mine.'",
         flavorTag: "Fetch & deliver",
         reward: 550,
         type: 'FETCH_AND_DELIVER',
@@ -73,7 +73,7 @@ const missionCatalogue = {
         hubPlanetRank: 0,
         timeLimitSec: 1500,
         requires: { completedMissions: ['FETCH_ORBIT_02'] },
-        completionLine: "Titan logs the couplers. Night shift owes you one.",
+        completionLine: "Titan logs the couplers. Mara: 'Night shift owes you one. Collect in coffee, not promises.'",
     },
 
     "FETCH_LAND_02": {
@@ -83,7 +83,7 @@ const missionCatalogue = {
         oneTime: true,
         issuer: "Station Operations",
         title: "Galley Protein Block Run",
-        briefing: "Galley freezer failed and the backup protein blocks are ground-side on the outer charted world. Land, collect, return to station. Crew morale depends on food that is not 'chewy.'",
+        briefing: "Galley freezer failed and the backup protein blocks are ground-side on the outer charted world. Land, collect, return to station. Mara: 'Crew morale depends on food that is not chewy. Also — Pip asked me if you eat the chewy stuff too. I told them you only eat the good stuff. Don't make a liar out of me.'",
         flavorTag: "Fetch & deliver",
         reward: 500,
         type: 'FETCH_AND_DELIVER',
@@ -91,7 +91,75 @@ const missionCatalogue = {
         hubPlanetRank: 1,
         timeLimitSec: 1500,
         requires: { completedMissions: ['FETCH_LAND_01'] },
-        completionLine: "Galley sends thanks. Nobody asks about the old blocks.",
+        completionLine: "Galley sends thanks. Mara: 'Pip says the protein blocks look like bricks. Eat something green tonight, hauler.'",
+    },
+
+    // ── Tier 0 — Story missions (Phase 2, Slice A) ────────────────────────
+
+    "TRINKET_RUN_01": {
+        era: 1,
+        tier: 0,
+        sortOrder: 47,
+        oneTime: true,
+        issuer: "Mara Voss — personal request",
+        title: "A Passenger for Pip",
+        briefing: "Mara, off the board and off the record: 'A surface outpost on the inner charted world has a litter that needs homes, and Pip has been asking about a dog since they could talk. Land, pick up one puppy — live cargo, handle with care — and bring it home. No timer. Some cargo you don't rush.'",
+        flavorTag: "Personal errand",
+        reward: 350,
+        type: 'FETCH_AND_DELIVER',
+        pickupAt: 'land',
+        hubPlanetRank: 0,
+        requires: { completedMissions: ['FETCH_LAND_02'] },
+        pickupLine: 'Puppy secured in the crew cabin. It has already chewed one checklist. Return to Alpha Station and dock.',
+        completionLine: "Pip names the puppy Comet on the spot. The drawing arrives an hour later: a rocket, a star, a stick figure, and now a dog. It's taped above your bunk.",
+        setsFlags: ['kid_drawing', 'dog_home'],
+        journalEntry: {
+            id: 'pip_drawing',
+            title: "Pip's drawing",
+            body: 'A crayon rocket, a star, a stick figure with your name on it — and now a scruffy dog. Taped above your bunk.'
+        },
+        contactOnComplete: 'pip_comet'
+    },
+
+    "MAD_HAULER_01": {
+        era: 1,
+        tier: 0,
+        sortOrder: 48,
+        oneTime: true,
+        issuer: "Dock 9 — no invoice",
+        title: "The Man on Dock 9",
+        briefing: "There's a man who drinks coffee on Dock 9 and tells anyone who'll stand still that he flew the K-14 lanes a century ago. The dock crew says he's harmless. Mara says he's harmless and to be polite. Talk to him — it costs nothing but a few minutes.",
+        flavorTag: "Dock encounter",
+        reward: 50,
+        type: 'DOCK_ENCOUNTER',
+        requires: { completedMissions: ['TUTORIAL_DOCK_01'] },
+        completionLine: "Old Tam presses a crumpled ¢50 chit into your hand. 'For listening. Nobody listens.'",
+        setsFlags: ['met_mad_hauler'],
+        encounterId: 'mad_hauler_first'
+    },
+
+    "RIVAL_RACE_01": {
+        era: 1,
+        tier: 0,
+        sortOrder: 49,
+        oneTime: true,
+        issuer: "Orbital Cargo Solutions",
+        title: "Rush Pickup — Contested",
+        briefing: "Orbital Cargo posted a rush pickup at the second charted world — and Kess Alden is already burning for it. First hull to lock orbit, load the pallet, and get home takes the contract. Mara: 'Kess is good. Kess is fast. Kess talks too much on open comms. Beat Kess to the depot and the coffee's on me.'",
+        flavorTag: "Race",
+        reward: 600,
+        type: 'FETCH_AND_DELIVER',
+        pickupAt: 'orbit',
+        hubPlanetRank: 1,
+        timeLimitSec: 900,
+        requires: { completedMissions: ['FETCH_ORBIT_02'] },
+        pickupLine: 'Pallet secured. Kess is still burning — get home first.',
+        completionLine: "You beat Kess to the dock by minutes. Open comms, one word, grudging: 'Lucky.'",
+        setsFlags: ['met_rival'],
+        rivalRace: true,
+        rivalWinLine: "Kess got there first. The pallet's gone, the contract's gone, and open comms carries one cheerful word: 'Slow.'",
+        contactOnComplete: 'kess_race_won',
+        contactOnRivalWin: 'kess_race_lost'
     },
 
     // ── Tier 1 — Charting contracts (unknown signals) ─────────────────────

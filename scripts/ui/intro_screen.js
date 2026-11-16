@@ -4,7 +4,8 @@ const INTRO_BRIEFING_PARAGRAPHS = [
     'Sector K-14 is under-charted. Most contacts on your nav are not worlds yet — they are unknown signals until someone flies out and catalogs them.',
     'You are an independent hauler under contract to this orbital station. The chart does not fill itself; runners like you survey, deliver, and expand reach.',
     null, // filled with ship/company line at show time
-    'Run dock contracts to pay consumables and dock fees. Take survey work to unlock better jobs on the mission board. Discovery is how you graduate from rent money to real routes.'
+    'Run dock contracts to pay consumables and dock fees. Take survey work to unlock better jobs on the mission board. Discovery is how you graduate from rent money to real routes.',
+    'One more thing, and it is not in the manual: there is an eight-year-old back home who thinks you fly the stars for a living. Pip\'s drawing is taped above your bunk — a rocket, a star, and a stick figure with your name on it. Keep the runs coming and the lien shrinking. That is the whole job.'
 ];
 
 const introScreen = {

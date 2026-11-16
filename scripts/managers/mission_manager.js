@@ -79,6 +79,24 @@ class MissionManager {
             }
         }
 
+        // Story gates (Phase 2, Slice A — MISSIONS.md appendix). Flags are
+        // set by mission effects; counters track repeated story progress.
+        if (Array.isArray(req.storyFlags) && req.storyFlags.length > 0) {
+            const unset = req.storyFlags.filter(flag => !playerDataManager.hasStoryFlag(flag));
+            if (unset.length > 0) {
+                missing.push('Complete the preceding story beat');
+            }
+        }
+
+        if (req.storyCounters && typeof req.storyCounters === 'object') {
+            Object.entries(req.storyCounters).forEach(([counter, minimum]) => {
+                const current = playerDataManager.getStoryCounter(counter);
+                if (current < minimum) {
+                    missing.push(`Story progress: ${counter} (${current}/${minimum})`);
+                }
+            });
+        }
+
         return {
             unlocked: missing.length === 0,
             hint: missing.join(' · ')
@@ -301,6 +319,29 @@ class MissionManager {
         const title = mission?.title || 'Contract';
         playerDataManager.clearShipMission(activeShip.id);
 
+        // Rival race expiry (Phase 2, Slice A): the rival wins the contract.
+        // Soft fail only — no punishment beyond pay, plus a taunt (MISSIONS.md §6).
+        if (mission?.rivalRace) {
+            this.applyMissionEffects(mission, activeShip);
+            const rivalLine = mission.rivalWinLine
+                || 'The rival got there first. Contract lost.';
+            if (typeof notificationManager !== 'undefined') {
+                notificationManager.show({
+                    title: 'Contract Lost — Rival Won',
+                    bodyHtml: `<p class="notification-planet-name">${this.escapeHtml(title)}</p><p>${this.escapeHtml(rivalLine)}</p>`,
+                    variant: 'warning',
+                    durationMs: 0,
+                    dismissible: true
+                });
+            } else {
+                uiNotify({ title: 'Contract Lost — Rival Won', message: `${title} — ${rivalLine}`, variant: 'warning', durationMs: 0, dismissible: true });
+            }
+            if (mission.contactOnRivalWin && typeof contactsUI !== 'undefined') {
+                contactsUI.queueMessage(mission.contactOnRivalWin);
+            }
+            return;
+        }
+
         if (typeof notificationManager !== 'undefined') {
             notificationManager.show({
                 title: 'Contract Expired',
@@ -470,7 +511,18 @@ class MissionManager {
             playerDataManager.saveData();
         }
 
-        let bodyHtml = '<p>Drop ship destroyed.';
+        // Silent write-off log (R7–R10): the drop ship is written off, the
+        // pilot ejects and is recovered. Recovery crews save people, not hulls.
+        playerDataManager.addWriteOffEntry({
+            kind: 'write_off',
+            what: missionState?.hasPickedUpCargo
+                ? 'drop ship + contract cargo'
+                : 'drop ship',
+            shipId: activeShip?.id ?? null,
+            missionId: missionId ?? null
+        });
+
+        let bodyHtml = '<p>You punched out clean — the ejection seat did its job, and the rescue skiff fished you out of the descent corridor. The drop ship wasn\'t so lucky: hull written off, recovery declined. Aegis logs it as a total loss.';
         if (paid) {
             bodyHtml += ` Replacement billed: ¢${DROP_SHIP_REPLACEMENT_COST.toLocaleString()}.`;
         } else {
@@ -505,6 +557,7 @@ class MissionManager {
         const labels = {
             DELIVER_TO_DOCK: 'Dock delivery',
             DOCK_CERT: 'Certification',
+            DOCK_ENCOUNTER: 'Dock encounter',
             FETCH_AND_DELIVER: 'Fetch & deliver',
             ORBIT_PLANET: 'Orbital survey',
             LAND_ON_PLANET: 'Surface drop',
@@ -731,6 +784,73 @@ class MissionManager {
         // You could also add a system for failed missions, time limits, etc.
     }
 
+    /**
+     * Story effects shared by completion and rival-loss paths (MISSIONS.md §6
+     * "Sets" column). Applies flags, counters and journal entries only —
+     * contact messages are queued by the caller, which knows the outcome.
+     */
+    applyMissionEffects(missionData, activeShip) {
+        if (!missionData) return;
+        if (Array.isArray(missionData.setsFlags)) {
+            playerDataManager.setStoryFlags(missionData.setsFlags);
+        }
+        if (missionData.setsCounters && typeof missionData.setsCounters === 'object') {
+            Object.entries(missionData.setsCounters).forEach(([counter, amount]) => {
+                playerDataManager.incrementStoryCounter(counter, amount);
+            });
+        }
+        if (missionData.journalEntry) {
+            playerDataManager.addJournalEntry(missionData.journalEntry);
+        }
+    }
+
+    /**
+     * Complete a DOCK_ENCOUNTER mission (dialogue-only, no ship assignment).
+     * Called after the encounter dialogue ends. Pays via the same lien
+     * deduction path as flight contracts so the ledger stays consistent.
+     */
+    completeDockEncounter(missionId) {
+        const missionData = missionCatalogue[missionId];
+        if (!missionData || missionData.type !== 'DOCK_ENCOUNTER') {
+            console.warn(`completeDockEncounter: ${missionId} is not a dock encounter.`);
+            return false;
+        }
+        const unlock = this.getMissionUnlockStatus({ id: missionId, ...missionData });
+        if (!unlock.unlocked) {
+            console.warn(`completeDockEncounter: locked mission ${missionId} — ${unlock.hint}`);
+            return false;
+        }
+        if (missionData.oneTime && playerDataManager.hasCompletedMission(missionId)) {
+            return false;
+        }
+
+        const payout = bankingManager.applyContractPayoutDeductions(missionData.reward || 0, {
+            missionTitle: missionData.title,
+            missionId
+        });
+
+        if (missionData.oneTime) {
+            playerDataManager.markMissionCompleted(missionId);
+        }
+        this.applyMissionEffects(missionData, null);
+
+        if (typeof notificationManager !== 'undefined' && notificationManager.showMissionComplete) {
+            notificationManager.showMissionComplete({
+                title: missionData.title,
+                completionLine: missionData.completionLine || null,
+                gross: payout.gross,
+                net: payout.net,
+                deductions: payout.deductions,
+                discoveryBonus: 0,
+                planetName: null,
+                isFirstLienReveal: payout.isFirstLienReveal
+            });
+        } else {
+            uiNotify({ title: missionData.title, message: missionData.completionLine || '', variant: 'mission', durationMs: 0, dismissible: true });
+        }
+        return true;
+    }
+
     finalizeMissionCompletion({
         activeMissionId,
         missionData,
@@ -763,6 +883,9 @@ class MissionManager {
             playerDataManager.markMissionCompleted(activeMissionId);
         }
 
+        // Story effects (Phase 2, Slice A): flags, counters, journal entries.
+        this.applyMissionEffects(missionData, activeShip);
+
         if (typeof notificationManager !== 'undefined' && notificationManager.showMissionComplete) {
             notificationManager.showMissionComplete({
                 title: missionData.title,
@@ -787,6 +910,11 @@ class MissionManager {
                 msg += `\n\n${planetName} is now surveyed.`;
             }
             uiNotify({ title: missionData.title, message: msg, variant: 'mission', durationMs: 0, dismissible: true });
+        }
+
+        // Story contact message on completion (contacts UI v1, Slice A).
+        if (missionData.contactOnComplete && typeof contactsUI !== 'undefined') {
+            contactsUI.queueMessage(missionData.contactOnComplete);
         }
 
         return payout;
